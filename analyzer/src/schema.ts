@@ -14,18 +14,13 @@ export type Item = {
   links: Link[]
 }
 
-export type Connector = { name: string; url: string; token: string | null }
-
-export const headers = ({ token }: Connector): Record<string, string> =>
-  token ? { Authorization: `Bearer ${token}` } : {}
-
 export type Owner = { name: string; aliases: string[] }
 
 export type Meeting = { title: string | null; startedAt: string; attendees: string[]; notes: string | null }
 
 export type Segment = { at: number; text: string }
 
-export type Input = { owner: Owner; meeting: Meeting; transcript: Segment[]; connectors: Connector[] }
+export type Input = { owner: Owner; meeting: Meeting; transcript: Segment[] }
 
 export const schema = {
   type: "object",

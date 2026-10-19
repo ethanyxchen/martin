@@ -5,18 +5,18 @@ public enum Analyzer {
         struct Owner: Encodable { let name: String; let aliases: [String] }
         struct MeetingInfo: Encodable { let title: String?; let startedAt: Date; let attendees: [String]; let notes: String? }
         struct Line: Encodable { let at: Double; let text: String }
-        struct Source: Encodable { let name: String; let url: URL; let token: String? }
         let owner: Owner
         let meeting: MeetingInfo
         let transcript: [Line]
-        let connectors: [Source]
     }
 
-    public struct ConnectorStatus: Decodable, Sendable, Hashable {
+    public struct Source: Decodable, Sendable, Hashable, Identifiable {
         public let name: String
-        public let ok: Bool
-        public let tools: Int
-        public let error: String?
+        public let status: String
+        public let detail: String?
+
+        public var id: String { name }
+        public var connected: Bool { status == "connected" }
     }
 
     public struct Failure: LocalizedError {
@@ -27,27 +27,15 @@ public enum Analyzer {
         let input = Input(
             owner: .init(name: settings.name, aliases: settings.aliases),
             meeting: .init(title: meeting.title, startedAt: meeting.startedAt, attendees: meeting.attendees, notes: meeting.calendarNotes),
-            transcript: transcript.map { .init(at: $0.at, text: $0.text) },
-            connectors: await sources(settings.connectors.filter(\.enabled))
+            transcript: transcript.map { .init(at: $0.at, text: $0.text) }
         )
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         return try await run(arguments: [], input: encoder.encode(input))
     }
 
-    public static func check(_ connectors: [Connector]) async throws -> [ConnectorStatus] {
-        let output = try await run(arguments: ["check"], input: JSONEncoder().encode(["connectors": await sources(connectors)]))
-        return try JSONDecoder().decode([ConnectorStatus].self, from: Data(output.utf8))
-    }
-
-    static func sources(_ connectors: [Connector]) async -> [Input.Source] {
-        var sources: [Input.Source] = []
-        for connector in connectors {
-            var token = Secrets.get(connector.secretKey)
-            if token == nil, connector.isGitHub { token = await GitHubCLI.token() }
-            sources.append(.init(name: connector.name, url: connector.url, token: token))
-        }
-        return sources
+    public static func sources() async throws -> [Source] {
+        try JSONDecoder().decode([Source].self, from: Data(await run(arguments: ["sources"], input: Data()).utf8))
     }
 
     static var executable: URL {
@@ -59,9 +47,6 @@ public enum Analyzer {
         let process = Process()
         process.executableURL = executable
         process.arguments = arguments
-        var environment = ProcessInfo.processInfo.environment
-        environment["ANTHROPIC_API_KEY"] = Secrets.get(Secrets.anthropic)
-        process.environment = environment
         let stdin = Pipe(), stdout = Pipe(), stderr = Pipe()
         process.standardInput = stdin
         process.standardOutput = stdout

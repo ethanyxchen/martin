@@ -19,23 +19,22 @@ The build compiles the analyzer in `analyzer/` and bundles it into the app.
 
 Open **Settings…** from the menu bar icon.
 
-**Keys.** Paste a [Deepgram](https://deepgram.com) API key; Deepgram transcribes the room while you record. The Anthropic key is optional; without it Martin uses your Claude Code sign-in.
+**Keys.** Paste a [Deepgram](https://deepgram.com) API key; Deepgram transcribes the room while you record. Notes are written with your Claude Code sign-in.
 
 **You.** Your name, what people call you, and words the transcript should get right, such as teammates and project names.
 
-**Connectors.** Martin connects to remote MCP servers to learn what you are working on. It only reads from them.
+**Connectors.** Martin holds no credentials for your work tools. It reads them through tools you have already signed in to, and only ever reads.
 
-- **GitHub** connects through [GitHub CLI](https://cli.github.com). Install it and sign in once, then add the GitHub connector and leave its token empty:
+- **GitHub** through [GitHub CLI](https://cli.github.com), limited to read-only commands:
 
   ```sh
   brew install gh
   gh auth login
   ```
 
-- **Linear** takes a personal API key with only the Read permission, created under Settings → Security & access in Linear.
-- **Custom** servers take a URL and an optional bearer token.
+- **Linear, Slack, Notion, Google Drive and others** through your [Claude connectors](https://claude.ai/settings/connectors). Connect them once in Claude; Martin uses only the tools each connector marks as read-only.
 
-Choose **Check connections** to see each connector's status.
+Settings shows each source and whether it is connected.
 
 **Calendar.** Martin names a recording after the calendar event in progress. For Google Calendar, add the account in System Settings → Internet Accounts with Calendars turned on.
 

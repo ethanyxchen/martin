@@ -3,7 +3,6 @@ import Security
 
 public enum Secrets {
     public static let deepgram = "deepgram"
-    public static let anthropic = "anthropic"
 
     private static let service = "dev.ethanchen.martin"
 

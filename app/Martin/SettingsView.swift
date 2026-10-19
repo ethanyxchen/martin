@@ -7,7 +7,7 @@ struct SettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 40) {
-                ConnectorsView(connectors: $settings.connectors)
+                ConnectorsView()
                 YouSection(settings: $settings)
                 KeysSection()
             }
@@ -130,9 +130,6 @@ private struct KeysSection: View {
         SettingsSection(title: "Keys", summary: "Kept in your keychain, never in a file.") {
             FieldRow(label: "Deepgram", hint: "Transcribes the room", divided: false) {
                 SecretField(key: Secrets.deepgram, prompt: "Paste API key")
-            }
-            FieldRow(label: "Anthropic", hint: "Writes your notes") {
-                SecretField(key: Secrets.anthropic, prompt: "Paste API key")
             }
         }
     }

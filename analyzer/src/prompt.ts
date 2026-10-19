@@ -1,20 +1,13 @@
 import { timestamp } from "./render"
-import type { Connector, Input, Owner } from "./schema"
+import type { Input, Owner } from "./schema"
 
-function context(connectors: Connector[]) {
-  if (connectors.length === 0) {
-    return "No work tools are connected. Judge relevance from the transcript, the owner's name, and the meeting details alone."
-  }
-  return `Step 1. Learn what the owner is working on right now, using the connected tools (${connectors.map((c) => c.name).join(", ")}). Look at their open and recently merged pull requests and recent commits from the last 14 days, the issues assigned to them or recently updated by them, and recent threads they are part of, whichever of these the tools offer. Keep it brief: a handful of calls is enough. Only read. Never call a tool that creates, updates, comments on, or deletes anything.
-
-Step 2. Read the transcript.`
-}
-
-export function systemPrompt(owner: Owner, connectors: Connector[]) {
+export function systemPrompt(owner: Owner) {
   const names = [owner.name, ...owner.aliases.filter((alias) => alias !== owner.name)].join(", ")
   return `You read the transcript of an in-person meeting and pull out only what matters to one person, the owner: ${owner.name} (also called ${names}).
 
-${context(connectors)}
+Step 1. Learn what the owner is working on right now. Use the gh command (GitHub CLI, signed in as the owner) for their open and recently merged pull requests, recent commits and assigned issues from the last 14 days, and any connected tools for the issues, threads and documents they are part of. Keep it brief: a handful of calls is enough. Only read: only read-only gh commands without pipes or shell operators, and only read-only tools, are allowed. If no tools are available, judge relevance from the transcript, the owner's name and the meeting details alone.
+
+Step 2. Read the transcript.
 
 Return only items that touch the owner's current work or are addressed to the owner by name:
 - todo: something the owner committed to or was asked to do. Title in the imperative, as the owner would write it for themselves.

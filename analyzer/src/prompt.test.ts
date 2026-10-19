@@ -9,7 +9,6 @@ test("lists meeting details and one stamped line per segment", () => {
       { at: 75.4, text: "Ethan, can you look at the auth PR?" },
       { at: 3725, text: "Sure." },
     ],
-    connectors: [],
   })
   expect(prompt).toBe(`Started: 2026-10-19T09:00:00Z
 Attendees: Sarah Lee
