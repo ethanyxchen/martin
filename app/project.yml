@@ -36,4 +36,5 @@ targets:
       - name: Bundle analyzer
         basedOnDependencyAnalysis: false
         script: |
+          mkdir -p "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
           cp "$SRCROOT/../analyzer/dist/martin-analyzer" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/martin-analyzer"

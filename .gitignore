@@ -7,3 +7,4 @@ node_modules/
 analyzer/dist/
 plans/
 DerivedData/
+*.bun-build
