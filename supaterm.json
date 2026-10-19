@@ -1,0 +1,13 @@
+{
+  "$schema": "https://supaterm.com/schema/supaterm.json",
+  "defaultThreadEnvMode": "worktree",
+  "scripts": [
+    {
+      "name": "Setup Worktree",
+      "command": "bash scripts/bootstrap-worktree.sh",
+      "icon": "configure",
+      "runOnWorktreeCreate": true,
+      "async": false
+    }
+  ]
+}
