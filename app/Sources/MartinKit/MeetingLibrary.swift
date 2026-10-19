@@ -17,6 +17,7 @@ public struct MeetingLibrary: Sendable {
     }
 
     public func create(startedAt: Date = .now, title: String? = nil, attendees: [String] = [], calendarNotes: String? = nil) throws -> Meeting {
+        let startedAt = Date(timeIntervalSince1970: startedAt.timeIntervalSince1970.rounded(.down))
         let meeting = Meeting(id: Self.folderName.string(from: startedAt), startedAt: startedAt, title: title, attendees: attendees, calendarNotes: calendarNotes)
         try FileManager.default.createDirectory(at: folder(of: meeting), withIntermediateDirectories: true)
         try save(meeting)
@@ -32,7 +33,7 @@ public struct MeetingLibrary: Sendable {
     }
 
     public func audioURL(of meeting: Meeting) -> URL {
-        folder(of: meeting).appending(path: "audio.m4a")
+        folder(of: meeting).appending(path: "audio.aac")
     }
 
     public func append(_ segment: Segment, to meeting: Meeting) throws {

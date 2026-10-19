@@ -13,6 +13,7 @@ public final class Recorder {
     public private(set) var phase: Phase = .idle
     public private(set) var level: Float = 0
     public private(set) var lastLine: String?
+    public private(set) var transcriptionError: String?
     public var onNoteReady: ((Meeting) -> Void)?
 
     public let library: MeetingLibrary
@@ -26,24 +27,29 @@ public final class Recorder {
     public func start() async throws {
         guard phase == .idle else { return }
         guard let apiKey = Secrets.get(Secrets.deepgram) else { throw Analyzer.Failure(errorDescription: "Add a Deepgram API key in Settings.") }
+        try await Microphone.authorize()
         let settings = Settings.load()
         let event = await CalendarLookup.currentEvent()
         let meeting = try library.create(title: event?.title, attendees: event?.attendees ?? [], calendarNotes: event?.notes)
         let stream = DeepgramStream(apiKey: apiKey, keyterms: Self.keyterms(settings: settings, attendees: meeting.attendees))
         let library = library
-        stream.connect { [weak self] segment in
-            try? library.append(segment, to: meeting)
-            Task { @MainActor in self?.lastLine = segment.text }
-        }
         let microphone = Microphone()
         try microphone.start(
             writingTo: library.audioURL(of: meeting),
             onLevel: { [weak self] level in Task { @MainActor in self?.level = level } },
             onAudio: { stream.send($0) }
         )
+        stream.connect(
+            onSegment: { [weak self] segment in
+                try? library.append(segment, to: meeting)
+                Task { @MainActor in self?.lastLine = segment.text }
+            },
+            onError: { [weak self] message in Task { @MainActor in self?.transcriptionError = message } }
+        )
         self.stream = stream
         self.microphone = microphone
         lastLine = nil
+        transcriptionError = nil
         phase = .recording(meeting, since: .now)
     }
 
