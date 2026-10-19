@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "bun build --compile src/main.ts --outfile dist/martin-analyzer",
+    "build": "bun build --compile src/main.ts --outfile dist/martin-analyzer && rm -f .*.bun-build",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },

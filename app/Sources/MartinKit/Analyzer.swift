@@ -28,7 +28,7 @@ public enum Analyzer {
             owner: .init(name: settings.name, aliases: settings.aliases),
             meeting: .init(title: meeting.title, startedAt: meeting.startedAt, attendees: meeting.attendees, notes: meeting.calendarNotes),
             transcript: transcript.map { .init(at: $0.at, text: $0.text) },
-            connectors: settings.connectors.filter(\.enabled).map { .init(name: $0.name, url: $0.url, token: Secrets.get($0.secretKey)) }
+            connectors: await sources(settings.connectors.filter(\.enabled))
         )
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -36,9 +36,18 @@ public enum Analyzer {
     }
 
     public static func check(_ connectors: [Connector]) async throws -> [ConnectorStatus] {
-        let sources = connectors.map { Input.Source(name: $0.name, url: $0.url, token: Secrets.get($0.secretKey)) }
-        let output = try await run(arguments: ["check"], input: JSONEncoder().encode(["connectors": sources]))
+        let output = try await run(arguments: ["check"], input: JSONEncoder().encode(["connectors": await sources(connectors)]))
         return try JSONDecoder().decode([ConnectorStatus].self, from: Data(output.utf8))
+    }
+
+    static func sources(_ connectors: [Connector]) async -> [Input.Source] {
+        var sources: [Input.Source] = []
+        for connector in connectors {
+            var token = Secrets.get(connector.secretKey)
+            if token == nil, connector.isGitHub { token = await GitHubCLI.token() }
+            sources.append(.init(name: connector.name, url: connector.url, token: token))
+        }
+        return sources
     }
 
     static var executable: URL {

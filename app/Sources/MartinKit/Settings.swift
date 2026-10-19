@@ -15,6 +15,8 @@ public struct Connector: Codable, Identifiable, Hashable, Sendable {
 
     public var secretKey: String { "connector.\(id.uuidString)" }
 
+    public var isGitHub: Bool { url.host() == "api.githubcopilot.com" }
+
     public static let presets: [Connector] = [
         Connector(name: "GitHub", url: URL(string: "https://api.githubcopilot.com/mcp/")!),
         Connector(name: "Linear", url: URL(string: "https://mcp.linear.app/mcp")!),

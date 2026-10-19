@@ -147,8 +147,8 @@ private struct ConnectorEditor: View {
             FieldRow(label: "Server URL", hint: "A remote MCP endpoint") {
                 TextField("https://", text: $url)
             }
-            FieldRow(label: "Token", hint: "Sent as a bearer token") {
-                SecretField(key: connector.secretKey, prompt: "Optional")
+            FieldRow(label: "Token", hint: connector.isGitHub ? "Leave empty to use your GitHub CLI sign-in" : "Sent as a bearer token") {
+                SecretField(key: connector.secretKey, prompt: connector.isGitHub ? "gh auth login" : "Optional")
             }
             HStack(alignment: .firstTextBaseline) {
                 if let error {
