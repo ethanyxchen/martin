@@ -1,0 +1,9 @@
+.env
+.DS_Store
+app/Martin.xcodeproj
+.build/
+.swiftpm/
+node_modules/
+analyzer/dist/
+plans/
+DerivedData/
