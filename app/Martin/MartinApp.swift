@@ -18,6 +18,7 @@ struct MartinApp: App {
 @MainActor
 @Observable
 final class AppState {
+    private static let page = NSSize(width: 520, height: 640)
     let recorder = Recorder()
     private(set) var meetings: [Meeting] = []
     @ObservationIgnored private var windows: [String: NSWindow] = [:]
@@ -43,19 +44,23 @@ final class AppState {
     func toggleRecording() async {
         switch recorder.phase {
         case .idle:
-            do {
-                try await recorder.start()
-                reload()
-                if case .recording(let meeting, _) = recorder.phase { open(meeting, activating: false) }
-            } catch {
-                explain(error)
-            }
+            await record(await CalendarLookup.currentEvent())
         case .recording:
             await recorder.stop()
         case .analyzing:
             return
         }
         reload()
+    }
+
+    func record(_ event: CalendarEvent?) async {
+        do {
+            try await recorder.start(event)
+            reload()
+            if case .recording(let meeting, _) = recorder.phase { open(meeting, activating: false) }
+        } catch {
+            explain(error)
+        }
     }
 
     func rename(_ meeting: Meeting, to title: String) {
@@ -68,19 +73,26 @@ final class AppState {
     }
 
     func open(_ meeting: Meeting, activating: Bool = true) {
-        let window = windows[meeting.id] ?? present(NoteView(app: self, meeting: meeting), id: meeting.id, title: meeting.displayTitle, size: NSSize(width: 520, height: 640))
+        let window = windows[meeting.id] ?? present(NoteView(app: self, meeting: meeting), id: meeting.id, title: meeting.displayTitle, size: Self.page)
         if activating {
-            NSApp.activate()
-            window.makeKeyAndOrderFront(nil)
+            show(window)
         } else {
             window.orderFrontRegardless()
         }
     }
 
+    func openUpcoming() {
+        show(windows["upcoming"] ?? present(UpcomingView(app: self), id: "upcoming", title: "Upcoming Meetings", size: Self.page))
+    }
+
     func openSettings() {
-        let window = windows["settings"] ?? present(SettingsView(), id: "settings", title: "Settings", size: NSSize(width: 560, height: 680))
+        show(windows["settings"] ?? present(SettingsView(), id: "settings", title: "Settings", size: NSSize(width: 560, height: 680)))
+    }
+
+    private func show(_ window: NSWindow) {
+        window.orderFrontRegardless()
+        window.makeKey()
         NSApp.activate()
-        window.makeKeyAndOrderFront(nil)
     }
 
     private func present(_ view: some View, id: String, title: String, size: NSSize) -> NSWindow {

@@ -3,35 +3,96 @@ import Foundation
 
 public struct CalendarEvent: Sendable, Hashable {
     public let title: String
+    public let start: Date
+    public let end: Date
     public let attendees: [String]
     public let notes: String?
-    public let previousStart: Date?
+
+    init(title: String, start: Date, end: Date, attendees: [String] = [], notes: String? = nil) {
+        self.title = title
+        self.start = start
+        self.end = end
+        self.attendees = attendees
+        self.notes = notes
+    }
+
+    init(_ event: EKEvent) {
+        self.init(
+            title: event.title ?? "",
+            start: event.startDate,
+            end: event.endDate,
+            attendees: (event.attendees ?? []).filter { !$0.isCurrentUser }.compactMap(CalendarLookup.name),
+            notes: event.notes
+        )
+    }
+
+    public func isUnderway(at date: Date) -> Bool {
+        start <= date && date < end
+    }
+}
+
+public struct AgendaDay: Sendable, Hashable {
+    public let start: Date
+    public let events: [CalendarEvent]
 }
 
 public enum CalendarLookup {
     public static func currentEvent(at date: Date = .now) async -> CalendarEvent? {
         let store = EKEventStore()
         guard (try? await store.requestFullAccessToEvents()) == true else { return nil }
-        let soon = date.addingTimeInterval(600)
-        let event = store.events(matching: store.predicateForEvents(withStart: date, end: soon, calendars: nil))
-            .filter { !$0.isAllDay && $0.startDate <= soon && $0.endDate > date }
-            .max { ($0.hasAttendees ? 1 : 0, $0.startDate) < ($1.hasAttendees ? 1 : 0, $1.startDate) }
-        return event.map { event in
-            CalendarEvent(
-                title: event.title ?? "",
-                attendees: (event.attendees ?? []).filter { !$0.isCurrentUser }.compactMap(name),
-                notes: event.notes,
-                previousStart: previousStart(of: event, in: store)
-            )
-        }
+        return ongoing(at: date, in: store).map(CalendarEvent.init)
     }
 
-    static func previousStart(of event: EKEvent, in store: EKEventStore) -> Date? {
+    public static func previousStart(ofEventAt date: Date) async -> Date? {
+        let store = EKEventStore()
+        guard (try? await store.requestFullAccessToEvents()) == true, let event = ongoing(at: date, in: store) else { return nil }
         let earliest = Calendar.current.date(byAdding: .day, value: -35, to: event.startDate)!
         return store.events(matching: store.predicateForEvents(withStart: earliest, end: event.startDate, calendars: [event.calendar]))
             .filter { $0.title == event.title && $0.startDate < event.startDate }
             .map(\.startDate)
             .max()
+    }
+
+    public static func events(from start: Date, to end: Date) -> AsyncStream<[CalendarEvent]> {
+        AsyncStream { continuation in
+            let task = Task {
+                let store = EKEventStore()
+                guard (try? await store.requestFullAccessToEvents()) == true else { return continuation.finish() }
+                continuation.yield(events(from: start, to: end, in: store))
+                for await _ in NotificationCenter.default.notifications(named: .EKEventStoreChanged) {
+                    continuation.yield(events(from: start, to: end, in: store))
+                }
+                continuation.finish()
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
+    static func events(from start: Date, to end: Date, in store: EKEventStore) -> [CalendarEvent] {
+        store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: nil))
+            .filter { !$0.isAllDay }
+            .map(CalendarEvent.init)
+    }
+
+    public static func agenda(of events: [CalendarEvent], days: Int, at now: Date, calendar: Calendar = .current) -> [AgendaDay] {
+        let today = calendar.startOfDay(for: now)
+        return (0..<days).map { offset in
+            let start = calendar.date(byAdding: .day, value: offset, to: today)!
+            let end = calendar.date(byAdding: .day, value: 1, to: start)!
+            return AgendaDay(
+                start: start,
+                events: events
+                    .filter { $0.start < end && $0.end > max(start, now) }
+                    .sorted { ($0.start, $0.title) < ($1.start, $1.title) }
+            )
+        }
+    }
+
+    static func ongoing(at date: Date, in store: EKEventStore) -> EKEvent? {
+        let soon = date.addingTimeInterval(600)
+        return store.events(matching: store.predicateForEvents(withStart: date, end: soon, calendars: nil))
+            .filter { !$0.isAllDay && $0.startDate <= soon && $0.endDate > date }
+            .max { ($0.hasAttendees ? 1 : 0, $0.startDate) < ($1.hasAttendees ? 1 : 0, $1.startDate) }
     }
 
     static func name(of participant: EKParticipant) -> String? {
