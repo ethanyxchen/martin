@@ -30,12 +30,11 @@ public final class Recorder {
         self.library = library
     }
 
-    public func start() async throws {
+    public func start(_ event: CalendarEvent?) async throws {
         guard phase == .idle else { return }
         guard let apiKey = Secrets.get(Secrets.deepgram) else { throw Analyzer.Failure(errorDescription: "Add a Deepgram API key in Settings.") }
         try await Microphone.authorize()
         let settings = Settings.load()
-        let event = await CalendarLookup.currentEvent()
         let meeting = try library.create(title: event?.title, attendees: event?.attendees ?? [], calendarNotes: event?.notes)
         let stream = DeepgramStream(apiKey: apiKey, keyterms: Self.keyterms(settings: settings, attendees: meeting.attendees))
         let library = library

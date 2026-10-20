@@ -4,6 +4,7 @@ import SwiftUI
 
 struct UpcomingView: View {
     private static let days = 4
+    let app: AppState
     @State private var events: [CalendarEvent]?
     @State private var denied = false
 
@@ -42,7 +43,7 @@ struct UpcomingView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 30) {
                     ForEach(CalendarLookup.agenda(of: events, days: Self.days, at: now), id: \.start) { day in
-                        DayView(day: day, now: now)
+                        DayView(app: app, day: day, now: now)
                     }
                 }
                 .padding(.leading, Theme.margin)
@@ -68,6 +69,7 @@ struct UpcomingView: View {
 }
 
 private struct DayView: View {
+    let app: AppState
     let day: AgendaDay
     let now: Date
 
@@ -95,7 +97,12 @@ private struct DayView: View {
                     .padding(.leading, Theme.gutter)
             }
             ForEach(day.events, id: \.self) { event in
-                EventRow(event: event, underway: event.isUnderway(at: now))
+                Button { Task { await app.record(event) } } label: {
+                    EventRow(event: event, underway: event.isUnderway(at: now))
+                }
+                .buttonStyle(.plain)
+                .pointerStyle(.link)
+                .disabled(app.recorder.phase != .idle)
             }
         }
     }
@@ -123,6 +130,8 @@ private struct EventRow: View {
             .lineLimit(1)
             .truncationMode(.tail)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(.rect)
     }
 
     private var time: String {

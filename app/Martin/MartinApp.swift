@@ -44,19 +44,23 @@ final class AppState {
     func toggleRecording() async {
         switch recorder.phase {
         case .idle:
-            do {
-                try await recorder.start()
-                reload()
-                if case .recording(let meeting, _) = recorder.phase { open(meeting, activating: false) }
-            } catch {
-                explain(error)
-            }
+            await record(await CalendarLookup.currentEvent())
         case .recording:
             await recorder.stop()
         case .analyzing:
             return
         }
         reload()
+    }
+
+    func record(_ event: CalendarEvent?) async {
+        do {
+            try await recorder.start(event)
+            reload()
+            if case .recording(let meeting, _) = recorder.phase { open(meeting, activating: false) }
+        } catch {
+            explain(error)
+        }
     }
 
     func rename(_ meeting: Meeting, to title: String) {
@@ -78,7 +82,7 @@ final class AppState {
     }
 
     func openUpcoming() {
-        show(windows["upcoming"] ?? present(UpcomingView(), id: "upcoming", title: "Upcoming Meetings", size: Self.page))
+        show(windows["upcoming"] ?? present(UpcomingView(app: self), id: "upcoming", title: "Upcoming Meetings", size: Self.page))
     }
 
     func openSettings() {
@@ -86,8 +90,9 @@ final class AppState {
     }
 
     private func show(_ window: NSWindow) {
+        window.orderFrontRegardless()
+        window.makeKey()
         NSApp.activate()
-        window.makeKeyAndOrderFront(nil)
     }
 
     private func present(_ view: some View, id: String, title: String, size: NSSize) -> NSWindow {
