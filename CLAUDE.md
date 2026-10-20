@@ -11,3 +11,11 @@ The build must stay free of compiler warnings. The pre-commit hook in `.githooks
 # Tests
 
 Run `swift test --package-path app` for the Swift side and `bun test` in `analyzer/` for the analyzer.
+
+# Logs
+
+Martin logs audio devices, transcription and assistant failures to the unified log under the subsystem `dev.ethanchen.martin`, in the categories `audio`, `transcription` and `assistant`. When Ethan reports a recording that went wrong, read them first (use the full path, since `log` is a shell builtin in zsh):
+
+```sh
+/usr/bin/log show --last 2h --style compact --predicate 'subsystem == "dev.ethanchen.martin"'
+```

@@ -91,6 +91,7 @@ public final class Microphone: @unchecked Sendable {
             throw error
         }
         self.engine = engine
+        Log.audio.notice("Microphone on \(AudioHardware.name(of: AudioHardware.defaultDevice(kAudioHardwarePropertyDefaultInputDevice)), privacy: .public) at \(Int(format.sampleRate)) Hz")
         observer = NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange, object: engine, queue: nil) { [weak self] _ in
             guard let self else { return }
             queue.async { self.restart.schedule() }
@@ -110,13 +111,20 @@ public final class Microphone: @unchecked Sendable {
         guard file != nil else { return true }
         teardown()
         interrupted = true
-        return (try? run()) != nil
+        do {
+            try run()
+            return true
+        } catch {
+            Log.audio.error("Microphone restart failed: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
     }
 
     private func process(_ buffer: AVAudioPCMBuffer) {
         guard let file, let resampler, buffer.format == resampler.input, let converted = resampler.convert(buffer) else { return }
         if interrupted, let heardAt {
             interrupted = false
+            Log.audio.notice("Microphone resumed after \(Date.now.timeIntervalSince(heardAt)) s")
             pad(seconds: Date.now.timeIntervalSince(heardAt) - Double(buffer.frameLength) / buffer.format.sampleRate, file: file)
         }
         heardAt = .now

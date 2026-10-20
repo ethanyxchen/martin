@@ -135,10 +135,13 @@ public final class DeepgramStream: @unchecked Sendable {
         bytesOnSocket = 0
         if let finishing { return close(finishing) }
         guard !stopped else { return }
-        if let message = Self.failure(closeCode: socket.closeCode.rawValue, status: (socket.response as? HTTPURLResponse)?.statusCode) {
+        let status = (socket.response as? HTTPURLResponse)?.statusCode
+        Log.transcription.notice("Deepgram socket closed with code \(socket.closeCode.rawValue), HTTP \(status ?? 0): \(socket.error?.localizedDescription ?? "no error", privacy: .public)")
+        if let message = Self.failure(closeCode: socket.closeCode.rawValue, status: status) {
             stopped = true
             keepAlive?.cancel()
             session.invalidateAndCancel()
+            Log.transcription.error("Transcription stopped: \(message, privacy: .public)")
             return onError(message)
         }
         queue.asyncAfter(deadline: .now() + retryDelay) { [weak self] in

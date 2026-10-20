@@ -11,7 +11,13 @@ public final class SystemAudio: @unchecked Sendable {
     private lazy var restart = Restart(queue: queue) { [weak self] in
         guard let self, running else { return true }
         teardown()
-        return (try? run()) != nil
+        do {
+            try run()
+            return true
+        } catch {
+            Log.audio.error("System audio restart failed: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
     }
     private lazy var routeChanged: AudioObjectPropertyListenerBlock = { [weak self] _, _ in self?.restart.schedule() }
 
@@ -67,6 +73,7 @@ public final class SystemAudio: @unchecked Sendable {
                 onAudio(Array(UnsafeBufferPointer(start: converted.int16ChannelData![0], count: Int(converted.frameLength))))
             }, "listen to system audio")
             try check(AudioDeviceStart(aggregate, proc), "start system audio")
+            Log.audio.notice("System audio from \(AudioHardware.name(of: device), privacy: .public) at \(Int(stream.mSampleRate)) Hz")
             listen(kAudioDevicePropertyNominalSampleRate, on: aggregate)
         } catch {
             teardown()

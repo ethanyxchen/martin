@@ -21,6 +21,15 @@ enum AudioHardware {
         return value
     }
 
+    static func name(of device: AudioObjectID) -> String {
+        let name: CFString? = (try? property(kAudioObjectPropertyName, of: device, initial: nil)) ?? nil
+        return name.map { $0 as String } ?? "device \(device)"
+    }
+
+    static func defaultDevice(_ selector: AudioObjectPropertySelector) -> AudioObjectID {
+        (try? property(selector, of: system, initial: AudioObjectID(kAudioObjectUnknown))) ?? AudioObjectID(kAudioObjectUnknown)
+    }
+
     static func listen(_ selector: AudioObjectPropertySelector, on object: AudioObjectID, queue: DispatchQueue, _ block: @escaping AudioObjectPropertyListenerBlock) {
         var address = address(selector)
         AudioObjectAddPropertyListenerBlock(object, &address, queue, block)

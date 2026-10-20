@@ -46,7 +46,11 @@ public final class Recorder {
             onAudio: { stream.send($0) }
         )
         let systemAudio = SystemAudio()
-        try? systemAudio.start(onAudio: { microphone.mix($0) })
+        do {
+            try systemAudio.start(onAudio: { microphone.mix($0) })
+        } catch {
+            Log.audio.error("System audio unavailable, recording the microphone only: \(error.localizedDescription, privacy: .public)")
+        }
         stream.connect(
             onSegment: { [weak self] segment in
                 try? library.append(segment, to: meeting)
@@ -95,6 +99,7 @@ public final class Recorder {
                 assistantError = nil
             } catch {
                 assistantError = error.localizedDescription
+                Log.assistant.error("Live pass failed: \(error.localizedDescription, privacy: .public)")
             }
             try? await Task.sleep(for: .seconds(15))
         }
@@ -104,9 +109,11 @@ public final class Recorder {
         defer { phase = .idle }
         do {
             try await catchUp(on: meeting)
+            Log.assistant.notice("Meeting \(meeting.id, privacy: .public) ended with \(self.heard) transcript lines and \(self.bullets.count) bullets")
             let silence = heard > 0 ? "Nothing in this meeting needed you." : "Nothing was transcribed."
             try library.saveNote(Note.markdown(briefing: briefing, bullets: bullets, silence: silence), for: meeting)
         } catch {
+            Log.assistant.error("Writing the note failed: \(error.localizedDescription, privacy: .public)")
             try? library.saveAnalysisError(error.localizedDescription, for: meeting)
         }
         onNoteReady?(meeting)
