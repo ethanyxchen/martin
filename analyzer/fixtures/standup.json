@@ -3,11 +3,11 @@
     "name": "Ethan Chen",
     "aliases": [
       "Ethan"
-    ]
+    ],
+    "interests": []
   },
   "meeting": {
     "title": "Eng standup",
-    "startedAt": "2026-10-19T09:30:00Z",
     "attendees": [
       "Sarah Lee",
       "Tom Becker",
@@ -16,165 +16,47 @@
     "notes": "Daily standup. Round the room, blockers first."
   },
   "transcript": [
-    {
-      "at": 2.1,
-      "text": "Okay, let's get started, looks like everyone's here except Marco who's out today."
-    },
-    {
-      "at": 11.1,
-      "text": "Same order as usual, Sarah you want to kick us off?"
-    },
-    {
-      "at": 18.4,
-      "text": "Sure. So yesterday I finished the empty states for the onboarding flow, the designs from Lena."
-    },
-    {
-      "at": 28.2,
-      "text": "Today I'm going to start on the settings page migration to the new design system components."
-    },
-    {
-      "at": 37.8,
-      "text": "No blockers, although the date picker in the design system is still a bit buggy on Safari."
-    },
-    {
-      "at": 47.3,
-      "text": "Yeah, I saw that, I think Tom has a fix for the date picker somewhere."
-    },
-    {
-      "at": 55.7,
-      "text": "I do, it's in review, should land today."
-    },
-    {
-      "at": 62.4,
-      "text": "Cool. Tom, you're up then."
-    },
-    {
-      "at": 68.3,
-      "text": "So most of yesterday was the Postgres upgrade on staging. We're on sixteen now, everything looks fine."
-    },
-    {
-      "at": 78.5,
-      "text": "I want to do production next Tuesday early morning, so expect maybe ten minutes of read only mode."
-    },
-    {
-      "at": 88.4,
-      "text": "Can you post that in the eng channel so support knows?"
-    },
-    {
-      "at": 95.9,
-      "text": "Yep, will do."
-    },
-    {
-      "at": 101.2,
-      "text": "Also the iOS crash on launch for older devices, that turned out to be the font loading thing, fix is out in the next build."
-    },
-    {
-      "at": 112.5,
-      "text": "Nice. Okay, Ethan, where are we on the webhook retries?"
-    },
-    {
-      "at": 120.0,
-      "text": "Yeah so the retry change is merged as of last night, it's behind the flag still."
-    },
-    {
-      "at": 129.0,
-      "text": "I'll add the dead letter queue metrics to the webhook dashboard by tomorrow so we can actually see what's failing."
-    },
-    {
-      "at": 139.8,
-      "text": "How are we doing the backoff, is it still linear?"
-    },
-    {
-      "at": 147.0,
-      "text": "Right now it's linear every five minutes, but I think we should move to exponential."
-    },
-    {
-      "at": 156.2,
-      "text": "Yeah, exponential with a cap. What did we say, cap at one hour?"
-    },
-    {
-      "at": 164.2,
-      "text": "One hour seems right to me."
-    },
-    {
-      "at": 170.2,
-      "text": "Okay so we're going with exponential backoff capped at one hour for webhooks, everyone fine with that?"
-    },
-    {
-      "at": 180.4,
-      "text": "Yep. Works for me."
-    },
-    {
-      "at": 185.9,
-      "text": "For testing it end to end I still need the new Stripe sandbox keys, the old ones got rotated."
-    },
-    {
-      "at": 195.5,
-      "text": "Oh, that's on me, I'll send you the new Stripe sandbox keys right after standup."
-    },
-    {
-      "at": 204.5,
-      "text": "Thanks Priya."
-    },
-    {
-      "at": 209.7,
-      "text": "Priya, while you're talking, how's the invoicing export going?"
-    },
-    {
-      "at": 217.7,
-      "text": "It's slow. The CSV export times out for the big customers, I'm going to try streaming it instead of building it in memory."
-    },
-    {
-      "at": 228.9,
-      "text": "If you need a second pair of eyes on the streaming stuff, ping me."
-    },
-    {
-      "at": 237.1,
-      "text": "Will do. That's it for me."
-    },
-    {
-      "at": 243.0,
-      "text": "Okay. One more thing, Eathan, can you take a look at the rate limiter PR before the release cut on Thursday? It touches the webhook endpoints."
-    },
-    {
-      "at": 255.4,
-      "text": "Sure, I'll review it today."
-    },
-    {
-      "at": 261.4,
-      "text": "Great. Release cut is Thursday at noon as usual, so anything that isn't merged by then waits a week."
-    },
-    {
-      "at": 271.5,
-      "text": "On hiring, we have two onsite interviews next week for the frontend role, I'll send the loop to whoever is on it."
-    },
-    {
-      "at": 282.3,
-      "text": "Lena asked if anyone can give feedback on the new marketing site by Friday, link is in the design channel."
-    },
-    {
-      "at": 292.7,
-      "text": "Also, reminder that the office is closed Monday for the holiday."
-    },
-    {
-      "at": 300.7,
-      "text": "Is anyone else seeing the CI being really slow today? My builds took like twenty minutes."
-    },
-    {
-      "at": 310.2,
-      "text": "Yeah, I think the cache got invalidated after the runner upgrade. It should warm up again."
-    },
-    {
-      "at": 319.7,
-      "text": "Okay. Oh and lunch is tacos on Wednesday, put your order in the sheet."
-    },
-    {
-      "at": 328.0,
-      "text": "Anything else? No? Alright, thanks everyone."
-    },
-    {
-      "at": 335.0,
-      "text": "Thanks, bye."
-    }
-  ]
+    "Okay, let's get started, looks like everyone's here except Marco who's out today.",
+    "Same order as usual, Sarah you want to kick us off?",
+    "Sure. So yesterday I finished the empty states for the onboarding flow, the designs from Lena.",
+    "Today I'm going to start on the settings page migration to the new design system components.",
+    "No blockers, although the date picker in the design system is still a bit buggy on Safari.",
+    "Yeah, I saw that, I think Tom has a fix for the date picker somewhere.",
+    "I do, it's in review, should land today.",
+    "Cool. Tom, you're up then.",
+    "So most of yesterday was the Postgres upgrade on staging. We're on sixteen now, everything looks fine.",
+    "I want to do production next Tuesday early morning, so expect maybe ten minutes of read only mode.",
+    "Can you post that in the eng channel so support knows?",
+    "Yep, will do.",
+    "Also the iOS crash on launch for older devices, that turned out to be the font loading thing, fix is out in the next build.",
+    "Nice. Okay, Ethan, where are we on the webhook retries?",
+    "Yeah so the retry change is merged as of last night, it's behind the flag still.",
+    "I'll add the dead letter queue metrics to the webhook dashboard by tomorrow so we can actually see what's failing.",
+    "How are we doing the backoff, is it still linear?",
+    "Right now it's linear every five minutes, but I think we should move to exponential.",
+    "Yeah, exponential with a cap. What did we say, cap at one hour?",
+    "One hour seems right to me.",
+    "Okay so we're going with exponential backoff capped at one hour for webhooks, everyone fine with that?",
+    "Yep. Works for me.",
+    "For testing it end to end I still need the new Stripe sandbox keys, the old ones got rotated.",
+    "Oh, that's on me, I'll send you the new Stripe sandbox keys right after standup.",
+    "Thanks Priya.",
+    "Priya, while you're talking, how's the invoicing export going?",
+    "It's slow. The CSV export times out for the big customers, I'm going to try streaming it instead of building it in memory.",
+    "If you need a second pair of eyes on the streaming stuff, ping me.",
+    "Will do. That's it for me.",
+    "Okay. One more thing, Eathan, can you take a look at the rate limiter PR before the release cut on Thursday? It touches the webhook endpoints.",
+    "Sure, I'll review it today.",
+    "Great. Release cut is Thursday at noon as usual, so anything that isn't merged by then waits a week.",
+    "On hiring, we have two onsite interviews next week for the frontend role, I'll send the loop to whoever is on it.",
+    "Lena asked if anyone can give feedback on the new marketing site by Friday, link is in the design channel.",
+    "Also, reminder that the office is closed Monday for the holiday.",
+    "Is anyone else seeing the CI being really slow today? My builds took like twenty minutes.",
+    "Yeah, I think the cache got invalidated after the runner upgrade. It should warm up again.",
+    "Okay. Oh and lunch is tacos on Wednesday, put your order in the sheet.",
+    "Anything else? No? Alright, thanks everyone.",
+    "Thanks, bye."
+  ],
+  "work": [],
+  "bullets": []
 }

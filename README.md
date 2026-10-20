@@ -1,6 +1,6 @@
 # Martin
 
-A native macOS menu bar notetaker that keeps only what concerns you. Record a meeting, and when it ends Martin reads the transcript against your own work in GitHub, Linear and other connectors, then writes a short note of your to-dos, what you are waiting on, decisions and things worth knowing. Each item quotes the transcript with a timestamp.
+A native macOS menu bar assistant for standups and team meetings that keeps only what concerns you. When you start recording, Martin lists the pull requests you merged and moved forward since the last time this meeting met, so you know what to share. While the team talks, it matches the live transcript against your recent pull requests and the topics you follow, and jots very brief bullets of your to-dos, decisions and open questions. When you stop, the result is saved as the meeting's note.
 
 ## Build
 
@@ -21,22 +21,16 @@ Open **Settings…** from the menu bar icon.
 
 **Keys.** Paste a [Deepgram](https://deepgram.com) API key; Deepgram transcribes the room while you record. Notes are written with your Claude Code sign-in.
 
-**You.** Your name, what people call you, and words the transcript should get right, such as teammates and project names.
+**You.** Your name, what people call you, and the teammates, projects and topics you follow. The transcript listens for these words, and Martin treats them as your interests.
 
-**Connectors.** Martin holds no credentials for your work tools. It reads them through tools you have already signed in to, and only ever reads.
+**Connectors.** Martin reads your pull requests through [GitHub CLI](https://cli.github.com) and never writes:
 
-- **GitHub** through [GitHub CLI](https://cli.github.com), limited to read-only commands:
+```sh
+brew install gh
+gh auth login
+```
 
-  ```sh
-  brew install gh
-  gh auth login
-  ```
-
-- **Linear, Slack, Notion, Google Drive and others** through your [Claude connectors](https://claude.ai/settings/connectors). Connect them once in Claude; Martin uses only the tools each connector marks as read-only.
-
-Settings shows each source and whether it is connected.
-
-**Calendar.** Martin names a recording after the calendar event in progress. For Google Calendar, add the account in System Settings → Internet Accounts with Calendars turned on.
+**Calendar.** Martin names a recording after the calendar event in progress, and finds the last time a recurring meeting met to know what is new since then. For Google Calendar, add the account in System Settings → Internet Accounts with Calendars turned on.
 
 ## Data
 

@@ -81,14 +81,26 @@ struct NoteView: View {
         if showsTranscript {
             TranscriptView(segments: (try? library.transcript(of: meeting)) ?? [])
         } else if let activity {
-            HStack(spacing: 10) {
-                Waveform(level: 0, breathing: true)
-                    .foregroundStyle(Theme.tertiary)
-                Text(activity == .recording ? "Recording…" : "Writing notes…")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Theme.secondary)
+            VStack(alignment: .leading, spacing: 18) {
+                HStack(spacing: 10) {
+                    Waveform(level: 0, breathing: true)
+                        .foregroundStyle(Theme.tertiary)
+                    Text(activity == .recording ? "Listening for anything that concerns you…" : "Writing notes…")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.secondary)
+                }
+                .padding(.leading, Theme.column)
+                if let error = app.recorder.assistantError {
+                    Text(error)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.ember)
+                        .textSelection(.enabled)
+                        .lineLimit(4)
+                        .padding(.leading, Theme.column)
+                        .padding(.trailing, Theme.margin)
+                }
+                MarkdownEditor(text: .constant(Note.markdown(briefing: app.recorder.briefing, bullets: app.recorder.bullets)), editable: false)
             }
-            .padding(.leading, Theme.column)
         } else if let text = Binding($note) {
             MarkdownEditor(text: text)
         } else {

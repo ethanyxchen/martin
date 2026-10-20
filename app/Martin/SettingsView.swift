@@ -111,7 +111,7 @@ private struct YouSection: View {
             FieldRow(label: "Also called", hint: "Nicknames, handles, usual misspellings") {
                 TextField("Eth, ethanc", text: $aliases)
             }
-            FieldRow(label: "Words to listen for", hint: "Names, products and jargon the transcript should get right") {
+            FieldRow(label: "Words to listen for", hint: "Teammates, projects and topics you follow") {
                 TextField("Linear, Postgres, Priya", text: $keyterms, axis: .vertical)
                     .lineLimit(1...4)
             }

@@ -5,6 +5,7 @@ public struct CalendarEvent: Sendable, Hashable {
     public let title: String
     public let attendees: [String]
     public let notes: String?
+    public let previousStart: Date?
 }
 
 public enum CalendarLookup {
@@ -19,9 +20,18 @@ public enum CalendarLookup {
             CalendarEvent(
                 title: event.title ?? "",
                 attendees: (event.attendees ?? []).filter { !$0.isCurrentUser }.compactMap(name),
-                notes: event.notes
+                notes: event.notes,
+                previousStart: previousStart(of: event, in: store)
             )
         }
+    }
+
+    static func previousStart(of event: EKEvent, in store: EKEventStore) -> Date? {
+        let earliest = Calendar.current.date(byAdding: .day, value: -35, to: event.startDate)!
+        return store.events(matching: store.predicateForEvents(withStart: earliest, end: event.startDate, calendars: [event.calendar]))
+            .filter { $0.title == event.title && $0.startDate < event.startDate }
+            .map(\.startDate)
+            .max()
     }
 
     static func name(of participant: EKParticipant) -> String? {

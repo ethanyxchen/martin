@@ -14,12 +14,17 @@ public final class Recorder {
     public private(set) var level: Float = 0
     public private(set) var lastLine: String?
     public private(set) var transcriptionError: String?
+    public private(set) var briefing: Briefing?
+    public private(set) var bullets: [Bullet] = []
+    public private(set) var assistantError: String?
     public var onNoteReady: ((Meeting) -> Void)?
 
     public let library: MeetingLibrary
     private var microphone: Microphone?
     private var stream: DeepgramStream?
     private var systemAudio: SystemAudio?
+    private var assistant: Task<Void, Never>?
+    private var heard = 0
 
     public init(library: MeetingLibrary = MeetingLibrary()) {
         self.library = library
@@ -54,7 +59,9 @@ public final class Recorder {
         self.systemAudio = systemAudio
         lastLine = nil
         transcriptionError = nil
+        forget()
         phase = .recording(meeting, since: .now)
+        assistant = Task { await assist(in: meeting) }
     }
 
     public func stop() async {
@@ -68,19 +75,62 @@ public final class Recorder {
         level = 0
         meeting.endedAt = .now
         try? library.save(meeting)
-        await analyze(meeting)
+        phase = .analyzing(meeting)
+        assistant?.cancel()
+        await assistant?.value
+        assistant = nil
+        await write(meeting)
     }
 
     public func analyze(_ meeting: Meeting) async {
+        forget()
         phase = .analyzing(meeting)
+        await write(meeting)
+    }
+
+    private func assist(in meeting: Meeting) async {
+        while !Task.isCancelled {
+            do {
+                try await catchUp(on: meeting)
+                assistantError = nil
+            } catch {
+                assistantError = error.localizedDescription
+            }
+            try? await Task.sleep(for: .seconds(15))
+        }
+    }
+
+    private func write(_ meeting: Meeting) async {
         defer { phase = .idle }
         do {
-            let note = try await Analyzer.note(for: meeting, transcript: library.transcript(of: meeting), settings: Settings.load())
-            try library.saveNote(note, for: meeting)
+            try await catchUp(on: meeting)
+            let silence = heard > 0 ? "Nothing in this meeting needed you." : "Nothing was transcribed."
+            try library.saveNote(Note.markdown(briefing: briefing, bullets: bullets, silence: silence), for: meeting)
         } catch {
             try? library.saveAnalysisError(error.localizedDescription, for: meeting)
         }
         onNoteReady?(meeting)
+    }
+
+    private func catchUp(on meeting: Meeting) async throws {
+        if briefing == nil { briefing = try await Self.briefing(for: meeting) }
+        let transcript = try library.transcript(of: meeting)
+        guard transcript.count > heard else { return }
+        bullets += try await Analyzer.listen(meeting: meeting, work: briefing?.pullRequests ?? [], transcript: transcript, bullets: bullets, settings: Settings.load())
+        heard = transcript.count
+    }
+
+    private func forget() {
+        briefing = nil
+        bullets = []
+        assistantError = nil
+        heard = 0
+    }
+
+    static func briefing(for meeting: Meeting) async throws -> Briefing {
+        let until = meeting.startedAt
+        let since = await CalendarLookup.currentEvent(at: until)?.previousStart ?? Calendar.current.date(byAdding: .day, value: -1, to: until)!
+        return Briefing(since: since, until: until, pullRequests: try await Analyzer.work(since: Briefing.earliest(since: since, until: until)))
     }
 
     static func keyterms(settings: Settings, attendees: [String]) -> [String] {

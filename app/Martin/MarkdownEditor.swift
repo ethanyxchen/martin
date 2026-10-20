@@ -3,6 +3,7 @@ import SwiftUI
 
 struct MarkdownEditor: NSViewRepresentable {
     @Binding var text: String
+    var editable = true
 
     func makeCoordinator() -> Coordinator {
         Coordinator(text: $text)
@@ -12,6 +13,7 @@ struct MarkdownEditor: NSViewRepresentable {
         let textView = NoteTextView.make()
         textView.delegate = context.coordinator
         textView.string = text
+        textView.isEditable = editable
         textView.restyle()
         let scroll = NSScrollView()
         scroll.drawsBackground = false
@@ -121,7 +123,7 @@ final class NoteTextView: NSTextView {
     }
 
     override func mouseDown(with event: NSEvent) {
-        guard let box = checkbox(at: convert(event.locationInWindow, from: nil)) else { return super.mouseDown(with: event) }
+        guard isEditable, let box = checkbox(at: convert(event.locationInWindow, from: nil)) else { return super.mouseDown(with: event) }
         let mark = (string as NSString).substring(with: box)
         replace(box, with: mark == " " ? "x" : " ")
     }

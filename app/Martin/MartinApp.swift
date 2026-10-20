@@ -45,6 +45,8 @@ final class AppState {
         case .idle:
             do {
                 try await recorder.start()
+                reload()
+                if case .recording(let meeting, _) = recorder.phase { open(meeting, activating: false) }
             } catch {
                 explain(error)
             }
