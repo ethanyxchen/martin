@@ -18,8 +18,8 @@ struct CalendarLookupTests {
         calendar.date(from: DateComponents(year: 2026, month: 10, day: day, hour: hour, minute: minute))!
     }
 
-    private static func event(_ title: String, _ start: Date, _ end: Date, allDay: Bool = false) -> CalendarEvent {
-        CalendarEvent(title: title, start: start, end: end, isAllDay: allDay)
+    private static func event(_ title: String, _ start: Date, _ end: Date) -> CalendarEvent {
+        CalendarEvent(title: title, start: start, end: end)
     }
 
     private static func agenda(_ events: [CalendarEvent], at now: Date) -> [[String]] {
@@ -53,10 +53,10 @@ struct CalendarLookupTests {
 
     @Test func agendaShowsEventsOnEveryDayTheySpan() {
         let events = [
-            Self.event("Offsite", Self.at(21, 0), Self.at(23, 0), allDay: true),
+            Self.event("Hackathon", Self.at(21, 13), Self.at(22, 13)),
             Self.event("Release night", Self.at(20, 22), Self.at(21, 2)),
         ]
-        #expect(Self.agenda(events, at: Self.at(20, 12)) == [["Release night"], ["Release night", "Offsite"], ["Offsite"], []])
+        #expect(Self.agenda(events, at: Self.at(20, 12)) == [["Release night"], ["Release night", "Hackathon"], ["Hackathon"], []])
     }
 
     @Test func eventIsUnderwayFromStartUntilEnd() {
@@ -66,9 +66,4 @@ struct CalendarLookupTests {
         #expect(!standup.isUnderway(at: Self.at(20, 9, 15)))
     }
 
-    @Test func attendeeSummaryNamesUpToThreePeople() {
-        #expect([String]().attendeeSummary == nil)
-        #expect(["Ada"].attendeeSummary == "Ada")
-        #expect(["Ada", "Grace", "Linus", "Barbara"].attendeeSummary == "Ada, Grace and 2 others")
-    }
 }

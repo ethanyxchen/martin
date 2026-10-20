@@ -71,35 +71,30 @@ private struct DayView: View {
     let day: AgendaDay
     let now: Date
 
-    private var allDay: [CalendarEvent] { day.events.filter(\.isAllDay) }
-    private var timed: [CalendarEvent] { day.events.filter { !$0.isAllDay } }
-
-    private var label: String {
+    private var name: String {
         if Calendar.current.isDateInToday(day.start) { return "Today" }
         if Calendar.current.isDateInTomorrow(day.start) { return "Tomorrow" }
-        return day.start.formatted(.dateTime.weekday(.wide).month(.wide).day())
+        return day.start.formatted(.dateTime.weekday(.wide))
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 3) {
-                SectionLabel(label)
-                if !allDay.isEmpty {
-                    Text("All day  ·  " + allDay.map(\.title).formatted(.list(type: .and)))
-                        .font(Theme.meta)
-                        .foregroundStyle(Theme.tertiary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(name)
+                    .font(.system(size: 18, weight: .semibold, design: .serif))
+                    .foregroundStyle(Theme.ink)
+                Text(day.start.formatted(.dateTime.month(.wide).day()))
+                    .font(Theme.meta)
+                    .foregroundStyle(Theme.tertiary)
             }
             .padding(.leading, Theme.gutter)
-            if timed.isEmpty {
-                Text("Nothing scheduled")
+            if day.events.isEmpty {
+                Text("No meetings")
                     .font(.system(size: 13))
                     .foregroundStyle(Theme.tertiary)
                     .padding(.leading, Theme.gutter)
             }
-            ForEach(timed, id: \.self) { event in
+            ForEach(day.events, id: \.self) { event in
                 EventRow(event: event, underway: event.isUnderway(at: now))
             }
         }
@@ -117,12 +112,12 @@ private struct EventRow: View {
                 .frame(width: 6, height: 6)
                 .opacity(underway ? 1 : 0)
                 .frame(width: Theme.gutter, alignment: .leading)
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(event.title.isEmpty ? "Untitled" : event.title)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: 14))
                     .foregroundStyle(Theme.ink)
-                Text(details)
-                    .font(Theme.meta)
+                Text(time)
+                    .font(Theme.meta.monospacedDigit())
                     .foregroundStyle(Theme.secondary)
             }
             .lineLimit(1)
@@ -130,11 +125,10 @@ private struct EventRow: View {
         }
     }
 
-    private var details: String {
-        let time = underway
+    private var time: String {
+        underway
             ? "Now until \(event.end.formatted(date: .omitted, time: .shortened))"
             : (event.start..<event.end).formatted(.interval.hour().minute())
-        return [time, event.attendees.attendeeSummary].compactMap(\.self).joined(separator: "  ·  ")
     }
 }
 

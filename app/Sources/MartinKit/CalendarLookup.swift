@@ -5,15 +5,13 @@ public struct CalendarEvent: Sendable, Hashable {
     public let title: String
     public let start: Date
     public let end: Date
-    public let isAllDay: Bool
     public let attendees: [String]
     public let notes: String?
 
-    init(title: String, start: Date, end: Date, isAllDay: Bool = false, attendees: [String] = [], notes: String? = nil) {
+    init(title: String, start: Date, end: Date, attendees: [String] = [], notes: String? = nil) {
         self.title = title
         self.start = start
         self.end = end
-        self.isAllDay = isAllDay
         self.attendees = attendees
         self.notes = notes
     }
@@ -23,7 +21,6 @@ public struct CalendarEvent: Sendable, Hashable {
             title: event.title ?? "",
             start: event.startDate,
             end: event.endDate,
-            isAllDay: event.isAllDay,
             attendees: (event.attendees ?? []).filter { !$0.isCurrentUser }.compactMap(CalendarLookup.name),
             notes: event.notes
         )
@@ -72,7 +69,9 @@ public enum CalendarLookup {
     }
 
     static func events(from start: Date, to end: Date, in store: EKEventStore) -> [CalendarEvent] {
-        store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: nil)).map(CalendarEvent.init)
+        store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: nil))
+            .filter { !$0.isAllDay }
+            .map(CalendarEvent.init)
     }
 
     public static func agenda(of events: [CalendarEvent], days: Int, at now: Date, calendar: Calendar = .current) -> [AgendaDay] {
@@ -97,19 +96,12 @@ public enum CalendarLookup {
     }
 
     static func name(of participant: EKParticipant) -> String? {
-        if let name = participant.name, !name.isEmpty, !name.contains("@") { return name }
+        if let name = participant.name, !name.isEmpty { return name }
         return emailName(participant.url)
     }
 
     static func emailName(_ url: URL) -> String? {
         guard url.scheme == "mailto", let local = url.absoluteString.dropFirst("mailto:".count).split(separator: "@").first else { return nil }
         return local.removingPercentEncoding
-    }
-}
-
-extension [String] {
-    public var attendeeSummary: String? {
-        guard count > 3 else { return isEmpty ? nil : formatted(.list(type: .and)) }
-        return prefix(2).joined(separator: ", ") + " and \(count - 2) others"
     }
 }
