@@ -30,7 +30,7 @@ brew install gh
 gh auth login
 ```
 
-**Calendar.** Martin names a recording after the calendar event in progress, and finds the last time a recurring meeting met to know what is new since then. For Google Calendar, add the account in System Settings → Internet Accounts with Calendars turned on.
+**Calendar.** Martin names a recording after the calendar event in progress, and finds the last time a recurring meeting met to know what is new since then. **Upcoming Meetings…** in the menu shows today and the next three days. For Google Calendar, add the account in System Settings → Internet Accounts with Calendars turned on.
 
 ## Data
 

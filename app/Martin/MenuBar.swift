@@ -18,6 +18,8 @@ struct MenuBar: View {
             Button("Writing Notes…") { app.open(meeting) }
         }
 
+        Button("Upcoming Meetings…") { app.openUpcoming() }
+
         if !app.meetings.isEmpty {
             Section("Recent") {
                 ForEach(app.meetings.prefix(8)) { meeting in

@@ -129,7 +129,7 @@ public final class Recorder {
 
     static func briefing(for meeting: Meeting) async throws -> Briefing {
         let until = meeting.startedAt
-        let since = await CalendarLookup.currentEvent(at: until)?.previousStart ?? Calendar.current.date(byAdding: .day, value: -1, to: until)!
+        let since = await CalendarLookup.previousStart(ofEventAt: until) ?? Calendar.current.date(byAdding: .day, value: -1, to: until)!
         return Briefing(since: since, until: until, pullRequests: try await Analyzer.work(since: Briefing.earliest(since: since, until: until)))
     }
 

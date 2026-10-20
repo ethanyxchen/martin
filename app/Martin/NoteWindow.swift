@@ -114,13 +114,7 @@ struct NoteView: View {
         let day = current.startedAt.formatted(.dateTime.weekday(.wide).day().month(.wide))
         let start = current.startedAt.formatted(date: .omitted, time: .shortened)
         let time = current.endedAt.map { "\(start) – \($0.formatted(date: .omitted, time: .shortened))" } ?? start
-        return ([day, time] + people).joined(separator: "  ·  ")
-    }
-
-    private var people: [String] {
-        let attendees = current.attendees
-        guard attendees.count > 3 else { return attendees.isEmpty ? [] : [attendees.formatted(.list(type: .and))] }
-        return [attendees.prefix(2).joined(separator: ", ") + " and \(attendees.count - 2) others"]
+        return [day, time, current.attendees.attendeeSummary].compactMap(\.self).joined(separator: "  ·  ")
     }
 
     private func save() {
