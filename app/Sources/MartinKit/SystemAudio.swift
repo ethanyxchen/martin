@@ -2,23 +2,18 @@ import AVFoundation
 import CoreAudio
 
 public final class SystemAudio: @unchecked Sendable {
-    struct Failure: LocalizedError {
-        let errorDescription: String?
-    }
-
-    private static let system = AudioObjectID(kAudioObjectSystemObject)
-
     private let queue = DispatchQueue(label: "dev.ethanchen.martin.system-audio")
     private var tap = AudioObjectID(kAudioObjectUnknown)
     private var aggregate = AudioObjectID(kAudioObjectUnknown)
     private var proc: AudioDeviceIOProcID?
     private var running = false
     private var onAudio: @Sendable ([Int16]) -> Void = { _ in }
-    private lazy var rebuild: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
-        guard let self, running else { return }
+    private lazy var restart = Restart(queue: queue) { [weak self] in
+        guard let self, running else { return true }
         teardown()
-        try? run()
+        return (try? run()) != nil
     }
+    private lazy var routeChanged: AudioObjectPropertyListenerBlock = { [weak self] _, _ in self?.restart.schedule() }
 
     public init() {}
 
@@ -28,7 +23,7 @@ public final class SystemAudio: @unchecked Sendable {
             self.onAudio = onAudio
             try run()
             running = true
-            listen(kAudioHardwarePropertyDefaultOutputDevice, on: Self.system)
+            listen(kAudioHardwarePropertyDefaultOutputDevice, on: AudioHardware.system)
         }
     }
 
@@ -36,7 +31,7 @@ public final class SystemAudio: @unchecked Sendable {
         queue.sync {
             guard running else { return }
             running = false
-            stopListening(kAudioHardwarePropertyDefaultOutputDevice, on: Self.system)
+            stopListening(kAudioHardwarePropertyDefaultOutputDevice, on: AudioHardware.system)
             teardown()
         }
     }
@@ -46,9 +41,9 @@ public final class SystemAudio: @unchecked Sendable {
             let description = CATapDescription(monoGlobalTapButExcludeProcesses: [])
             description.isPrivate = true
             try check(AudioHardwareCreateProcessTap(description, &tap), "create the system audio tap")
-            let device = try Self.property(kAudioHardwarePropertyDefaultOutputDevice, of: Self.system, initial: AudioObjectID(kAudioObjectUnknown))
-            let uid: CFString? = try Self.property(kAudioDevicePropertyDeviceUID, of: device, initial: nil)
-            guard let output = uid else { throw Failure(errorDescription: "No audio output device is available.") }
+            let device = try AudioHardware.property(kAudioHardwarePropertyDefaultOutputDevice, of: AudioHardware.system, initial: AudioObjectID(kAudioObjectUnknown))
+            let uid: CFString? = try AudioHardware.property(kAudioDevicePropertyDeviceUID, of: device, initial: nil)
+            guard let output = uid else { throw AudioHardware.Failure(errorDescription: "No audio output device is available.") }
             let configuration: [String: Any] = [
                 kAudioAggregateDeviceNameKey: "Martin",
                 kAudioAggregateDeviceUIDKey: UUID().uuidString,
@@ -60,10 +55,10 @@ public final class SystemAudio: @unchecked Sendable {
                 kAudioAggregateDeviceTapListKey: [[kAudioSubTapDriftCompensationKey: true, kAudioSubTapUIDKey: description.uuid.uuidString]],
             ]
             try check(AudioHardwareCreateAggregateDevice(configuration as CFDictionary, &aggregate), "create the system audio device")
-            var stream = try Self.property(kAudioTapPropertyFormat, of: tap, initial: AudioStreamBasicDescription())
-            stream.mSampleRate = try Self.property(kAudioDevicePropertyNominalSampleRate, of: aggregate, initial: Float64(0))
+            var stream = try AudioHardware.property(kAudioTapPropertyFormat, of: tap, initial: AudioStreamBasicDescription())
+            stream.mSampleRate = try AudioHardware.property(kAudioDevicePropertyNominalSampleRate, of: aggregate, initial: Float64(0))
             guard let format = AVAudioFormat(streamDescription: &stream), let resampler = Resampler(from: format) else {
-                throw Failure(errorDescription: "System audio has an unsupported format.")
+                throw AudioHardware.Failure(errorDescription: "System audio has an unsupported format.")
             }
             let onAudio = onAudio
             try check(AudioDeviceCreateIOProcIDWithBlock(&proc, aggregate, nil) { _, input, _, _, _ in
@@ -95,30 +90,15 @@ public final class SystemAudio: @unchecked Sendable {
     }
 
     private func listen(_ selector: AudioObjectPropertySelector, on object: AudioObjectID) {
-        var address = Self.address(selector)
-        AudioObjectAddPropertyListenerBlock(object, &address, queue, rebuild)
+        AudioHardware.listen(selector, on: object, queue: queue, routeChanged)
     }
 
     private func stopListening(_ selector: AudioObjectPropertySelector, on object: AudioObjectID) {
-        var address = Self.address(selector)
-        AudioObjectRemovePropertyListenerBlock(object, &address, queue, rebuild)
+        AudioHardware.stopListening(selector, on: object, queue: queue, routeChanged)
     }
 
     private func check(_ status: OSStatus, _ action: String) throws {
         guard status != noErr else { return }
-        throw Failure(errorDescription: "Could not \(action) (\(status)).")
-    }
-
-    private static func address(_ selector: AudioObjectPropertySelector) -> AudioObjectPropertyAddress {
-        AudioObjectPropertyAddress(mSelector: selector, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
-    }
-
-    private static func property<T>(_ selector: AudioObjectPropertySelector, of object: AudioObjectID, initial: T) throws -> T {
-        var address = address(selector)
-        var size = UInt32(MemoryLayout<T>.size)
-        var value = initial
-        let status = withUnsafeMutablePointer(to: &value) { AudioObjectGetPropertyData(object, &address, 0, nil, &size, $0) }
-        guard status == noErr else { throw Failure(errorDescription: "Could not read audio property \(selector) (\(status)).") }
-        return value
+        throw AudioHardware.Failure(errorDescription: "Could not \(action) (\(status)).")
     }
 }

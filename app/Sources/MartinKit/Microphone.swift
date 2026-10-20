@@ -12,13 +12,16 @@ public final class Microphone: @unchecked Sendable {
     static let frameLength = 1600
 
     private let queue = DispatchQueue(label: "dev.ethanchen.martin.microphone")
-    private let engine = AVAudioEngine()
+    private var engine: AVAudioEngine?
     private var file: AVAudioFile?
     private var resampler: Resampler?
     private var framer = Framer(size: frameLength)
     private var mixdown = Mixdown()
-    private var interruptedAt: Date?
+    private var heardAt: Date?
+    private var interrupted = false
     private var observer: NSObjectProtocol?
+    private lazy var restart = Restart(queue: queue) { [weak self] in self?.reconfigure() ?? true }
+    private lazy var routeChanged: AudioObjectPropertyListenerBlock = { [weak self] _, _ in self?.restart.schedule() }
     private var onLevel: @Sendable (Float) -> Void = { _ in }
     private var onAudio: @Sendable (Data) -> Void = { _ in }
 
@@ -46,10 +49,7 @@ public final class Microphone: @unchecked Sendable {
                 self.file = nil
                 throw error
             }
-            observer = NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange, object: engine, queue: nil) { [weak self] _ in
-                guard let self else { return }
-                queue.async { self.reconfigure() }
-            }
+            AudioHardware.listen(kAudioHardwarePropertyDefaultInputDevice, on: AudioHardware.system, queue: queue, routeChanged)
         }
     }
 
@@ -60,20 +60,20 @@ public final class Microphone: @unchecked Sendable {
     public func stop() {
         queue.sync {
             guard file != nil else { return }
-            if let observer { NotificationCenter.default.removeObserver(observer) }
-            observer = nil
-            engine.stop()
-            engine.inputNode.removeTap(onBus: 0)
+            AudioHardware.stopListening(kAudioHardwarePropertyDefaultInputDevice, on: AudioHardware.system, queue: queue, routeChanged)
+            teardown()
             let rest = framer.drain()
             if !rest.isEmpty { onAudio(Self.data(rest)) }
             file?.close()
             file = nil
-            resampler = nil
+            heardAt = nil
+            interrupted = false
             mixdown = Mixdown()
         }
     }
 
     private func run() throws {
+        let engine = AVAudioEngine()
         let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)
         guard format.sampleRate > 0, format.channelCount > 0, let resampler = Resampler(from: format) else { throw Failure.noInput }
@@ -90,27 +90,36 @@ public final class Microphone: @unchecked Sendable {
             input.removeTap(onBus: 0)
             throw error
         }
+        self.engine = engine
+        observer = NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange, object: engine, queue: nil) { [weak self] _ in
+            guard let self else { return }
+            queue.async { self.restart.schedule() }
+        }
     }
 
-    private func reconfigure() {
-        guard file != nil else { return }
-        engine.stop()
-        engine.inputNode.removeTap(onBus: 0)
+    private func teardown() {
+        if let observer { NotificationCenter.default.removeObserver(observer) }
+        observer = nil
+        engine?.stop()
+        engine?.inputNode.removeTap(onBus: 0)
+        engine = nil
         resampler = nil
-        interruptedAt = interruptedAt ?? .now
-        do {
-            try run()
-        } catch {
-            queue.asyncAfter(deadline: .now() + 1) { [weak self] in self?.reconfigure() }
-        }
+    }
+
+    private func reconfigure() -> Bool {
+        guard file != nil else { return true }
+        teardown()
+        interrupted = true
+        return (try? run()) != nil
     }
 
     private func process(_ buffer: AVAudioPCMBuffer) {
         guard let file, let resampler, buffer.format == resampler.input, let converted = resampler.convert(buffer) else { return }
-        if let interruptedAt {
-            self.interruptedAt = nil
-            pad(seconds: Date.now.timeIntervalSince(interruptedAt), file: file)
+        if interrupted, let heardAt {
+            interrupted = false
+            pad(seconds: Date.now.timeIntervalSince(heardAt) - Double(buffer.frameLength) / buffer.format.sampleRate, file: file)
         }
+        heardAt = .now
         let samples = UnsafeMutableBufferPointer(start: converted.int16ChannelData![0], count: Int(converted.frameLength))
         mixdown.mix(into: samples)
         try? file.write(from: converted)
@@ -118,7 +127,7 @@ public final class Microphone: @unchecked Sendable {
     }
 
     private func pad(seconds: TimeInterval, file: AVAudioFile) {
-        let count = AVAudioFrameCount(seconds * Self.format.sampleRate)
+        let count = AVAudioFrameCount(max(seconds, 0) * Self.format.sampleRate)
         guard count > 0, let silence = AVAudioPCMBuffer(pcmFormat: Self.format, frameCapacity: count) else { return }
         silence.frameLength = count
         try? file.write(from: silence)
