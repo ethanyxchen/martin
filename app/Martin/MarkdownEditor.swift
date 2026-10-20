@@ -125,7 +125,7 @@ final class NoteTextView: NSTextView {
     override func mouseDown(with event: NSEvent) {
         guard isEditable, let box = checkbox(at: convert(event.locationInWindow, from: nil)) else { return super.mouseDown(with: event) }
         let mark = (string as NSString).substring(with: box)
-        replace(box, with: mark == " " ? "x" : " ")
+        replace(box, with: mark == " " ? "x" : " ", movingCaret: false)
     }
 
     private func lineMarker(at location: Int) -> NSRange? {
@@ -178,10 +178,11 @@ final class NoteTextView: NSTextView {
     }
 
     @discardableResult
-    private func replace(_ range: NSRange, with replacement: String) -> Bool {
+    private func replace(_ range: NSRange, with replacement: String, movingCaret: Bool = true) -> Bool {
         guard shouldChangeText(in: range, replacementString: replacement) else { return true }
+        let selection = selectedRange()
         textStorage?.replaceCharacters(in: range, with: replacement)
-        setSelectedRange(NSRange(location: range.location + (replacement as NSString).length, length: 0))
+        setSelectedRange(movingCaret ? NSRange(location: range.location + (replacement as NSString).length, length: 0) : selection)
         didChangeText()
         return true
     }
