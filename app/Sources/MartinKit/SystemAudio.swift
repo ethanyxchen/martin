@@ -6,47 +6,39 @@ public final class SystemAudio: @unchecked Sendable {
         let errorDescription: String?
     }
 
-    private static let defaultOutput = AudioObjectPropertyAddress(
-        mSelector: kAudioHardwarePropertyDefaultOutputDevice,
-        mScope: kAudioObjectPropertyScopeGlobal,
-        mElement: kAudioObjectPropertyElementMain
-    )
+    private static let system = AudioObjectID(kAudioObjectSystemObject)
 
     private let queue = DispatchQueue(label: "dev.ethanchen.martin.system-audio")
     private var tap = AudioObjectID(kAudioObjectUnknown)
     private var aggregate = AudioObjectID(kAudioObjectUnknown)
     private var proc: AudioDeviceIOProcID?
-    private var listener: AudioObjectPropertyListenerBlock?
+    private var running = false
     private var onAudio: @Sendable ([Int16]) -> Void = { _ in }
+    private lazy var rebuild: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
+        guard let self, running else { return }
+        teardown()
+        try? run()
+    }
 
     public init() {}
 
     public func start(onAudio: @escaping @Sendable ([Int16]) -> Void) throws {
         try queue.sync {
-            guard listener == nil else { return }
+            guard !running else { return }
             self.onAudio = onAudio
             try run()
-            let listener: AudioObjectPropertyListenerBlock = { [weak self] _, _ in self?.rebuild() }
-            var address = Self.defaultOutput
-            AudioObjectAddPropertyListenerBlock(AudioObjectID(kAudioObjectSystemObject), &address, queue, listener)
-            self.listener = listener
+            running = true
+            listen(kAudioHardwarePropertyDefaultOutputDevice, on: Self.system)
         }
     }
 
     public func stop() {
         queue.sync {
-            guard let listener else { return }
-            var address = Self.defaultOutput
-            AudioObjectRemovePropertyListenerBlock(AudioObjectID(kAudioObjectSystemObject), &address, queue, listener)
-            self.listener = nil
+            guard running else { return }
+            running = false
+            stopListening(kAudioHardwarePropertyDefaultOutputDevice, on: Self.system)
             teardown()
         }
-    }
-
-    private func rebuild() {
-        guard listener != nil else { return }
-        teardown()
-        try? run()
     }
 
     private func run() throws {
@@ -54,7 +46,7 @@ public final class SystemAudio: @unchecked Sendable {
             let description = CATapDescription(monoGlobalTapButExcludeProcesses: [])
             description.isPrivate = true
             try check(AudioHardwareCreateProcessTap(description, &tap), "create the system audio tap")
-            let device = try Self.property(kAudioHardwarePropertyDefaultOutputDevice, of: AudioObjectID(kAudioObjectSystemObject), initial: AudioObjectID(kAudioObjectUnknown))
+            let device = try Self.property(kAudioHardwarePropertyDefaultOutputDevice, of: Self.system, initial: AudioObjectID(kAudioObjectUnknown))
             let uid: CFString? = try Self.property(kAudioDevicePropertyDeviceUID, of: device, initial: nil)
             guard let output = uid else { throw Failure(errorDescription: "No audio output device is available.") }
             let configuration: [String: Any] = [
@@ -69,6 +61,7 @@ public final class SystemAudio: @unchecked Sendable {
             ]
             try check(AudioHardwareCreateAggregateDevice(configuration as CFDictionary, &aggregate), "create the system audio device")
             var stream = try Self.property(kAudioTapPropertyFormat, of: tap, initial: AudioStreamBasicDescription())
+            stream.mSampleRate = try Self.property(kAudioDevicePropertyNominalSampleRate, of: aggregate, initial: Float64(0))
             guard let format = AVAudioFormat(streamDescription: &stream), let resampler = Resampler(from: format) else {
                 throw Failure(errorDescription: "System audio has an unsupported format.")
             }
@@ -79,6 +72,7 @@ public final class SystemAudio: @unchecked Sendable {
                 onAudio(Array(UnsafeBufferPointer(start: converted.int16ChannelData![0], count: Int(converted.frameLength))))
             }, "listen to system audio")
             try check(AudioDeviceStart(aggregate, proc), "start system audio")
+            listen(kAudioDevicePropertyNominalSampleRate, on: aggregate)
         } catch {
             teardown()
             throw error
@@ -90,11 +84,24 @@ public final class SystemAudio: @unchecked Sendable {
             AudioDeviceStop(aggregate, proc)
             AudioDeviceDestroyIOProcID(aggregate, proc)
         }
-        if aggregate != kAudioObjectUnknown { AudioHardwareDestroyAggregateDevice(aggregate) }
+        if aggregate != kAudioObjectUnknown {
+            stopListening(kAudioDevicePropertyNominalSampleRate, on: aggregate)
+            AudioHardwareDestroyAggregateDevice(aggregate)
+        }
         if tap != kAudioObjectUnknown { AudioHardwareDestroyProcessTap(tap) }
         proc = nil
         aggregate = AudioObjectID(kAudioObjectUnknown)
         tap = AudioObjectID(kAudioObjectUnknown)
+    }
+
+    private func listen(_ selector: AudioObjectPropertySelector, on object: AudioObjectID) {
+        var address = Self.address(selector)
+        AudioObjectAddPropertyListenerBlock(object, &address, queue, rebuild)
+    }
+
+    private func stopListening(_ selector: AudioObjectPropertySelector, on object: AudioObjectID) {
+        var address = Self.address(selector)
+        AudioObjectRemovePropertyListenerBlock(object, &address, queue, rebuild)
     }
 
     private func check(_ status: OSStatus, _ action: String) throws {
@@ -102,8 +109,12 @@ public final class SystemAudio: @unchecked Sendable {
         throw Failure(errorDescription: "Could not \(action) (\(status)).")
     }
 
+    private static func address(_ selector: AudioObjectPropertySelector) -> AudioObjectPropertyAddress {
+        AudioObjectPropertyAddress(mSelector: selector, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
+    }
+
     private static func property<T>(_ selector: AudioObjectPropertySelector, of object: AudioObjectID, initial: T) throws -> T {
-        var address = AudioObjectPropertyAddress(mSelector: selector, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
+        var address = address(selector)
         var size = UInt32(MemoryLayout<T>.size)
         var value = initial
         let status = withUnsafeMutablePointer(to: &value) { AudioObjectGetPropertyData(object, &address, 0, nil, &size, $0) }
