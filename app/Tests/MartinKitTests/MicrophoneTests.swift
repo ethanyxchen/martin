@@ -21,6 +21,28 @@ struct MicrophoneTests {
         #expect(Microphone.data([1, -2]) == Data([0x01, 0x00, 0xFE, 0xFF]))
     }
 
+    @Test func mixdownAddsSystemAudioAndClamps() {
+        var mixdown = Mixdown()
+        mixdown.add([10, .max, -5])
+        var mic: [Int16] = [1, 1, .min, 7]
+        mic.withUnsafeMutableBufferPointer { mixdown.mix(into: $0) }
+        #expect(mic == [11, .max, .min, 7])
+        mixdown.add([3])
+        var next: [Int16] = [0]
+        next.withUnsafeMutableBufferPointer { mixdown.mix(into: $0) }
+        #expect(next == [3])
+    }
+
+    @Test func mixdownDropsOldestBeyondLimit() {
+        var mixdown = Mixdown()
+        mixdown.add(Array(repeating: 1, count: Mixdown.limit))
+        mixdown.add([2])
+        var mic = [Int16](repeating: 0, count: Mixdown.limit + 1)
+        mic.withUnsafeMutableBufferPointer { mixdown.mix(into: $0) }
+        #expect(mic.last == 0)
+        #expect(mic[Mixdown.limit - 1] == 2)
+    }
+
     @Test func resamplerKeepsStateAcrossBuffers() throws {
         let input = try #require(AVAudioFormat(standardFormatWithSampleRate: 48000, channels: 2))
         let resampler = try #require(Resampler(from: input))

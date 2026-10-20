@@ -16,6 +16,7 @@ public final class Microphone: @unchecked Sendable {
     private var file: AVAudioFile?
     private var resampler: Resampler?
     private var framer = Framer(size: frameLength)
+    private var mixdown = Mixdown()
     private var interruptedAt: Date?
     private var observer: NSObjectProtocol?
     private var onLevel: @Sendable (Float) -> Void = { _ in }
@@ -52,6 +53,10 @@ public final class Microphone: @unchecked Sendable {
         }
     }
 
+    public func mix(_ samples: [Int16]) {
+        queue.async { self.mixdown.add(samples) }
+    }
+
     public func stop() {
         queue.sync {
             guard file != nil else { return }
@@ -64,6 +69,7 @@ public final class Microphone: @unchecked Sendable {
             file?.close()
             file = nil
             resampler = nil
+            mixdown = Mixdown()
         }
     }
 
@@ -105,8 +111,10 @@ public final class Microphone: @unchecked Sendable {
             self.interruptedAt = nil
             pad(seconds: Date.now.timeIntervalSince(interruptedAt), file: file)
         }
+        let samples = UnsafeMutableBufferPointer(start: converted.int16ChannelData![0], count: Int(converted.frameLength))
+        mixdown.mix(into: samples)
         try? file.write(from: converted)
-        emit(UnsafeBufferPointer(start: converted.int16ChannelData![0], count: Int(converted.frameLength)))
+        emit(samples)
     }
 
     private func pad(seconds: TimeInterval, file: AVAudioFile) {
@@ -155,6 +163,24 @@ struct Framer {
     mutating func drain() -> [Int16] {
         defer { pending = [] }
         return pending
+    }
+}
+
+struct Mixdown {
+    static let limit = 16000
+    private var pending: [Int16] = []
+
+    mutating func add(_ samples: [Int16]) {
+        pending.append(contentsOf: samples)
+        pending.removeFirst(max(pending.count - Self.limit, 0))
+    }
+
+    mutating func mix(into samples: UnsafeMutableBufferPointer<Int16>) {
+        let count = min(samples.count, pending.count)
+        for index in 0..<count {
+            samples[index] = Int16(clamping: Int32(samples[index]) + Int32(pending[index]))
+        }
+        pending.removeFirst(count)
     }
 }
 

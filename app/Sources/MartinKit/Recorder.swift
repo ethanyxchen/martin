@@ -19,6 +19,7 @@ public final class Recorder {
     public let library: MeetingLibrary
     private var microphone: Microphone?
     private var stream: DeepgramStream?
+    private var systemAudio: SystemAudio?
 
     public init(library: MeetingLibrary = MeetingLibrary()) {
         self.library = library
@@ -39,6 +40,8 @@ public final class Recorder {
             onLevel: { [weak self] level in Task { @MainActor in self?.level = level } },
             onAudio: { stream.send($0) }
         )
+        let systemAudio = SystemAudio()
+        try? systemAudio.start(onAudio: { microphone.mix($0) })
         stream.connect(
             onSegment: { [weak self] segment in
                 try? library.append(segment, to: meeting)
@@ -48,6 +51,7 @@ public final class Recorder {
         )
         self.stream = stream
         self.microphone = microphone
+        self.systemAudio = systemAudio
         lastLine = nil
         transcriptionError = nil
         phase = .recording(meeting, since: .now)
@@ -55,8 +59,10 @@ public final class Recorder {
 
     public func stop() async {
         guard case .recording(var meeting, _) = phase else { return }
+        systemAudio?.stop()
         microphone?.stop()
         await stream?.finish()
+        systemAudio = nil
         microphone = nil
         stream = nil
         level = 0
