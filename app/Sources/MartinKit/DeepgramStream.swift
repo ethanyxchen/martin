@@ -79,7 +79,7 @@ public final class DeepgramStream: @unchecked Sendable {
     }
 
     static func url(keyterms: [String]) -> URL {
-        var components = URLComponents(string: "wss://api.deepgram.com/v1/listen?model=nova-3&encoding=linear16&sample_rate=16000&channels=1&smart_format=true&interim_results=false")!
+        var components = URLComponents(string: "wss://api.deepgram.com/v1/listen?model=nova-3&encoding=linear16&sample_rate=16000&channels=1&smart_format=true&interim_results=false&mip_opt_out=true")!
         var budget = keytermBudget
         let terms = keyterms.prefix { term in
             budget -= term.count
