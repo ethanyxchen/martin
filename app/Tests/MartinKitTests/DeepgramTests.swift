@@ -26,7 +26,7 @@ struct DeepgramTests {
 
     @Test func urlRepeatsEncodedKeyterms() {
         let url = DeepgramStream.url(keyterms: ["Ethan Chen", "C++", "a&b=c"]).absoluteString
-        #expect(url == "wss://api.deepgram.com/v1/listen?model=nova-3&encoding=linear16&sample_rate=16000&channels=1&smart_format=true&interim_results=false&keyterm=Ethan%20Chen&keyterm=C%2B%2B&keyterm=a%26b%3Dc")
+        #expect(url == "wss://api.deepgram.com/v1/listen?model=nova-3&encoding=linear16&sample_rate=16000&channels=1&smart_format=true&interim_results=false&mip_opt_out=true&keyterm=Ethan%20Chen&keyterm=C%2B%2B&keyterm=a%26b%3Dc")
     }
 
     @Test func urlCapsKeytermsByBudget() {
