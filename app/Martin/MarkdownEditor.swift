@@ -31,7 +31,7 @@ struct MarkdownEditor: NSViewRepresentable {
         context.coordinator.text = $text
         guard let textView = scroll.documentView as? NoteTextView else { return }
         textView.isEditable = editable
-        if !(textView.string as NSString).isEqual(to: text) { textView.load(text) }
+        if textView.textStorage?.mutableString.isEqual(to: text) == false { textView.load(text) }
     }
 
     final class Coordinator: NSObject, NSTextViewDelegate {
@@ -43,8 +43,8 @@ struct MarkdownEditor: NSViewRepresentable {
 
         @objc func storageChanged(_ notification: Notification) {
             guard let storage = notification.object as? NSTextStorage, storage.editedMask.contains(.editedCharacters) else { return }
-            let markdown = storage.nativeString
-            if text.wrappedValue != markdown { text.wrappedValue = markdown }
+            guard !storage.mutableString.isEqual(to: text.wrappedValue) else { return }
+            text.wrappedValue = storage.nativeString
         }
 
         func textView(_ textView: NSTextView, doCommandBy selector: Selector) -> Bool {

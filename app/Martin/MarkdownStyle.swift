@@ -24,12 +24,13 @@ final class MarkdownStyle: NSObject {
     private var selectedDuringEdit = false
 
     func select(_ selection: NSRange?, in storage: NSTextStorage) -> Set<NSRange> {
-        guard selection != self.selection else { return [] }
-        let text = storage.string as NSString
-        let before = headings(revealedBy: self.selection, in: text)
+        let pending = storage.editedMask.contains(.editedCharacters)
+        let previous = pending ? self.selection?.moved(across: storage.editedRange, by: storage.changeInLength) : self.selection
         self.selection = selection
-        selectedDuringEdit = !storage.editedMask.isEmpty
-        return before.symmetricDifference(headings(revealedBy: selection, in: text))
+        selectedDuringEdit = pending
+        guard selection != previous else { return [] }
+        let text = storage.string as NSString
+        return headings(revealedBy: previous, in: text).symmetricDifference(headings(revealedBy: selection, in: text))
     }
 
     func line(at location: Int, in text: NSString) -> (range: NSRange, line: Markdown.Line) {
@@ -179,11 +180,11 @@ extension MarkdownStyle: @preconcurrency NSTextContentStorageDelegate {
 
 extension MarkdownStyle: @preconcurrency NSTextStorageDelegate {
     func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: NSTextStorageEditActions, range: NSRange, changeInLength delta: Int) {
+        defer { selectedDuringEdit = false }
         guard editedMask.contains(.editedCharacters) else { return }
         let before = codeBlocks.map { $0.moved(across: range, by: delta) }
         let labels = Set(references.keys)
         if !selectedDuringEdit { selection = selection?.moved(across: range, by: delta) }
-        selectedDuringEdit = false
         codeBlocks = Markdown.codeBlocks(in: textStorage.string)
         references = Markdown.references(in: textStorage.string)
         let document = NSRange(location: 0, length: textStorage.length)
