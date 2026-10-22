@@ -31,7 +31,7 @@ struct MarkdownEditor: NSViewRepresentable {
         context.coordinator.text = $text
         guard let textView = scroll.documentView as? NoteTextView else { return }
         textView.isEditable = editable
-        if textView.string != text { textView.load(text) }
+        if !(textView.string as NSString).isEqual(to: text) { textView.load(text) }
     }
 
     final class Coordinator: NSObject, NSTextViewDelegate {
@@ -251,7 +251,7 @@ final class NoteTextView: NSTextView {
 
     private func reveal(_ selection: NSRange?) {
         guard let textStorage, let textLayoutManager, let content = textContentStorage else { return }
-        for range in style.select(selection, in: textStorage.string as NSString) {
+        for range in style.select(selection, in: textStorage) {
             textStorage.edited(.editedAttributes, range: range, changeInLength: 0)
             guard let start = content.location(content.documentRange.location, offsetBy: range.location),
                   let end = content.location(start, offsetBy: range.length) else { continue }

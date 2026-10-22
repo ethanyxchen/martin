@@ -21,10 +21,14 @@ final class MarkdownStyle: NSObject {
     private var codeBlocks: [NSRange] = []
     private var references: [String: String] = [:]
     private var selection: NSRange?
+    private var selectedDuringEdit = false
 
-    func select(_ selection: NSRange?, in text: NSString) -> Set<NSRange> {
+    func select(_ selection: NSRange?, in storage: NSTextStorage) -> Set<NSRange> {
+        guard selection != self.selection else { return [] }
+        let text = storage.string as NSString
         let before = headings(revealedBy: self.selection, in: text)
         self.selection = selection
+        selectedDuringEdit = !storage.editedMask.isEmpty
         return before.symmetricDifference(headings(revealedBy: selection, in: text))
     }
 
@@ -178,7 +182,8 @@ extension MarkdownStyle: @preconcurrency NSTextStorageDelegate {
         guard editedMask.contains(.editedCharacters) else { return }
         let before = codeBlocks.map { $0.moved(across: range, by: delta) }
         let labels = Set(references.keys)
-        selection = selection?.moved(across: range, by: delta)
+        if !selectedDuringEdit { selection = selection?.moved(across: range, by: delta) }
+        selectedDuringEdit = false
         codeBlocks = Markdown.codeBlocks(in: textStorage.string)
         references = Markdown.references(in: textStorage.string)
         let document = NSRange(location: 0, length: textStorage.length)
