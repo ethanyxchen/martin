@@ -16,9 +16,19 @@ final class MarkdownStyle: NSObject {
     private static let secondary = Theme.secondary.ns
     private static let tertiary = Theme.tertiary.ns
     private static let ember = Theme.ember.ns
+    private static let collapsed = NSFont.systemFont(ofSize: 0.01)
 
     private var codeBlocks: [NSRange] = []
     private var references: [String: String] = [:]
+    private var selection: NSRange?
+
+    func select(_ selection: NSRange?, in text: NSString) -> [NSRange] {
+        let before = self.selection.map { Self.paragraphs(of: $0, in: text) }
+        self.selection = selection
+        let after = selection.map { Self.paragraphs(of: $0, in: text) }
+        guard before != after else { return [] }
+        return [before, after].compactMap(\.self).filter { collapses($0, in: text) }
+    }
 
     func line(at location: Int, in text: NSString) -> (range: NSRange, line: Markdown.Line) {
         var start = 0, contentsEnd = 0
@@ -31,6 +41,16 @@ final class MarkdownStyle: NSObject {
         return (range, closing ? line : Markdown.Line(contents, code: true))
     }
 
+    private func collapses(_ paragraphs: NSRange, in text: NSString) -> Bool {
+        let line = line(at: paragraphs.location, in: text).line
+        return line.block == .heading && (line.spans.first?.range.length ?? 0) > 1
+    }
+
+    private static func paragraphs(of selection: NSRange, in text: NSString) -> NSRange {
+        let location = min(selection.location, text.length)
+        return text.paragraphRange(for: NSRange(location: location, length: min(selection.length, text.length - location)))
+    }
+
     private func edge(of line: Markdown.Line, at location: Int) -> CodeEdge? {
         switch line.block {
         case .code: .middle
@@ -39,7 +59,7 @@ final class MarkdownStyle: NSObject {
         }
     }
 
-    private func style(_ text: NSMutableAttributedString, as line: Markdown.Line, length: Int, edge: CodeEdge?) {
+    private func style(_ text: NSMutableAttributedString, as line: Markdown.Line, length: Int, edge: CodeEdge?, revealed: Bool) {
         let look = Look(line.block)
         let all = NSRange(location: 0, length: text.length)
         text.addAttributes([.font: look.font, .foregroundColor: look.color, .baselineOffset: look.baselineOffset], range: all)
@@ -52,7 +72,12 @@ final class MarkdownStyle: NSObject {
             case .marker:
                 text.addAttribute(.foregroundColor, value: Self.tertiary, range: span.range)
                 text.removeAttribute(.strikethroughStyle, range: span.range)
-                if case .heading = line.block, span.range.location < line.prefix { text.addAttribute(.font, value: Self.body, range: span.range) }
+                if case .heading = line.block, span.range.location < line.prefix {
+                    text.addAttribute(.font, value: Self.body, range: span.range)
+                    if !revealed {
+                        text.addAttributes([.font: Self.collapsed, .foregroundColor: NSColor.clear], range: NSRange(location: span.range.location, length: span.range.length - 1))
+                    }
+                }
             case .checkbox:
                 text.addAttribute(.foregroundColor, value: line.block == .task(done: true) ? Self.ember : Self.tertiary, range: span.range)
                 text.removeAttribute(.strikethroughStyle, range: span.range)
@@ -82,7 +107,6 @@ final class MarkdownStyle: NSObject {
         style.tailIndent = tail
         style.minimumLineHeight = look.lineHeight
         style.maximumLineHeight = look.lineHeight
-        style.paragraphSpacingBefore = look.spacing
         return style
     }
 
@@ -105,7 +129,6 @@ final class MarkdownStyle: NSObject {
         let font: NSFont
         let color: NSColor
         let lineHeight: CGFloat
-        let spacing: CGFloat
 
         var baselineOffset: CGFloat {
             (lineHeight - font.ascender + font.descender) / 2
@@ -113,22 +136,21 @@ final class MarkdownStyle: NSObject {
 
         init(_ block: Markdown.Line.Block) {
             switch block {
-            case .heading: self.init(font: heading, lineHeight: 26, spacing: 8)
+            case .heading: self.init(font: heading, lineHeight: 26)
             case .quote: self.init(font: NSFont(descriptor: body.fontDescriptor.withDesign(.serif)!, size: 15)!, color: secondary)
             case .fence: self.init(font: mono(13), color: tertiary, lineHeight: 22)
             case .code: self.init(font: mono(13), lineHeight: 21)
-            case .blank: self.init(font: body, lineHeight: 12)
+            case .blank: self.init(font: body)
             case .rule: self.init(font: body, color: tertiary)
             case .definition: self.init(font: body.withSize(12.5), color: tertiary, lineHeight: 20)
             case .text, .list, .task: self.init(font: body)
             }
         }
 
-        private init(font: NSFont, color: NSColor = MarkdownStyle.ink, lineHeight: CGFloat = 24, spacing: CGFloat = 0) {
+        private init(font: NSFont, color: NSColor = MarkdownStyle.ink, lineHeight: CGFloat = 24) {
             self.font = font
             self.color = color
             self.lineHeight = lineHeight
-            self.spacing = spacing
         }
     }
 }
@@ -138,7 +160,8 @@ extension MarkdownStyle: @preconcurrency NSTextContentStorageDelegate {
         guard let source = textContentStorage.textStorage else { return nil }
         let text = NSMutableAttributedString(attributedString: source.attributedSubstring(from: range))
         let (contents, line) = line(at: range.location, in: source.string as NSString)
-        style(text, as: line, length: contents.length, edge: edge(of: line, at: range.location))
+        let revealed = selection.map { NSIntersectionRange(Self.paragraphs(of: $0, in: source.string as NSString), range).length > 0 } ?? false
+        style(text, as: line, length: contents.length, edge: edge(of: line, at: range.location), revealed: revealed)
         return NSTextParagraph(attributedString: text)
     }
 }

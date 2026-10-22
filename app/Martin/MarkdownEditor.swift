@@ -111,8 +111,26 @@ final class NoteTextView: NSTextView {
 
     override func setFrameSize(_ size: NSSize) {
         super.setFrameSize(size)
-        let inset = Theme.column - MarkdownStyle.hang + max(0, (size.width - Theme.column - Theme.measure - Theme.margin) / 2)
+        let width = enclosingScrollView?.frame.width ?? size.width
+        let inset = Theme.column - MarkdownStyle.hang + max(0, (width - Theme.column - Theme.measure - Theme.margin) / 2)
         if textContainerInset.width != inset { textContainerInset.width = inset }
+    }
+
+    override func setSelectedRanges(_ ranges: [NSValue], affinity: NSSelectionAffinity, stillSelecting: Bool) {
+        super.setSelectedRanges(ranges, affinity: affinity, stillSelecting: stillSelecting)
+        reveal(window?.firstResponder === self ? selectedRange() : nil)
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        let became = super.becomeFirstResponder()
+        if became { reveal(selectedRange()) }
+        return became
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let resigned = super.resignFirstResponder()
+        if resigned { reveal(nil) }
+        return resigned
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -219,6 +237,16 @@ final class NoteTextView: NSTextView {
             default: false
             }
             return literal && NSIntersectionRange(span.range.offset(by: range.location), word).length > 0
+        }
+    }
+
+    private func reveal(_ selection: NSRange?) {
+        guard let textStorage, let textLayoutManager, let content = textContentStorage else { return }
+        for range in style.select(selection, in: textStorage.string as NSString) {
+            textStorage.edited(.editedAttributes, range: range, changeInLength: 0)
+            guard let start = content.location(content.documentRange.location, offsetBy: range.location),
+                  let end = content.location(start, offsetBy: range.length) else { continue }
+            textLayoutManager.invalidateLayout(for: NSTextRange(location: start, end: end)!)
         }
     }
 
