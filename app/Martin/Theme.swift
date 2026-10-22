@@ -51,6 +51,12 @@ enum Theme {
     @MainActor static let timestamp = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
 }
 
+extension View {
+    func movesWindow() -> some View {
+        contentShape(.rect).gesture(WindowDragGesture())
+    }
+}
+
 struct SectionLabel: View {
     let text: String
 

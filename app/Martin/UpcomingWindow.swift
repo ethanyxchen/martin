@@ -36,8 +36,7 @@ struct UpcomingView: View {
         .padding(.top, 46)
         .padding(.bottom, 22)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(.rect)
-        .gesture(WindowDragGesture())
+        .movesWindow()
     }
 
     @ViewBuilder
