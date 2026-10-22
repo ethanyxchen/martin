@@ -124,7 +124,7 @@ struct NoteView: View {
     }
 
     private func save() {
-        guard let note, note != library.note(of: meeting) else { return }
+        guard let note, library.note(of: meeting).map({ ($0 as NSString).isEqual(to: note) }) != true else { return }
         try? library.saveNote(note, for: meeting)
     }
 }

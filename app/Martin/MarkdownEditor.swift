@@ -95,6 +95,7 @@ final class NoteTextView: NSTextView {
         view.textContainer?.lineFragmentPadding = 0
         view.textContainerInset = NSSize(width: Theme.column - MarkdownStyle.hang, height: 2)
         view.isContinuousSpellCheckingEnabled = true
+        NotificationCenter.default.addObserver(view, selector: #selector(selectionChanged), name: NSTextView.didChangeSelectionNotification, object: view)
         view.insertionPointColor = Theme.ink.ns
         view.typingAttributes = MarkdownStyle.typing
         view.defaultParagraphStyle = MarkdownStyle.typing[.paragraphStyle] as? NSParagraphStyle
@@ -115,11 +116,6 @@ final class NoteTextView: NSTextView {
         let width = enclosingScrollView?.frame.width ?? size.width
         let inset = Theme.column - MarkdownStyle.hang + max(0, (width - Theme.page) / 2)
         if textContainerInset.width != inset { textContainerInset.width = inset }
-    }
-
-    override func setSelectedRanges(_ ranges: [NSValue], affinity: NSSelectionAffinity, stillSelecting: Bool) {
-        super.setSelectedRanges(ranges, affinity: affinity, stillSelecting: stillSelecting)
-        reveal(window?.firstResponder === self ? selectedRange() : nil)
     }
 
     override func becomeFirstResponder() -> Bool {
@@ -249,9 +245,13 @@ final class NoteTextView: NSTextView {
         }
     }
 
+    @objc private func selectionChanged() {
+        reveal(window?.firstResponder === self ? selectedRange() : nil)
+    }
+
     private func reveal(_ selection: NSRange?) {
         guard let textStorage, let textLayoutManager, let content = textContentStorage else { return }
-        for range in style.select(selection, in: textStorage) {
+        for range in style.select(selection, in: textStorage.string as NSString) {
             textStorage.edited(.editedAttributes, range: range, changeInLength: 0)
             guard let start = content.location(content.documentRange.location, offsetBy: range.location),
                   let end = content.location(start, offsetBy: range.length) else { continue }
