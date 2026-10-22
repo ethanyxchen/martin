@@ -4,14 +4,30 @@ import SwiftUI
 
 @main
 struct MartinApp: App {
-    @State private var app = AppState()
+    @NSApplicationDelegateAdaptor private var delegate: AppDelegate
 
     var body: some Scene {
         MenuBarExtra {
-            MenuBar(app: app)
+            MenuBar(app: delegate.app)
         } label: {
-            Image(nsImage: .menuBarIcon(awake: app.recorder.phase != .idle))
+            Image(nsImage: .menuBarIcon(awake: delegate.app.recorder.phase != .idle))
         }
+        .commands {
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings…") { delegate.app.openSettings() }
+                    .keyboardShortcut(",")
+            }
+        }
+    }
+}
+
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    let app = AppState()
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
+        app.reopen()
+        return true
     }
 }
 
@@ -79,6 +95,10 @@ final class AppState {
         } else {
             window.orderFrontRegardless()
         }
+    }
+
+    func reopen() {
+        if windows.isEmpty { openUpcoming() }
     }
 
     func openUpcoming() {

@@ -16,8 +16,6 @@
 	<string>APPL</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>26.0</string>
-	<key>LSUIElement</key>
-	<true/>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Martin names a recording after the calendar event it belongs to.</string>
 	<key>NSAudioCaptureUsageDescription</key>
