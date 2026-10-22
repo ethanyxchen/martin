@@ -124,7 +124,8 @@ struct MarkdownTests {
         #expect(Markdown.toggle("*", in: "**foo**", selection: NSRange(location: 0, length: 7)) == Markdown.Edit(range: NSRange(location: 0, length: 7), replacement: "***foo***", selection: NSRange(location: 1, length: 7)))
         #expect(Markdown.toggle("*", in: "***foo***", selection: NSRange(location: 3, length: 3)) == Markdown.Edit(range: NSRange(location: 2, length: 5), replacement: "foo", selection: NSRange(location: 2, length: 3)))
         #expect(Markdown.toggle("**", in: "***foo***", selection: NSRange(location: 3, length: 3)) == Markdown.Edit(range: NSRange(location: 1, length: 7), replacement: "foo", selection: NSRange(location: 1, length: 3)))
-        #expect(Markdown.toggle("~~", in: "~~~foo~~~", selection: NSRange(location: 3, length: 3)).replacement == "~~foo~~")
+        #expect(Markdown.toggle("~~", in: "~~~foo~~~", selection: NSRange(location: 3, length: 3)) == Markdown.Edit(range: NSRange(location: 1, length: 7), replacement: "foo", selection: NSRange(location: 1, length: 3)))
+        #expect(Markdown.toggle("`", in: "``x``", selection: NSRange(location: 0, length: 5)) == Markdown.Edit(range: NSRange(location: 0, length: 5), replacement: "`x`", selection: NSRange(location: 0, length: 3)))
         let empty = Markdown.toggle("~~", in: "", selection: NSRange(location: 0, length: 0))
         #expect(empty == Markdown.Edit(range: NSRange(location: 0, length: 0), replacement: "~~~~", selection: NSRange(location: 2, length: 0)))
     }

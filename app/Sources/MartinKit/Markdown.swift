@@ -190,6 +190,10 @@ public enum Markdown {
         return references
     }
 
+    public static func mayBeHeading(_ line: NSRange, in text: NSString) -> Bool {
+        text.blockStart(in: line).map { text.character(at: $0) == 0x23 } ?? false
+    }
+
     static func label(_ name: String) -> String {
         name.lowercased().split(whereSeparator: \.isWhitespace).joined(separator: " ")
     }
@@ -204,7 +208,7 @@ public enum Markdown {
             return count
         }
         func wraps(_ run: Int) -> Bool {
-            run == width || (mark == 0x2A && run >= 3)
+            mark == 0x2A ? run == width || run >= 3 : run >= width
         }
         let document = NSRange(location: 0, length: text.length)
         if wraps(min(run(from: selection.location - 1, by: -1, within: document), run(from: NSMaxRange(selection), by: 1, within: document))) {

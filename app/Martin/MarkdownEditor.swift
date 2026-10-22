@@ -222,16 +222,16 @@ final class NoteTextView: NSTextView {
 
     private func checkbox(at index: Int, under point: NSPoint) -> NSRange? {
         guard let (range, line) = line(at: index), let box = line.spans.first(where: { $0.role == .checkbox })?.range.offset(by: range.location) else { return nil }
-        return rect(of: box).insetBy(dx: -3, dy: -3).contains(point) ? NSRange(location: box.location + 1, length: 1) : nil
+        return rect(of: box)?.insetBy(dx: -3, dy: -3).contains(point) == true ? NSRange(location: box.location + 1, length: 1) : nil
     }
 
     private func character(under point: NSPoint) -> Int? {
         let index = characterIndexForInsertion(at: point)
-        return [index, index - 1].first { NSLocationInRange($0, NSRange(location: 0, length: (string as NSString).length)) && rect(of: NSRange(location: $0, length: 1)).contains(point) }
+        return [index, index - 1].first { NSLocationInRange($0, NSRange(location: 0, length: (string as NSString).length)) && rect(of: NSRange(location: $0, length: 1))?.insetBy(dx: -1, dy: -4).contains(point) == true }
     }
 
-    private func rect(of range: NSRange) -> NSRect {
-        guard let window else { return .zero }
+    private func rect(of range: NSRange) -> NSRect? {
+        guard let window else { return nil }
         return convert(window.convertFromScreen(firstRect(forCharacterRange: range, actualRange: nil)), from: nil)
     }
 

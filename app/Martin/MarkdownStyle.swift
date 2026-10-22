@@ -21,11 +21,13 @@ final class MarkdownStyle: NSObject {
     private var codeBlocks: [NSRange] = []
     private var references: [String: String] = [:]
     private var selection: NSRange?
+    private var revealed: Set<NSRange> = []
 
     func select(_ selection: NSRange?, in text: NSString) -> Set<NSRange> {
-        let before = headings(revealedBy: self.selection, in: text)
         self.selection = selection
-        return before.symmetricDifference(headings(revealedBy: selection, in: text))
+        let headings = headings(revealedBy: selection, in: text)
+        defer { revealed = headings }
+        return revealed.symmetricDifference(headings)
     }
 
     func line(at location: Int, in text: NSString) -> (range: NSRange, line: Markdown.Line) {
@@ -43,9 +45,7 @@ final class MarkdownStyle: NSObject {
         guard let selection else { return [] }
         var headings: Set<NSRange> = []
         text.enumerateSubstrings(in: Self.paragraphs(of: selection, in: text), options: [.byParagraphs, .substringNotRequired]) { _, range, enclosing, _ in
-            var start = range.location
-            while start < NSMaxRange(range), text.character(at: start) == 0x20 { start += 1 }
-            guard start < NSMaxRange(range), text.character(at: start) == 0x23 else { return }
+            guard Markdown.mayBeHeading(range, in: text) else { return }
             let line = self.line(at: range.location, in: text).line
             if line.block == .heading, (line.spans.first?.range.length ?? 0) > 1 { headings.insert(enclosing) }
         }
@@ -185,6 +185,10 @@ extension MarkdownStyle: @preconcurrency NSTextStorageDelegate {
             return NSRange(location: block.location, length: block.length + delta)
         }
         let labels = Set(references.keys)
+        revealed = Set(revealed.compactMap { heading in
+            if NSMaxRange(heading) <= range.location { return heading }
+            return heading.location >= end ? NSRange(location: heading.location + delta, length: heading.length) : nil
+        })
         codeBlocks = Markdown.codeBlocks(in: textStorage.string)
         references = Markdown.references(in: textStorage.string)
         let document = NSRange(location: 0, length: textStorage.length)
