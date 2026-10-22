@@ -177,7 +177,8 @@ extension MarkdownStyle: @preconcurrency NSTextContentStorageDelegate {
 extension MarkdownStyle: @preconcurrency NSTextStorageDelegate {
     func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: NSTextStorageEditActions, range: NSRange, changeInLength delta: Int) {
         guard editedMask.contains(.editedCharacters) else { return }
-        let before = codeBlocks.map { $0.moved(across: range, by: delta, growing: true) }
+        let end = textStorage.length - delta
+        let before = codeBlocks.map { $0.moved(across: range, by: delta, growing: NSMaxRange($0) == end) }
         let labels = Set(references.keys)
         selection = selection?.moved(across: range, by: delta)
         codeBlocks = Markdown.codeBlocks(in: textStorage.string)
