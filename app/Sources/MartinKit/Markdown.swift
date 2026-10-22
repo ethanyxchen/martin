@@ -3,7 +3,7 @@ import Foundation
 public enum Markdown {
     public struct Line: Equatable, Sendable {
         public enum Block: Equatable, Sendable {
-            case text, blank, heading(Int), list, task(done: Bool), quote, fence, code, rule, definition
+            case text, blank, heading, list, task(done: Bool), quote, fence, code, rule, definition
         }
 
         public enum Role: Equatable, Sendable {
@@ -67,7 +67,7 @@ public enum Markdown {
                 pattern.firstMatch(in: text, options: .anchored, range: whole)
             }
             if let heading = match(Pattern.heading) {
-                return (.heading(heading.range(at: 1).length), heading.range.length, [Span(.marker, heading.range(at: 1))])
+                return (.heading, heading.range.length, [Span(.marker, heading.range(at: 1))])
             }
             if let quote = match(Pattern.quote) {
                 return (.quote, quote.range.length, [Span(.marker, quote.range(at: 1))])

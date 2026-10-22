@@ -21,8 +21,8 @@ struct MarkdownTests {
 
     @Test func blocksAndTheirPrefixes() {
         let expectations: [(String, Line.Block, Int)] = [
-            ("# Title", .heading(1), 2),
-            ("### Third", .heading(3), 4),
+            ("# Title", .heading, 2),
+            ("### Third", .heading, 4),
             ("#hashtag", .text, 0),
             ("- item", .list, 2),
             ("  - nested", .list, 4),

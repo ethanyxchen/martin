@@ -98,9 +98,7 @@ final class MarkdownStyle: NSObject {
         .monospacedSystemFont(ofSize: size, weight: .regular)
     }
 
-    private static func heading(_ size: CGFloat) -> NSFont {
-        NSFont(descriptor: NSFont.systemFont(ofSize: size, weight: .semibold).fontDescriptor.withDesign(.serif)!, size: size)!
-    }
+    private static let heading = NSFont(descriptor: NSFont.systemFont(ofSize: 17, weight: .semibold).fontDescriptor.withDesign(.serif)!, size: 17)!
 
     @MainActor
     private struct Look {
@@ -115,10 +113,7 @@ final class MarkdownStyle: NSObject {
 
         init(_ block: Markdown.Line.Block) {
             switch block {
-            case .heading(1): self.init(font: heading(23), lineHeight: 32, spacing: 10)
-            case .heading(2): self.init(font: heading(19), lineHeight: 28, spacing: 8)
-            case .heading(3): self.init(font: heading(16.5), lineHeight: 25, spacing: 6)
-            case .heading(let level): self.init(font: heading(15), color: level > 4 ? secondary : ink, lineHeight: 24, spacing: 4)
+            case .heading: self.init(font: heading, lineHeight: 26, spacing: 8)
             case .quote: self.init(font: NSFont(descriptor: body.fontDescriptor.withDesign(.serif)!, size: 15)!, color: secondary)
             case .fence: self.init(font: mono(13), color: tertiary, lineHeight: 22)
             case .code: self.init(font: mono(13), lineHeight: 21)
