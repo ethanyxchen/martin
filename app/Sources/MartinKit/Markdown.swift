@@ -197,23 +197,25 @@ public enum Markdown {
     public static func toggle(_ delimiter: String, in text: String, selection: NSRange) -> Edit {
         let text = text as NSString
         let width = (delimiter as NSString).length
-        let selected = text.substring(with: selection)
         let mark = (delimiter as NSString).character(at: 0)
-        func run(from location: Int, by step: Int) -> Int {
+        func run(from location: Int, by step: Int, within bounds: NSRange) -> Int {
             var count = 0
-            while location + count * step >= 0, location + count * step < text.length, text.character(at: location + count * step) == mark { count += 1 }
+            while NSLocationInRange(location + count * step, bounds), text.character(at: location + count * step) == mark { count += 1 }
             return count
         }
-        let surrounding = min(run(from: selection.location - 1, by: -1), run(from: NSMaxRange(selection), by: 1))
-        if surrounding == width || surrounding >= max(width, 3) {
+        func wraps(_ run: Int) -> Bool {
+            run == width || (mark == 0x2A && run >= 3)
+        }
+        let document = NSRange(location: 0, length: text.length)
+        if wraps(min(run(from: selection.location - 1, by: -1, within: document), run(from: NSMaxRange(selection), by: 1, within: document))) {
             let range = NSRange(location: selection.location - width, length: selection.length + 2 * width)
-            return Edit(range: range, replacement: selected, selection: NSRange(location: range.location, length: selection.length))
+            return Edit(range: range, replacement: text.substring(with: selection), selection: NSRange(location: range.location, length: selection.length))
         }
-        if selection.length >= 2 * width, selected.hasPrefix(delimiter), selected.hasSuffix(delimiter) {
-            let inner = (selected as NSString).substring(with: NSRange(location: width, length: selection.length - 2 * width))
-            return Edit(range: selection, replacement: inner, selection: NSRange(location: selection.location, length: (inner as NSString).length))
+        if selection.length >= 2 * width, wraps(min(run(from: selection.location, by: 1, within: selection), run(from: NSMaxRange(selection) - 1, by: -1, within: selection))) {
+            let inner = NSRange(location: selection.location + width, length: selection.length - 2 * width)
+            return Edit(range: selection, replacement: text.substring(with: inner), selection: NSRange(location: selection.location, length: inner.length))
         }
-        return Edit(range: selection, replacement: delimiter + selected + delimiter, selection: NSRange(location: selection.location + width, length: selection.length))
+        return Edit(range: selection, replacement: delimiter + text.substring(with: selection) + delimiter, selection: NSRange(location: selection.location + width, length: selection.length))
     }
 
     public static func link(in text: String, selection: NSRange) -> Edit {
@@ -259,7 +261,7 @@ private enum Pattern {
     static let task = regex(#"([ \t]*)([-*+]|\d{1,9}[.)])[ \t]+(\[[ xX]\])(?:[ \t]+|$)"#)
     static let list = regex(#"([ \t]*)([-*+]|\d{1,9}[.)])(?:[ \t]+|$)"#)
     static let code = regex(#"(`+)(?!`)(.+?)(?<!`)\1(?!`)"#)
-    static let link = regex(#"(!?\[)([^\]\n]*)(\]\()([^)\s]*)((?:[ \t]+"[^"\n]*")?\))"#)
+    static let link = regex(#"(!?\[)([^\[\]\n]*)(\]\()([^)\s]*)((?:[ \t]+"[^"\n]*")?\))"#)
     static let definition = regex(#" {0,3}(\[([^\]\n]+)\]:)[ \t]*(\S+)(?:[ \t]+"[^"\n]*")?[ \t]*$"#)
     static let reference = regex(#"(\[)([^\[\]\n]+)(\]\[)([^\[\]\n]*)(\])"#)
     static let shortcut = regex(#"(?<![\]\\!])(\[)([^\[\]\n]+)(\])(?![(\[:])"#)

@@ -22,12 +22,10 @@ final class MarkdownStyle: NSObject {
     private var references: [String: String] = [:]
     private var selection: NSRange?
 
-    func select(_ selection: NSRange?, in text: NSString) -> [NSRange] {
-        let before = self.selection.map { Self.paragraphs(of: $0, in: text) }
+    func select(_ selection: NSRange?, in text: NSString) -> Set<NSRange> {
+        let before = headings(revealedBy: self.selection, in: text)
         self.selection = selection
-        let after = selection.map { Self.paragraphs(of: $0, in: text) }
-        guard before != after else { return [] }
-        return [before, after].compactMap(\.self).filter { collapses($0, in: text) }
+        return before.symmetricDifference(headings(revealedBy: selection, in: text))
     }
 
     func line(at location: Int, in text: NSString) -> (range: NSRange, line: Markdown.Line) {
@@ -41,14 +39,17 @@ final class MarkdownStyle: NSObject {
         return (range, closing ? line : Markdown.Line(contents, code: true))
     }
 
-    private func collapses(_ paragraphs: NSRange, in text: NSString) -> Bool {
-        var location = paragraphs.location
-        while location < NSMaxRange(paragraphs) {
-            let (range, line) = line(at: location, in: text)
-            if line.block == .heading, (line.spans.first?.range.length ?? 0) > 1 { return true }
-            location = NSMaxRange(text.paragraphRange(for: range))
+    private func headings(revealedBy selection: NSRange?, in text: NSString) -> Set<NSRange> {
+        guard let selection else { return [] }
+        var headings: Set<NSRange> = []
+        text.enumerateSubstrings(in: Self.paragraphs(of: selection, in: text), options: [.byParagraphs, .substringNotRequired]) { _, range, enclosing, _ in
+            var start = range.location
+            while start < NSMaxRange(range), text.character(at: start) == 0x20 { start += 1 }
+            guard start < NSMaxRange(range), text.character(at: start) == 0x23 else { return }
+            let line = self.line(at: range.location, in: text).line
+            if line.block == .heading, (line.spans.first?.range.length ?? 0) > 1 { headings.insert(enclosing) }
         }
-        return false
+        return headings
     }
 
     private static func paragraphs(of selection: NSRange, in text: NSString) -> NSRange {
@@ -129,6 +130,7 @@ final class MarkdownStyle: NSObject {
 
     private static let serif = NSFont(descriptor: body.fontDescriptor.withDesign(.serif)!, size: 15)!
     private static let code = mono(13)
+    private static let small = body.withSize(12.5)
     private static let heading = NSFont(descriptor: NSFont.systemFont(ofSize: 17, weight: .semibold).fontDescriptor.withDesign(.serif)!, size: 17)!
 
     @MainActor
@@ -149,7 +151,7 @@ final class MarkdownStyle: NSObject {
             case .code: self.init(font: code, lineHeight: 21)
             case .blank: self.init(font: body)
             case .rule: self.init(font: body, color: tertiary)
-            case .definition: self.init(font: body.withSize(12.5), color: tertiary, lineHeight: 20)
+            case .definition: self.init(font: small, color: tertiary, lineHeight: 20)
             case .text, .list, .task: self.init(font: body)
             }
         }

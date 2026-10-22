@@ -94,6 +94,7 @@ final class NoteTextView: NSTextView {
         view.textContainer?.widthTracksTextView = true
         view.textContainer?.lineFragmentPadding = 0
         view.textContainerInset = NSSize(width: Theme.column - MarkdownStyle.hang, height: 2)
+        view.isContinuousSpellCheckingEnabled = true
         view.insertionPointColor = Theme.ink.ns
         view.typingAttributes = MarkdownStyle.typing
         view.defaultParagraphStyle = MarkdownStyle.typing[.paragraphStyle] as? NSParagraphStyle
@@ -135,10 +136,9 @@ final class NoteTextView: NSTextView {
 
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
-        let index = characterIndexForInsertion(at: point)
-        if event.modifierFlags.contains(.command) || !isEditable, let url = link(at: index) {
+        if event.modifierFlags.contains(.command) || !isEditable, let url = character(under: point).flatMap(link(at:)) {
             NSWorkspace.shared.open(url)
-        } else if isEditable, let mark = checkbox(at: index, under: point) {
+        } else if isEditable, let mark = checkbox(at: characterIndexForInsertion(at: point), under: point) {
             let tick = (string as NSString).substring(with: mark) == " " ? "x" : " "
             apply(Markdown.Edit(range: mark, replacement: tick, selection: selectedRange()))
         } else {
@@ -209,7 +209,7 @@ final class NoteTextView: NSTextView {
         guard let (range, line) = line(at: index) else { return nil }
         let text = string as NSString
         for span in line.spans {
-            guard (span.range.location...NSMaxRange(span.range)).contains(index - range.location) else { continue }
+            guard NSLocationInRange(index - range.location, span.range) else { continue }
             switch span.role {
             case .link(let destination): return URL(string: text.substring(with: destination.offset(by: range.location)))
             case .reference(let destination): return URL(string: destination)
@@ -221,10 +221,18 @@ final class NoteTextView: NSTextView {
     }
 
     private func checkbox(at index: Int, under point: NSPoint) -> NSRange? {
-        guard let window, let (range, line) = line(at: index) else { return nil }
-        guard let box = line.spans.first(where: { $0.role == .checkbox })?.range.offset(by: range.location) else { return nil }
-        let bounds = convert(window.convertFromScreen(firstRect(forCharacterRange: box, actualRange: nil)), from: nil)
-        return bounds.insetBy(dx: -3, dy: -3).contains(point) ? NSRange(location: box.location + 1, length: 1) : nil
+        guard let (range, line) = line(at: index), let box = line.spans.first(where: { $0.role == .checkbox })?.range.offset(by: range.location) else { return nil }
+        return rect(of: box).insetBy(dx: -3, dy: -3).contains(point) ? NSRange(location: box.location + 1, length: 1) : nil
+    }
+
+    private func character(under point: NSPoint) -> Int? {
+        let index = characterIndexForInsertion(at: point)
+        return [index, index - 1].first { NSLocationInRange($0, NSRange(location: 0, length: (string as NSString).length)) && rect(of: NSRange(location: $0, length: 1)).contains(point) }
+    }
+
+    private func rect(of range: NSRange) -> NSRect {
+        guard let window else { return .zero }
+        return convert(window.convertFromScreen(firstRect(forCharacterRange: range, actualRange: nil)), from: nil)
     }
 
     private func isProse(_ word: NSRange) -> Bool {
