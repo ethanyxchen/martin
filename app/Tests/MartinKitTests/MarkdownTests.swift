@@ -141,11 +141,14 @@ struct MarkdownTests {
         #expect(NSRange(location: 0, length: 5).moved(across: insertAtFive.edit, by: insertAtFive.delta) == NSRange(location: 0, length: 5))
         #expect(NSRange(location: 5, length: 0).moved(across: insertAtFive.edit, by: insertAtFive.delta) == NSRange(location: 8, length: 0))
         #expect(NSRange(location: 6, length: 4).moved(across: insertAtFive.edit, by: insertAtFive.delta) == NSRange(location: 9, length: 4))
+        #expect(NSRange(location: 5, length: 2).moved(across: insertAtFive.edit, by: insertAtFive.delta) == NSRange(location: 8, length: 2))
+        #expect(NSRange(location: 0, length: 5).moved(across: insertAtFive.edit, by: insertAtFive.delta, growing: true) == NSRange(location: 0, length: 8))
         let deleteTwoToFive = (edit: NSRange(location: 2, length: 0), delta: -3)
         #expect(NSRange(location: 3, length: 5).moved(across: deleteTwoToFive.edit, by: deleteTwoToFive.delta) == NSRange(location: 2, length: 3))
         #expect(NSRange(location: 8, length: 0).moved(across: deleteTwoToFive.edit, by: deleteTwoToFive.delta) == NSRange(location: 5, length: 0))
         let replaceTwoToFive = (edit: NSRange(location: 2, length: 6), delta: 3)
         #expect(NSRange(location: 3, length: 0).moved(across: replaceTwoToFive.edit, by: replaceTwoToFive.delta) == NSRange(location: 8, length: 0))
+        #expect(NSRange(location: 2, length: 0).moved(across: replaceTwoToFive.edit, by: replaceTwoToFive.delta) == NSRange(location: 8, length: 0))
         #expect(NSRange(location: 0, length: 4).moved(across: replaceTwoToFive.edit, by: replaceTwoToFive.delta) == NSRange(location: 0, length: 8))
     }
 

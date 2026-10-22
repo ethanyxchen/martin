@@ -109,6 +109,7 @@ final class NoteTextView: NSTextView {
     func load(_ markdown: String) {
         textStorage?.setAttributedString(NSAttributedString(string: markdown, attributes: MarkdownStyle.typing))
         undoManager?.removeAllActions()
+        selectionChanged()
     }
 
     override func setFrameSize(_ size: NSSize) {

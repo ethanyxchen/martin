@@ -230,14 +230,14 @@ public enum Markdown {
 }
 
 public extension NSRange {
-    func moved(across edit: NSRange, by delta: Int) -> NSRange {
+    func moved(across edit: NSRange, by delta: Int, growing: Bool = false) -> NSRange {
         let replacedEnd = NSMaxRange(edit) - delta
-        func moved(_ position: Int, inserting: Bool) -> Int {
-            if position < edit.location || (position == edit.location && !inserting) { return position }
+        func shift(_ position: Int, pastInsertion: Bool) -> Int {
+            if position < edit.location || (position == edit.location && !pastInsertion) { return position }
             return position >= replacedEnd ? position + delta : NSMaxRange(edit)
         }
-        let start = moved(location, inserting: true)
-        return NSRange(location: start, length: max(start, moved(NSMaxRange(self), inserting: false)) - start)
+        let start = shift(location, pastInsertion: true)
+        return NSRange(location: start, length: max(start, shift(NSMaxRange(self), pastInsertion: growing)) - start)
     }
 }
 
