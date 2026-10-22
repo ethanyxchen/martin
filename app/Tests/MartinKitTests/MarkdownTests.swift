@@ -135,6 +135,20 @@ struct MarkdownTests {
         #expect(Markdown.link(in: "", selection: NSRange(location: 0, length: 0)).selection == NSRange(location: 1, length: 0))
     }
 
+    @Test func rangesMoveAcrossEdits() {
+        let insertAtFive = (edit: NSRange(location: 5, length: 3), delta: 3)
+        #expect(NSRange(location: 0, length: 2).moved(across: insertAtFive.edit, by: insertAtFive.delta) == NSRange(location: 0, length: 2))
+        #expect(NSRange(location: 0, length: 5).moved(across: insertAtFive.edit, by: insertAtFive.delta) == NSRange(location: 0, length: 5))
+        #expect(NSRange(location: 5, length: 0).moved(across: insertAtFive.edit, by: insertAtFive.delta) == NSRange(location: 8, length: 0))
+        #expect(NSRange(location: 6, length: 4).moved(across: insertAtFive.edit, by: insertAtFive.delta) == NSRange(location: 9, length: 4))
+        let deleteTwoToFive = (edit: NSRange(location: 2, length: 0), delta: -3)
+        #expect(NSRange(location: 3, length: 5).moved(across: deleteTwoToFive.edit, by: deleteTwoToFive.delta) == NSRange(location: 2, length: 3))
+        #expect(NSRange(location: 8, length: 0).moved(across: deleteTwoToFive.edit, by: deleteTwoToFive.delta) == NSRange(location: 5, length: 0))
+        let replaceTwoToFive = (edit: NSRange(location: 2, length: 6), delta: 3)
+        #expect(NSRange(location: 3, length: 0).moved(across: replaceTwoToFive.edit, by: replaceTwoToFive.delta) == NSRange(location: 8, length: 0))
+        #expect(NSRange(location: 0, length: 4).moved(across: replaceTwoToFive.edit, by: replaceTwoToFive.delta) == NSRange(location: 0, length: 8))
+    }
+
     @Test func tenThousandWordsParseQuickly() {
         let section = """
         ## Section heading

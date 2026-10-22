@@ -202,14 +202,6 @@ extension MarkdownStyle: @preconcurrency NSTextLayoutManagerDelegate {
     }
 }
 
-private extension NSRange {
-    func moved(across edit: NSRange, by delta: Int) -> NSRange {
-        if NSMaxRange(self) < edit.location { return self }
-        if location >= NSMaxRange(edit) - delta { return NSRange(location: location + delta, length: length) }
-        return NSRange(location: min(location, NSMaxRange(edit)), length: max(0, length + delta))
-    }
-}
-
 private enum CodeEdge {
     case top, middle, bottom
 }

@@ -229,6 +229,18 @@ public enum Markdown {
     }
 }
 
+public extension NSRange {
+    func moved(across edit: NSRange, by delta: Int) -> NSRange {
+        let replacedEnd = NSMaxRange(edit) - delta
+        func moved(_ position: Int, inserting: Bool) -> Int {
+            if position < edit.location || (position == edit.location && !inserting) { return position }
+            return position >= replacedEnd ? position + delta : NSMaxRange(edit)
+        }
+        let start = moved(location, inserting: true)
+        return NSRange(location: start, length: max(start, moved(NSMaxRange(self), inserting: false)) - start)
+    }
+}
+
 private struct Fence {
     let mark: unichar
     let count: Int
