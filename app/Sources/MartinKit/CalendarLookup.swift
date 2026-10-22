@@ -43,16 +43,6 @@ public enum CalendarLookup {
         return ongoing(at: date, in: store).map(CalendarEvent.init)
     }
 
-    public static func previousStart(ofEventAt date: Date) async -> Date? {
-        let store = EKEventStore()
-        guard (try? await store.requestFullAccessToEvents()) == true, let event = ongoing(at: date, in: store) else { return nil }
-        let earliest = Calendar.current.date(byAdding: .day, value: -35, to: event.startDate)!
-        return store.events(matching: store.predicateForEvents(withStart: earliest, end: event.startDate, calendars: [event.calendar]))
-            .filter { $0.title == event.title && $0.startDate < event.startDate }
-            .map(\.startDate)
-            .max()
-    }
-
     public static func events(from start: Date, to end: Date) -> AsyncStream<[CalendarEvent]> {
         AsyncStream { continuation in
             let task = Task {

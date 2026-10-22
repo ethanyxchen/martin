@@ -14,7 +14,6 @@ public final class Recorder {
     public private(set) var level: Float = 0
     public private(set) var lastLine: String?
     public private(set) var transcriptionError: String?
-    public private(set) var briefing: Briefing?
     public private(set) var bullets: [Bullet] = []
     public private(set) var assistantError: String?
     public var onNoteReady: ((Meeting) -> Void)?
@@ -110,7 +109,7 @@ public final class Recorder {
             try await catchUp(on: meeting)
             Log.assistant.notice("Meeting \(meeting.id, privacy: .public) ended with \(self.heard) transcript lines and \(self.bullets.count) bullets")
             let silence = heard > 0 ? "Nothing in this meeting needed you." : "Nothing was transcribed."
-            try library.saveNote(Note.markdown(briefing: briefing, bullets: bullets, silence: silence), for: meeting)
+            try library.saveNote(Note.markdown(bullets: bullets, silence: silence), for: meeting)
         } catch {
             Log.assistant.error("Writing the note failed: \(error.localizedDescription, privacy: .public)")
             try? library.saveAnalysisError(error.localizedDescription, for: meeting)
@@ -119,24 +118,16 @@ public final class Recorder {
     }
 
     private func catchUp(on meeting: Meeting) async throws {
-        if briefing == nil { briefing = try await Self.briefing(for: meeting) }
         let transcript = try library.transcript(of: meeting)
         guard transcript.count > heard else { return }
-        bullets += try await Analyzer.listen(meeting: meeting, work: briefing?.pullRequests ?? [], transcript: transcript, bullets: bullets, settings: Settings.load())
+        bullets += try await Analyzer.listen(meeting: meeting, transcript: transcript, bullets: bullets, settings: Settings.load())
         heard = transcript.count
     }
 
     private func forget() {
-        briefing = nil
         bullets = []
         assistantError = nil
         heard = 0
-    }
-
-    static func briefing(for meeting: Meeting) async throws -> Briefing {
-        let until = meeting.startedAt
-        let since = await CalendarLookup.previousStart(ofEventAt: until) ?? Calendar.current.date(byAdding: .day, value: -1, to: until)!
-        return Briefing(since: since, until: until, pullRequests: try await Analyzer.work(since: Briefing.earliest(since: since, until: until)))
     }
 
     static func keyterms(settings: Settings, attendees: [String]) -> [String] {
