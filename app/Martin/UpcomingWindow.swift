@@ -35,6 +35,8 @@ struct UpcomingView: View {
         .padding(.trailing, Theme.margin)
         .padding(.top, 46)
         .padding(.bottom, 22)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .movesWindow()
     }
 
     @ViewBuilder

@@ -74,6 +74,7 @@ struct NoteView: View {
         .padding(.trailing, Theme.margin)
         .padding(.top, 46)
         .padding(.bottom, 22)
+        .movesWindow()
     }
 
     @ViewBuilder

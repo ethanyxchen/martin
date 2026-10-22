@@ -5,15 +5,24 @@ struct SettingsView: View {
     @State private var settings = MartinKit.Settings.load()
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 40) {
-                ConnectorsView()
-                YouSection(settings: $settings)
-                KeysSection()
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Settings")
+                .font(Theme.title)
+                .foregroundStyle(Theme.ink)
+                .padding(.horizontal, 32)
+                .padding(.top, 46)
+                .padding(.bottom, 22)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .movesWindow()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 40) {
+                    ConnectorsView()
+                    YouSection(settings: $settings)
+                    KeysSection()
+                }
+                .padding(.horizontal, 32)
+                .padding(.bottom, 36)
             }
-            .padding(.horizontal, 32)
-            .padding(.top, 44)
-            .padding(.bottom, 36)
         }
         .background(Theme.paper)
         .ignoresSafeArea(edges: .top)
