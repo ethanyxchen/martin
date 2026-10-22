@@ -48,6 +48,7 @@ struct NoteView: View {
             save()
         }
         .onDisappear(perform: save)
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in save() }
     }
 
     private var header: some View {
@@ -70,8 +71,7 @@ struct NoteView: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
         }
-        .padding(.leading, Theme.column)
-        .padding(.trailing, Theme.margin)
+        .column()
         .padding(.top, 46)
         .padding(.bottom, 22)
         .movesWindow()
@@ -90,15 +90,14 @@ struct NoteView: View {
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.secondary)
                 }
-                .padding(.leading, Theme.column)
+                .column()
                 if let error = app.recorder.assistantError {
                     Text(error)
                         .font(.system(size: 12))
                         .foregroundStyle(Theme.ember)
                         .textSelection(.enabled)
                         .lineLimit(4)
-                        .padding(.leading, Theme.column)
-                        .padding(.trailing, Theme.margin)
+                        .column()
                 }
                 MarkdownEditor(text: .constant(Note.markdown(bullets: app.recorder.bullets)), editable: false)
             }
@@ -125,7 +124,7 @@ struct NoteView: View {
     }
 
     private func save() {
-        guard let note, note != library.note(of: meeting) else { return }
+        guard let note, library.note(of: meeting).map({ ($0 as NSString).isEqual(to: note) }) != true else { return }
         try? library.saveNote(note, for: meeting)
     }
 }
@@ -148,8 +147,7 @@ private struct Unwritten: View {
             Button(error == nil ? "Write Notes" : "Try Again", action: retry)
                 .padding(.top, 8)
         }
-        .padding(.leading, Theme.column)
-        .padding(.trailing, Theme.margin)
+        .column()
     }
 }
 
@@ -178,8 +176,7 @@ private struct TranscriptView: View {
                 }
             }
             .textSelection(.enabled)
-            .padding(.leading, Theme.column)
-            .padding(.trailing, Theme.margin)
+            .column()
             .padding(.bottom, 28)
         }
     }

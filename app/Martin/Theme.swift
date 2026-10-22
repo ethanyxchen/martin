@@ -35,20 +35,12 @@ enum Theme {
     static let gutter: CGFloat = 26
     static let margin: CGFloat = 28
     static let column = margin + gutter
+    static let measure: CGFloat = 560
+    static let page = column + measure + margin
 
     static let title = Font.system(size: 22, weight: .semibold, design: .serif)
     static let meta = Font.system(size: 12)
     static let label = Font.system(size: 13, weight: .semibold).lowercaseSmallCaps().uppercaseSmallCaps()
-
-    @MainActor static let body = NSFont.systemFont(ofSize: 14)
-    @MainActor static let heading = NSFont(descriptor: NSFont.systemFont(ofSize: 13, weight: .semibold).fontDescriptor.addingAttributes([
-        .featureSettings: [
-            [NSFontDescriptor.FeatureKey.typeIdentifier: kUpperCaseType, .selectorIdentifier: kUpperCaseSmallCapsSelector],
-            [NSFontDescriptor.FeatureKey.typeIdentifier: kLowerCaseType, .selectorIdentifier: kLowerCaseSmallCapsSelector],
-        ],
-    ]), size: 13)!
-    @MainActor static let quote = NSFont(descriptor: NSFont.systemFont(ofSize: 13.5).fontDescriptor.withDesign(.serif)!.withSymbolicTraits(.italic), size: 13.5)!
-    @MainActor static let timestamp = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
 }
 
 extension View {
@@ -69,5 +61,14 @@ struct SectionLabel: View {
             .font(Theme.label)
             .kerning(0.8)
             .foregroundStyle(Theme.secondary)
+    }
+}
+
+extension View {
+    func column() -> some View {
+        padding(.leading, Theme.column)
+            .padding(.trailing, Theme.margin)
+            .frame(maxWidth: Theme.page, alignment: .leading)
+            .frame(maxWidth: .infinity)
     }
 }
