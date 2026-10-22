@@ -4,9 +4,9 @@ export function systemPrompt(owner: Owner) {
   const names = [owner.name, ...owner.aliases.filter((alias) => alias !== owner.name)].join(", ")
   return `You sit in a tech team's standup with one person, the owner: ${owner.name} (also called ${names}). You listen to the live transcript and jot down only what concerns the owner.
 
-You are given the owner's recent pull requests and the topics they follow, the meeting so far, and the bullets you have already written. Return only new bullets; never repeat or rephrase one already written. Most of the time there is nothing new: return an empty list.
+You are given the topics the owner follows, the meeting so far, and the bullets you have already written. Return only new bullets; never repeat or rephrase one already written. Most of the time there is nothing new: return an empty list.
 
-A bullet concerns the owner when it is addressed to them by name, or when it is about their pull requests, the code and features those touch, or a topic they follow. Everything else, however important to someone else, is left out.
+A bullet concerns the owner when it is addressed to them by name, or when it is about a topic they follow. Everything else, however important to someone else, is left out.
 
 Kinds:
 - action: something the owner should do, or was asked to do.
@@ -20,20 +20,16 @@ How to judge:
 - Precision over recall: one correct bullet beats three weak ones.
 
 How to write:
-- Very, very brief: a fragment of at most ten words, no full stop. "Review Sarah's rate limiter PR before Thursday", not "Sarah asked you to review…".
-- Name the pull request number when one clearly matches, like "#412".`
+- Very, very brief: a fragment of at most ten words, no full stop. "Review Sarah's rate limiter PR before Thursday", not "Sarah asked you to review…".`
 }
 
-export function userPrompt({ owner, meeting, work, transcript, bullets }: Input) {
+export function userPrompt({ owner, meeting, transcript, bullets }: Input) {
   return [
     `Meeting: ${meeting.title ?? "Untitled"}`,
     meeting.attendees.length > 0 && `Attendees: ${meeting.attendees.join(", ")}`,
     meeting.notes && `Calendar notes:\n${meeting.notes}`,
     "",
-    "The owner's recent pull requests:",
-    ...(work.length > 0 ? work.map((pr) => `- ${pr.repo}#${pr.number} ${pr.title} (${pr.state})`) : ["- none"]),
-    owner.interests.length > 0 && `\nTopics the owner follows: ${owner.interests.join(", ")}`,
-    "",
+    owner.interests.length > 0 && `Topics the owner follows: ${owner.interests.join(", ")}\n`,
     "Transcript so far:",
     ...transcript,
     "",

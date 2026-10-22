@@ -1,15 +1,10 @@
 import { listen } from "./analyze"
-import { sources } from "./sources"
-import { work } from "./work"
 
-process.env.PATH = ["/opt/homebrew/bin", "/usr/local/bin", process.env.PATH].filter(Boolean).join(":")
 delete process.env.ANTHROPIC_API_KEY
 
-async function run([command, argument]: string[]) {
+async function run([command]: string[]) {
   if (command === "listen") return listen(await Bun.stdin.json())
-  if (command === "work" && argument) return work(argument)
-  if (command === "sources") return sources()
-  throw new Error(`Unknown command "${command}". Use "listen", "work <since>" or "sources".`)
+  throw new Error(`Unknown command "${command}". Use "listen".`)
 }
 
 try {

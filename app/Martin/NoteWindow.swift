@@ -100,7 +100,7 @@ struct NoteView: View {
                         .padding(.leading, Theme.column)
                         .padding(.trailing, Theme.margin)
                 }
-                MarkdownEditor(text: .constant(Note.markdown(briefing: app.recorder.briefing, bullets: app.recorder.bullets)), editable: false)
+                MarkdownEditor(text: .constant(Note.markdown(bullets: app.recorder.bullets)), editable: false)
             }
         } else if let text = Binding($note) {
             MarkdownEditor(text: text)

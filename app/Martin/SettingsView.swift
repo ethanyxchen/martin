@@ -16,7 +16,6 @@ struct SettingsView: View {
                 .movesWindow()
             ScrollView {
                 VStack(alignment: .leading, spacing: 40) {
-                    ConnectorsView()
                     YouSection(settings: $settings)
                     KeysSection()
                 }
