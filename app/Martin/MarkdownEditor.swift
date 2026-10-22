@@ -194,6 +194,7 @@ final class NoteTextView: NSTextView {
             guard (span.range.location...NSMaxRange(span.range)).contains(index - range.location) else { continue }
             switch span.role {
             case .link(let destination): return URL(string: text.substring(with: destination.offset(by: range.location)))
+            case .reference(let destination): return URL(string: destination)
             case .url: return URL(string: text.substring(with: span.range.offset(by: range.location)))
             default: continue
             }

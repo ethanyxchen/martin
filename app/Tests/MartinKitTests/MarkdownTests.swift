@@ -73,6 +73,19 @@ struct MarkdownTests {
         #expect(Self.spans("see https://example.com/a_b_c.") == ["link→https://example.com/a_b_c https://example.com/a_b_c"])
     }
 
+    @Test func referenceLinksResolveOnlyWhenDefined() {
+        let references = Markdown.references(in: "- Fix [#412]\n\n[#412]: https://x.dev/412\n[Docs]: https://x.dev/docs \"Title\"")
+        #expect(references == ["#412": "https://x.dev/412", "docs": "https://x.dev/docs"])
+        func spans(_ text: String) -> [String] {
+            Line(text, references: references).spans.map { "\($0.role) " + (text as NSString).substring(with: $0.range) }
+        }
+        #expect(spans("Fix [#412] now") == ["marker [", "reference(destination: \"https://x.dev/412\") #412", "marker ]"])
+        #expect(spans("Read [the guide][DOCS]") == ["marker [", "reference(destination: \"https://x.dev/docs\") the guide", "marker ][DOCS]"])
+        #expect(spans("Not a link [sic] here").isEmpty)
+        #expect(Line("[#412]: https://x.dev/412").block == .definition)
+        #expect(spans("[#412]: https://x.dev/412") == ["marker [#412]:", "url https://x.dev/412"])
+    }
+
     @Test func intrawordDelimitersStayPlain() {
         #expect(Self.spans("snake_case_name and 2 * 3 * 4").isEmpty)
         #expect(Self.spans("an **unclosed bold").isEmpty)

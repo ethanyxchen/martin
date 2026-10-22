@@ -16,16 +16,16 @@ final class MarkdownStyle: NSObject {
     private static let secondary = Theme.secondary.ns
     private static let tertiary = Theme.tertiary.ns
     private static let ember = Theme.ember.ns
-    private static let moss = Theme.moss.ns
 
     private var codeBlocks: [NSRange] = []
+    private var references: [String: String] = [:]
 
     func line(at location: Int, in text: NSString) -> (range: NSRange, line: Markdown.Line) {
         var start = 0, contentsEnd = 0
         text.getParagraphStart(&start, end: nil, contentsEnd: &contentsEnd, for: NSRange(location: location, length: 0))
         let range = NSRange(location: start, length: contentsEnd - start)
         let contents = text.substring(with: range)
-        let line = Markdown.Line(contents)
+        let line = Markdown.Line(contents, references: references)
         guard let block = codeBlocks.first(where: { NSLocationInRange(start, $0) }), start != block.location else { return (range, line) }
         let closing = line.block == .fence && NSMaxRange(text.paragraphRange(for: range)) == NSMaxRange(block)
         return (range, closing ? line : Markdown.Line(contents, code: true))
@@ -52,8 +52,9 @@ final class MarkdownStyle: NSObject {
             case .marker:
                 text.addAttribute(.foregroundColor, value: Self.tertiary, range: span.range)
                 text.removeAttribute(.strikethroughStyle, range: span.range)
+                if case .heading = line.block, span.range.location < line.prefix { text.addAttribute(.font, value: Self.body, range: span.range) }
             case .checkbox:
-                text.addAttribute(.foregroundColor, value: line.block == .task(done: true) ? Self.ember : Self.secondary, range: span.range)
+                text.addAttribute(.foregroundColor, value: line.block == .task(done: true) ? Self.ember : Self.tertiary, range: span.range)
                 text.removeAttribute(.strikethroughStyle, range: span.range)
             case .strong:
                 Self.add(.bold, to: text, in: span.range)
@@ -62,9 +63,9 @@ final class MarkdownStyle: NSObject {
             case .strikethrough:
                 text.addAttributes([.strikethroughStyle: NSUnderlineStyle.single.rawValue, .strikethroughColor: Self.secondary], range: span.range)
             case .code:
-                text.addAttributes([.font: Self.mono(look.font.pointSize * 0.9), .foregroundColor: Self.moss], range: span.range)
-            case .link:
-                text.addAttribute(.foregroundColor, value: Self.ember, range: span.range)
+                text.addAttribute(.font, value: Self.mono(look.font.pointSize * 0.9), range: span.range)
+            case .link, .reference:
+                text.addAttributes([.underlineStyle: NSUnderlineStyle.single.rawValue, .underlineColor: Self.tertiary], range: span.range)
             case .url:
                 text.addAttribute(.foregroundColor, value: Self.tertiary, range: span.range)
             }
@@ -118,11 +119,12 @@ final class MarkdownStyle: NSObject {
             case .heading(2): self.init(font: heading(19), lineHeight: 28, spacing: 8)
             case .heading(3): self.init(font: heading(16.5), lineHeight: 25, spacing: 6)
             case .heading(let level): self.init(font: heading(15), color: level > 4 ? secondary : ink, lineHeight: 24, spacing: 4)
-            case .quote: self.init(font: NSFont(descriptor: body.fontDescriptor.withDesign(.serif)!.withSymbolicTraits(.italic), size: 15)!, color: secondary)
+            case .quote: self.init(font: NSFont(descriptor: body.fontDescriptor.withDesign(.serif)!, size: 15)!, color: secondary)
             case .fence: self.init(font: mono(13), color: tertiary, lineHeight: 22)
             case .code: self.init(font: mono(13), lineHeight: 21)
             case .blank: self.init(font: body, lineHeight: 12)
             case .rule: self.init(font: body, color: tertiary)
+            case .definition: self.init(font: body.withSize(12.5), color: tertiary, lineHeight: 20)
             case .text, .list, .task: self.init(font: body)
             }
         }
@@ -155,11 +157,16 @@ extension MarkdownStyle: @preconcurrency NSTextStorageDelegate {
             if block.location >= end { return NSRange(location: block.location + delta, length: block.length) }
             return NSRange(location: block.location, length: block.length + delta)
         }
+        let labels = Set(references.keys)
         codeBlocks = Markdown.codeBlocks(in: textStorage.string)
+        references = Markdown.references(in: textStorage.string)
+        let document = NSRange(location: 0, length: textStorage.length)
         let changed = Set(before).symmetricDifference(codeBlocks)
-        guard let first = changed.first else { return }
-        let stale = NSIntersectionRange(changed.reduce(first, NSUnionRange), NSRange(location: 0, length: textStorage.length))
-        textStorage.edited(.editedAttributes, range: stale, changeInLength: 0)
+        if labels != Set(references.keys) {
+            textStorage.edited(.editedAttributes, range: document, changeInLength: 0)
+        } else if let first = changed.first {
+            textStorage.edited(.editedAttributes, range: NSIntersectionRange(changed.reduce(first, NSUnionRange), document), changeInLength: 0)
+        }
     }
 }
 

@@ -3,11 +3,11 @@ import Foundation
 public enum Markdown {
     public struct Line: Equatable, Sendable {
         public enum Block: Equatable, Sendable {
-            case text, blank, heading(Int), list, task(done: Bool), quote, fence, code, rule
+            case text, blank, heading(Int), list, task(done: Bool), quote, fence, code, rule, definition
         }
 
         public enum Role: Equatable, Sendable {
-            case marker, checkbox, strong, emphasis, strikethrough, code, link(destination: NSRange), url
+            case marker, checkbox, strong, emphasis, strikethrough, code, link(destination: NSRange), reference(destination: String), url
         }
 
         public struct Span: Equatable, Sendable {
@@ -25,7 +25,7 @@ public enum Markdown {
         public let prefix: Int
         public let spans: [Span]
 
-        public init(_ text: String, code: Bool = false) {
+        public init(_ text: String, code: Bool = false, references: [String: String] = [:]) {
             let line = text as NSString
             let whole = NSRange(location: 0, length: line.length)
             let start = line.rangeOfCharacter(from: CharacterSet(charactersIn: " \t").inverted).location
@@ -38,10 +38,12 @@ public enum Markdown {
                 (block, prefix, spans) = (.fence, indent, [Span(.marker, whole)])
             } else if Pattern.rule.firstMatch(in: text, options: .anchored, range: whole) != nil {
                 (block, prefix, spans) = (.rule, indent, [Span(.marker, whole)])
+            } else if let definition = Pattern.definition.firstMatch(in: text, options: .anchored, range: whole) {
+                (block, prefix, spans) = (.definition, indent, [Span(.marker, definition.range(at: 1)), Span(.url, definition.range(at: 3))])
             } else {
                 let (block, prefix, markers) = Self.block(of: text, in: whole, indent: indent)
                 let content = NSRange(location: prefix, length: line.length - prefix)
-                (self.block, self.prefix, spans) = (block, prefix, markers + Self.inline(text, in: content))
+                (self.block, self.prefix, spans) = (block, prefix, markers + Self.inline(text, in: content, references: references))
             }
         }
 
@@ -80,7 +82,7 @@ public enum Markdown {
             return (.text, indent, [])
         }
 
-        private static func inline(_ text: String, in content: NSRange) -> [Span] {
+        private static func inline(_ text: String, in content: NSRange, references: [String: String]) -> [Span] {
             var spans: [Span] = []
             var claimed: [NSRange] = []
             func free(_ ranges: NSRange...) -> Bool {
@@ -104,6 +106,19 @@ public enum Markdown {
                     Span(.marker, match.range(at: 5)),
                 ]
                 claimed += [match.range(at: 1), target]
+            }
+            for match in Pattern.reference.matches(in: text, range: content) {
+                let label = match.range(at: 2), target = NSUnionRange(match.range(at: 3), match.range(at: 5))
+                let name = (text as NSString).substring(with: match.range(at: 4).length > 0 ? match.range(at: 4) : label)
+                guard free(match.range), let destination = references[Markdown.label(name)] else { continue }
+                spans += [Span(.marker, match.range(at: 1)), Span(.reference(destination: destination), label), Span(.marker, target)]
+                claimed.append(match.range)
+            }
+            for match in Pattern.shortcut.matches(in: text, range: content) {
+                let label = match.range(at: 2)
+                guard free(match.range), let destination = references[Markdown.label((text as NSString).substring(with: label))] else { continue }
+                spans += [Span(.marker, match.range(at: 1)), Span(.reference(destination: destination), label), Span(.marker, match.range(at: 3))]
+                claimed.append(match.range)
             }
             for match in Pattern.address.matches(in: text, range: content) where free(match.range) {
                 spans.append(Span(.link(destination: match.range), match.range))
@@ -157,6 +172,28 @@ public enum Markdown {
         return blocks
     }
 
+    public static func references(in text: String) -> [String: String] {
+        let source = text as NSString
+        var references: [String: String] = [:]
+        var location = 0
+        while location < source.length {
+            var end = 0, contentsEnd = 0
+            source.getParagraphStart(nil, end: &end, contentsEnd: &contentsEnd, for: NSRange(location: location, length: 0))
+            let line = NSRange(location: location, length: contentsEnd - location)
+            if let start = source.blockStart(in: line), source.character(at: start) == 0x5B,
+               let match = Pattern.definition.firstMatch(in: text, options: .anchored, range: line) {
+                let name = label(source.substring(with: match.range(at: 2)))
+                if references[name] == nil { references[name] = source.substring(with: match.range(at: 3)) }
+            }
+            location = end
+        }
+        return references
+    }
+
+    static func label(_ name: String) -> String {
+        name.lowercased().split(whereSeparator: \.isWhitespace).joined(separator: " ")
+    }
+
     public static func toggle(_ delimiter: String, in text: String, selection: NSRange) -> Edit {
         let text = text as NSString
         let width = (delimiter as NSString).length
@@ -186,9 +223,7 @@ private struct Fence {
     let bare: Bool
 
     init?(_ text: NSString, _ line: NSRange) {
-        var start = line.location
-        while start < NSMaxRange(line), start - line.location < 3, text.character(at: start) == 0x20 { start += 1 }
-        guard start < NSMaxRange(line), [0x60, 0x7E].contains(text.character(at: start)) else { return nil }
+        guard let start = text.blockStart(in: line), [0x60, 0x7E].contains(text.character(at: start)) else { return nil }
         mark = text.character(at: start)
         var end = start
         while end < NSMaxRange(line), text.character(at: end) == mark { end += 1 }
@@ -203,6 +238,14 @@ private struct Fence {
     }
 }
 
+private extension NSString {
+    func blockStart(in line: NSRange) -> Int? {
+        var start = line.location
+        while start < NSMaxRange(line), start - line.location < 3, character(at: start) == 0x20 { start += 1 }
+        return start < NSMaxRange(line) ? start : nil
+    }
+}
+
 private enum Pattern {
     static let heading = regex(#" {0,3}(#{1,6})(?:[ \t]+|$)"#)
     static let rule = regex(#" {0,3}([-*_])[ \t]*(?:\1[ \t]*){2,}$"#)
@@ -211,6 +254,9 @@ private enum Pattern {
     static let list = regex(#"([ \t]*)([-*+]|\d{1,9}[.)])(?:[ \t]+|$)"#)
     static let code = regex(#"(`+)(?!`)(.+?)(?<!`)\1(?!`)"#)
     static let link = regex(#"(!?\[)([^\]\n]*)(\]\()([^)\s]*)((?:[ \t]+"[^"\n]*")?\))"#)
+    static let definition = regex(#" {0,3}(\[([^\]\n]+)\]:)[ \t]*(\S+)(?:[ \t]+"[^"\n]*")?[ \t]*$"#)
+    static let reference = regex(#"(\[)([^\]\n]+)(\]\[)([^\]\n]*)(\])"#)
+    static let shortcut = regex(#"(?<![\]\\!])(\[)([^\]\n]+)(\])(?![(\[:])"#)
     static let address = regex(#"(?<![\w/])https?://[^\s<>()\[\]]*[^\s<>()\[\].,:;!?'"*_~]"#)
     static let delimited: [(NSRegularExpression, [Markdown.Line.Role], Int)] = [
         (regex(#"(?<![\\*])\*\*\*(?![\s*])(.+?)(?<![\s\\*])\*\*\*(?!\*)"#), [.strong, .emphasis], 3),
