@@ -17,6 +17,13 @@ struct MartinApp: App {
                 Button("Settings…") { delegate.app.openSettings() }
                     .keyboardShortcut(",")
             }
+            TextEditingCommands()
+            CommandMenu("Format") {
+                ForEach(NoteTextView.formats, id: \.title) { format in
+                    Button(format.title) { NSApp.sendAction(format.action, to: nil, from: nil) }
+                        .keyboardShortcut(KeyEquivalent(format.key), modifiers: format.shift ? [.command, .shift] : .command)
+                }
+            }
         }
     }
 }
