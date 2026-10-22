@@ -21,13 +21,11 @@ final class MarkdownStyle: NSObject {
     private var codeBlocks: [NSRange] = []
     private var references: [String: String] = [:]
     private var selection: NSRange?
-    private var revealed: Set<NSRange> = []
 
     func select(_ selection: NSRange?, in text: NSString) -> Set<NSRange> {
+        let before = headings(revealedBy: self.selection, in: text)
         self.selection = selection
-        let headings = headings(revealedBy: selection, in: text)
-        defer { revealed = headings }
-        return revealed.symmetricDifference(headings)
+        return before.symmetricDifference(headings(revealedBy: selection, in: text))
     }
 
     func line(at location: Int, in text: NSString) -> (range: NSRange, line: Markdown.Line) {
@@ -178,17 +176,9 @@ extension MarkdownStyle: @preconcurrency NSTextContentStorageDelegate {
 extension MarkdownStyle: @preconcurrency NSTextStorageDelegate {
     func textStorage(_ textStorage: NSTextStorage, didProcessEditing editedMask: NSTextStorageEditActions, range: NSRange, changeInLength delta: Int) {
         guard editedMask.contains(.editedCharacters) else { return }
-        let end = NSMaxRange(range) - delta
-        let before = codeBlocks.map { block in
-            if NSMaxRange(block) < range.location { return block }
-            if block.location >= end { return NSRange(location: block.location + delta, length: block.length) }
-            return NSRange(location: block.location, length: block.length + delta)
-        }
+        let before = codeBlocks.map { $0.moved(across: range, by: delta) }
         let labels = Set(references.keys)
-        revealed = Set(revealed.compactMap { heading in
-            if NSMaxRange(heading) <= range.location { return heading }
-            return heading.location >= end ? NSRange(location: heading.location + delta, length: heading.length) : nil
-        })
+        selection = selection?.moved(across: range, by: delta)
         codeBlocks = Markdown.codeBlocks(in: textStorage.string)
         references = Markdown.references(in: textStorage.string)
         let document = NSRange(location: 0, length: textStorage.length)
@@ -208,6 +198,14 @@ extension MarkdownStyle: @preconcurrency NSTextLayoutManagerDelegate {
             return NSTextLayoutFragment(textElement: textElement, range: textElement.elementRange)
         }
         return CodeFragment(textElement: textElement, range: textElement.elementRange, edge: edge)
+    }
+}
+
+private extension NSRange {
+    func moved(across edit: NSRange, by delta: Int) -> NSRange {
+        if NSMaxRange(self) < edit.location { return self }
+        if location >= NSMaxRange(edit) - delta { return NSRange(location: location + delta, length: length) }
+        return NSRange(location: location, length: max(0, length + delta))
     }
 }
 
