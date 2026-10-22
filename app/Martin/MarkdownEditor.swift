@@ -101,7 +101,7 @@ final class NoteTextView: NSTextView {
     }
 
     override var isEditable: Bool {
-        didSet { isContinuousSpellCheckingEnabled = isEditable }
+        didSet { if isEditable != oldValue { isContinuousSpellCheckingEnabled = isEditable } }
     }
 
     func load(_ markdown: String) {
@@ -112,7 +112,7 @@ final class NoteTextView: NSTextView {
     override func setFrameSize(_ size: NSSize) {
         super.setFrameSize(size)
         let width = enclosingScrollView?.frame.width ?? size.width
-        let inset = Theme.column - MarkdownStyle.hang + max(0, (width - Theme.column - Theme.measure - Theme.margin) / 2)
+        let inset = Theme.column - MarkdownStyle.hang + max(0, (width - Theme.page) / 2)
         if textContainerInset.width != inset { textContainerInset.width = inset }
     }
 
@@ -136,7 +136,7 @@ final class NoteTextView: NSTextView {
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
         let index = characterIndexForInsertion(at: point)
-        if event.modifierFlags.contains(.command), let url = link(at: index) {
+        if event.modifierFlags.contains(.command) || !isEditable, let url = link(at: index) {
             NSWorkspace.shared.open(url)
         } else if isEditable, let mark = checkbox(at: index, under: point) {
             let tick = (string as NSString).substring(with: mark) == " " ? "x" : " "
@@ -228,6 +228,7 @@ final class NoteTextView: NSTextView {
     }
 
     private func isProse(_ word: NSRange) -> Bool {
+        guard NSMaxRange(word) <= (string as NSString).length else { return false }
         let (range, line) = style.line(at: word.location, in: string as NSString)
         guard line.block != .code, line.block != .fence else { return false }
         return !line.spans.contains { span in

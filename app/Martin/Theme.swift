@@ -36,6 +36,7 @@ enum Theme {
     static let margin: CGFloat = 28
     static let column = margin + gutter
     static let measure: CGFloat = 560
+    static let page = column + measure + margin
 
     static let title = Font.system(size: 22, weight: .semibold, design: .serif)
     static let meta = Font.system(size: 12)
@@ -67,7 +68,7 @@ extension View {
     func column() -> some View {
         padding(.leading, Theme.column)
             .padding(.trailing, Theme.margin)
-            .frame(maxWidth: Theme.column + Theme.measure + Theme.margin, alignment: .leading)
+            .frame(maxWidth: Theme.page, alignment: .leading)
             .frame(maxWidth: .infinity)
     }
 }

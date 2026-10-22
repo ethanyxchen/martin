@@ -198,10 +198,16 @@ public enum Markdown {
         let text = text as NSString
         let width = (delimiter as NSString).length
         let selected = text.substring(with: selection)
-        let before = NSRange(location: selection.location - width, length: width)
-        let after = NSRange(location: NSMaxRange(selection), length: width)
-        if before.location >= 0, NSMaxRange(after) <= text.length, text.substring(with: before) == delimiter, text.substring(with: after) == delimiter {
-            return Edit(range: NSUnionRange(before, after), replacement: selected, selection: NSRange(location: before.location, length: selection.length))
+        let mark = (delimiter as NSString).character(at: 0)
+        func run(from location: Int, by step: Int) -> Int {
+            var count = 0
+            while location + count * step >= 0, location + count * step < text.length, text.character(at: location + count * step) == mark { count += 1 }
+            return count
+        }
+        let surrounding = min(run(from: selection.location - 1, by: -1), run(from: NSMaxRange(selection), by: 1))
+        if surrounding == width || surrounding >= max(width, 3) {
+            let range = NSRange(location: selection.location - width, length: selection.length + 2 * width)
+            return Edit(range: range, replacement: selected, selection: NSRange(location: range.location, length: selection.length))
         }
         if selection.length >= 2 * width, selected.hasPrefix(delimiter), selected.hasSuffix(delimiter) {
             let inner = (selected as NSString).substring(with: NSRange(location: width, length: selection.length - 2 * width))
@@ -255,8 +261,8 @@ private enum Pattern {
     static let code = regex(#"(`+)(?!`)(.+?)(?<!`)\1(?!`)"#)
     static let link = regex(#"(!?\[)([^\]\n]*)(\]\()([^)\s]*)((?:[ \t]+"[^"\n]*")?\))"#)
     static let definition = regex(#" {0,3}(\[([^\]\n]+)\]:)[ \t]*(\S+)(?:[ \t]+"[^"\n]*")?[ \t]*$"#)
-    static let reference = regex(#"(\[)([^\]\n]+)(\]\[)([^\]\n]*)(\])"#)
-    static let shortcut = regex(#"(?<![\]\\!])(\[)([^\]\n]+)(\])(?![(\[:])"#)
+    static let reference = regex(#"(\[)([^\[\]\n]+)(\]\[)([^\[\]\n]*)(\])"#)
+    static let shortcut = regex(#"(?<![\]\\!])(\[)([^\[\]\n]+)(\])(?![(\[:])"#)
     static let address = regex(#"(?<![\w/])https?://[^\s<>()\[\]]*[^\s<>()\[\].,:;!?'"*_~]"#)
     static let delimited: [(NSRegularExpression, [Markdown.Line.Role], Int)] = [
         (regex(#"(?<![\\*])\*\*\*(?![\s*])(.+?)(?<![\s\\*])\*\*\*(?!\*)"#), [.strong, .emphasis], 3),

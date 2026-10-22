@@ -42,8 +42,13 @@ final class MarkdownStyle: NSObject {
     }
 
     private func collapses(_ paragraphs: NSRange, in text: NSString) -> Bool {
-        let line = line(at: paragraphs.location, in: text).line
-        return line.block == .heading && (line.spans.first?.range.length ?? 0) > 1
+        var location = paragraphs.location
+        while location < NSMaxRange(paragraphs) {
+            let (range, line) = line(at: location, in: text)
+            if line.block == .heading, (line.spans.first?.range.length ?? 0) > 1 { return true }
+            location = NSMaxRange(text.paragraphRange(for: range))
+        }
+        return false
     }
 
     private static func paragraphs(of selection: NSRange, in text: NSString) -> NSRange {
@@ -122,6 +127,8 @@ final class MarkdownStyle: NSObject {
         .monospacedSystemFont(ofSize: size, weight: .regular)
     }
 
+    private static let serif = NSFont(descriptor: body.fontDescriptor.withDesign(.serif)!, size: 15)!
+    private static let code = mono(13)
     private static let heading = NSFont(descriptor: NSFont.systemFont(ofSize: 17, weight: .semibold).fontDescriptor.withDesign(.serif)!, size: 17)!
 
     @MainActor
@@ -137,9 +144,9 @@ final class MarkdownStyle: NSObject {
         init(_ block: Markdown.Line.Block) {
             switch block {
             case .heading: self.init(font: heading, lineHeight: 26)
-            case .quote: self.init(font: NSFont(descriptor: body.fontDescriptor.withDesign(.serif)!, size: 15)!, color: secondary)
-            case .fence: self.init(font: mono(13), color: tertiary, lineHeight: 22)
-            case .code: self.init(font: mono(13), lineHeight: 21)
+            case .quote: self.init(font: serif, color: secondary)
+            case .fence: self.init(font: code, color: tertiary, lineHeight: 22)
+            case .code: self.init(font: code, lineHeight: 21)
             case .blank: self.init(font: body)
             case .rule: self.init(font: body, color: tertiary)
             case .definition: self.init(font: body.withSize(12.5), color: tertiary, lineHeight: 20)
