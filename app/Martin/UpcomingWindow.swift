@@ -120,7 +120,7 @@ private struct EventRow: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 0) {
             Circle()
-                .fill(Theme.ember)
+                .fill(Theme.cobalt)
                 .frame(width: 6, height: 6)
                 .opacity(underway ? 1 : 0)
                 .frame(width: Theme.gutter, alignment: .leading)

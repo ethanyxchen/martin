@@ -23,12 +23,12 @@ struct Tone: ShapeStyle {
 }
 
 enum Theme {
-    static let paper = Tone(light: 0xFBFBF4, dark: 0x1C1B19)
-    static let well = Tone(light: 0xF3F2EA, dark: 0x242320)
+    static let paper = Tone(light: 0xF7F3E8, dark: 0x1C1B19)
+    static let well = Tone(light: 0xE9E3DA, dark: 0x242320)
     static let ink = Tone(light: 0x1F1E1B, dark: 0xECEAE3)
     static let secondary = Tone(light: 0x6E6A61, dark: 0xA19C91)
     static let tertiary = Tone(light: 0xA8A49A, dark: 0x6C685F)
-    static let ember = Tone(light: 0xEE5F22, dark: 0xFF7A3D)
+    static let cobalt = Tone(light: 0x0055E0, dark: 0x5B8CFF)
 
     static let gutter: CGFloat = 26
     static let margin: CGFloat = 28

@@ -7,7 +7,7 @@ public enum Markdown {
         }
 
         public enum Role: Equatable, Sendable {
-            case marker, checkbox, strong, emphasis, strikethrough, code, link(destination: NSRange), reference(destination: String), url
+            case marker, bullet, checkbox, strong, emphasis, strikethrough, code, link(destination: NSRange), reference(destination: String), url
         }
 
         public struct Span: Equatable, Sendable {
@@ -21,6 +21,7 @@ public enum Markdown {
         }
 
         public let block: Block
+        public let depth: Int
         public let prefix: Int
         public let spans: [Span]
 
@@ -29,6 +30,7 @@ public enum Markdown {
             let whole = NSRange(location: 0, length: line.length)
             let start = line.rangeOfCharacter(from: CharacterSet(charactersIn: " \t").inverted).location
             let indent = start == NSNotFound ? line.length : start
+            depth = line.substring(to: indent).reduce(0) { $0 + ($1 == "\t" ? 2 : 1) } / 2
             if code {
                 (block, prefix, spans) = (.code, indent, [])
             } else if indent == line.length {
@@ -71,12 +73,15 @@ public enum Markdown {
             if let quote = match(Pattern.quote) {
                 return (.quote, quote.range.length, [Span(.marker, quote.range(at: 1))])
             }
+            func marker(_ range: NSRange) -> Span {
+                Span(range.length == 1 ? .bullet : .marker, range)
+            }
             if let task = match(Pattern.task) {
                 let done = (text as NSString).substring(with: task.range(at: 3)) != "[ ]"
-                return (.task(done: done), task.range.length, [Span(.marker, task.range(at: 2)), Span(.checkbox, task.range(at: 3))])
+                return (.task(done: done), task.range.length, [marker(task.range(at: 2)), Span(.checkbox, task.range(at: 3))])
             }
             if let list = match(Pattern.list) {
-                return (.list, list.range.length, [Span(.marker, list.range(at: 2))])
+                return (.list, list.range.length, [marker(list.range(at: 2))])
             }
             return (.text, indent, [])
         }
