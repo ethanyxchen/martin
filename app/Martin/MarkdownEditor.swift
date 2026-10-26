@@ -90,7 +90,7 @@ final class NoteTextView: NSTextView {
         view.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
         view.textContainer?.widthTracksTextView = true
         view.textContainer?.lineFragmentPadding = 0
-        view.textContainerInset = NSSize(width: Theme.column - MarkdownStyle.hang, height: 2)
+        view.textContainerInset = NSSize(width: Theme.margin, height: 2)
         view.isContinuousSpellCheckingEnabled = true
         NotificationCenter.default.addObserver(view, selector: #selector(selectionChanged), name: NSTextView.didChangeSelectionNotification, object: view)
         view.insertionPointColor = Theme.ink.ns
@@ -112,7 +112,7 @@ final class NoteTextView: NSTextView {
     override func setFrameSize(_ size: NSSize) {
         super.setFrameSize(size)
         let width = enclosingScrollView?.frame.width ?? size.width
-        let inset = Theme.column - MarkdownStyle.hang + max(0, (width - Theme.page) / 2)
+        let inset = Theme.margin + max(0, (width - Theme.page) / 2)
         if textContainerInset.width != inset { textContainerInset.width = inset }
     }
 

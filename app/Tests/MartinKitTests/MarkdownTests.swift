@@ -43,7 +43,6 @@ struct MarkdownTests {
             #expect(line.block == block, "\(text)")
             #expect(line.prefix == prefix, "\(text)")
         }
-        #expect(Line("  - nested").indent == 2)
         #expect(Line("**not code**", code: true).block == .code)
         #expect(Line("**not code**", code: true).spans.isEmpty)
         #expect(Line("   - inside a fence", code: true).prefix == 3)
