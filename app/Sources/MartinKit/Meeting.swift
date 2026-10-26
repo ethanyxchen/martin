@@ -5,14 +5,12 @@ public struct Meeting: Identifiable, Hashable, Codable, Sendable {
     public let startedAt: Date
     public let occurrence: Occurrence?
     public var title: String?
-    public var attendees: [String]
 
-    public init(id: String, startedAt: Date, occurrence: Occurrence? = nil, title: String? = nil, attendees: [String] = []) {
+    public init(id: String, startedAt: Date, occurrence: Occurrence? = nil, title: String? = nil) {
         self.id = id
         self.startedAt = startedAt
         self.occurrence = occurrence
         self.title = title
-        self.attendees = attendees
     }
 }
 

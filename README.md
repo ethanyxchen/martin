@@ -1,6 +1,6 @@
 # Martin
 
-A native macOS menu bar notepad for standups and team meetings. Take notes from the menu bar or from the calendar, and Martin opens the Markdown note for that meeting, named after the event, with its attendees. Each calendar occurrence has one note, so coming back to a meeting reopens what you wrote.
+A native macOS menu bar notepad for standups and team meetings. Take notes from the menu bar or from the calendar, and Martin opens the Markdown note for that meeting, named after the event. Each calendar occurrence has one note, so coming back to a meeting reopens what you wrote.
 
 ## Build
 

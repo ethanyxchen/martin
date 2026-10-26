@@ -60,13 +60,7 @@ struct NoteView: View {
     private var details: String {
         let day = current.startedAt.formatted(.dateTime.weekday(.wide).day().month(.wide))
         let time = current.startedAt.formatted(date: .omitted, time: .shortened)
-        return ([day, time] + people).joined(separator: "  ·  ")
-    }
-
-    private var people: [String] {
-        let attendees = current.attendees
-        guard attendees.count > 3 else { return attendees.isEmpty ? [] : [attendees.formatted(.list(type: .and))] }
-        return [attendees.prefix(2).joined(separator: ", ") + " and \(attendees.count - 2) others"]
+        return "\(day)  ·  \(time)"
     }
 
     private func save() {
