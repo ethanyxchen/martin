@@ -46,11 +46,11 @@ struct NoteView: View {
                     .foregroundStyle(Theme.ink)
                     .focused($editingTitle)
                     .onSubmit { editingTitle = false }
-                Text(details)
-                    .font(Theme.meta.monospacedDigit())
-                    .foregroundStyle(Theme.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
+                if let year {
+                    Text(year)
+                        .font(Theme.meta)
+                        .foregroundStyle(Theme.secondary)
+                }
             }
             DateLeaf(date: current.startedAt)
         }
@@ -60,10 +60,9 @@ struct NoteView: View {
         .movesWindow()
     }
 
-    private var details: String {
+    private var year: String? {
         let start = current.startedAt
-        let year = Calendar.current.isDate(start, equalTo: .now, toGranularity: .year) ? [] : [start.formatted(.dateTime.year())]
-        return ([start.formatted(.dateTime.weekday(.wide))] + year + [start.formatted(date: .omitted, time: .shortened)]).joined(separator: "  ·  ")
+        return Calendar.current.isDate(start, equalTo: .now, toGranularity: .year) ? nil : start.formatted(.dateTime.year())
     }
 
     private func save() {
