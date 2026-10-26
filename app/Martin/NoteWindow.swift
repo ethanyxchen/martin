@@ -52,7 +52,7 @@ struct NoteView: View {
                         .foregroundStyle(Theme.secondary)
                 }
             }
-            DateLeaf(date: current.startedAt)
+            DateLeaf(date: current.date)
         }
         .column()
         .padding(.top, 46)
@@ -61,7 +61,7 @@ struct NoteView: View {
     }
 
     private var year: String? {
-        let start = current.startedAt
+        let start = current.date
         return Calendar.current.isDate(start, equalTo: .now, toGranularity: .year) ? nil : start.formatted(.dateTime.year())
     }
 

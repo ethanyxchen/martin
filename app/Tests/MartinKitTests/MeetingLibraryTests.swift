@@ -7,8 +7,9 @@ struct MeetingLibraryTests {
 
     @Test func createdMeetingKeepsCalendarDetails() throws {
         let occurrence = Occurrence(series: "standup@example.com", start: Date(timeIntervalSince1970: 1_750_000_000))
-        let meeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_749_999_000), occurrence: occurrence, title: "Standup")
+        let meeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_749_999_000), scheduledAt: Date(timeIntervalSince1970: 1_750_000_300), occurrence: occurrence, title: "Standup")
         let reloaded = try #require(try library.meetings().first)
+        #expect(reloaded.date == Date(timeIntervalSince1970: 1_750_000_300))
         #expect(reloaded.occurrence == occurrence)
         #expect(reloaded.title == "Standup")
         #expect(library.note(of: meeting) == nil)
@@ -30,6 +31,11 @@ struct MeetingLibraryTests {
         let first = try library.create(startedAt: startedAt, title: "Standup")
         #expect(throws: (any Error).self) { try library.create(startedAt: startedAt.addingTimeInterval(0.5), title: "Retro") }
         #expect(try library.meetings() == [first])
+    }
+
+    @Test func meetingWithoutScheduleIsDatedWhenStarted() throws {
+        let meeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_750_000_000))
+        #expect(meeting.date == meeting.startedAt)
     }
 
     @Test func noteRoundTripsByteForByte() throws {

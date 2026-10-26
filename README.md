@@ -18,4 +18,4 @@ open build/Martin.app
 
 ## Data
 
-Each meeting is a folder in `~/Library/Application Support/Martin/meetings/` with `meeting.json` and `note.md`, which is the note you edit in Martin. A meeting taken from the calendar records its `occurrence`: the event's series identifier, shared by every occurrence of a recurring meeting, and for recurring meetings that occurrence's original start, so a rescheduled meeting keeps its note.
+Each meeting is a folder in `~/Library/Application Support/Martin/meetings/` with `meeting.json` and `note.md`, which is the note you edit in Martin. A meeting taken from the calendar records `scheduledAt`, the event's start, which dates the note, and its `occurrence`: the event's series identifier, shared by every occurrence of a recurring meeting, and for recurring meetings that occurrence's original start, so a rescheduled meeting keeps its note.

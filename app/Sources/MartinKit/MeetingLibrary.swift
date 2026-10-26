@@ -20,9 +20,9 @@ public struct MeetingLibrary: Sendable {
         try meetings().first { $0.occurrence == occurrence }
     }
 
-    public func create(startedAt: Date = .now, occurrence: Occurrence? = nil, title: String? = nil) throws -> Meeting {
+    public func create(startedAt: Date = .now, scheduledAt: Date? = nil, occurrence: Occurrence? = nil, title: String? = nil) throws -> Meeting {
         let startedAt = Date(timeIntervalSince1970: startedAt.timeIntervalSince1970.rounded(.down))
-        let meeting = Meeting(id: Self.folderName.string(from: startedAt), startedAt: startedAt, occurrence: occurrence, title: title)
+        let meeting = Meeting(id: Self.folderName.string(from: startedAt), startedAt: startedAt, scheduledAt: scheduledAt, occurrence: occurrence, title: title)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: folder(of: meeting), withIntermediateDirectories: false)
         try save(meeting)
