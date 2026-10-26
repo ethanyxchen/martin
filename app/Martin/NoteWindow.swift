@@ -38,7 +38,7 @@ struct NoteView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 18) {
+        HStack(spacing: 18) {
             VStack(alignment: .leading, spacing: 6) {
                 TextField("Meeting", text: $title)
                     .textFieldStyle(.plain)
