@@ -7,7 +7,7 @@ final class MarkdownStyle: NSObject {
 
     static let typing: [NSAttributedString.Key: Any] = {
         let look = Look(.text)
-        return [.font: look.font, .foregroundColor: look.color, .paragraphStyle: paragraph(look, indent: 0, prefix: 0, content: 0), .baselineOffset: look.baselineOffset]
+        return [.font: look.font, .foregroundColor: look.color, .paragraphStyle: paragraph(look, first: 0, head: 0, nested: false), .baselineOffset: look.baselineOffset]
     }()
 
     private static let body = NSFont.systemFont(ofSize: 15)
@@ -107,18 +107,19 @@ final class MarkdownStyle: NSObject {
         case .list, .task: true
         default: false
         }
-        if nested { text.addAttribute(.font, value: Self.collapsed, range: NSRange(location: 0, length: line.spans[0].range.location)) }
+        let lead = nested ? line.spans[0].range.location : 0
+        text.addAttribute(.font, value: Self.collapsed, range: NSRange(location: 0, length: lead))
         let indent = nested ? CGFloat(line.depth) * Self.step : 0
-        let prefix = text.attributedSubstring(from: NSRange(location: 0, length: line.prefix)).size().width
-        let content = text.attribute(.bullet, at: 0, effectiveRange: nil) == nil ? prefix : Self.step
-        text.addAttribute(.paragraphStyle, value: Self.paragraph(look, indent: indent, prefix: prefix, content: content), range: all)
+        let marker = text.attribute(.bullet, at: 0, effectiveRange: nil) == nil ? text.attributedSubstring(from: NSRange(location: lead, length: line.prefix - lead)).size().width : 0
+        let content = indent + (nested ? max(marker, Self.step) : marker)
+        text.addAttribute(.paragraphStyle, value: Self.paragraph(look, first: content - marker, head: content, nested: nested), range: all)
     }
 
-    private static func paragraph(_ look: Look, indent: CGFloat, prefix: CGFloat, content: CGFloat) -> NSParagraphStyle {
+    private static func paragraph(_ look: Look, first: CGFloat, head: CGFloat, nested: Bool) -> NSParagraphStyle {
         let style = NSMutableParagraphStyle()
-        style.firstLineHeadIndent = Theme.gutter + indent + content - prefix
-        style.headIndent = Theme.gutter + indent + content
-        if indent > 0 {
+        style.firstLineHeadIndent = Theme.gutter + first
+        style.headIndent = Theme.gutter + head
+        if nested {
             style.tabStops = []
             style.defaultTabInterval = 0.01
         }
@@ -257,7 +258,7 @@ private final class BulletFragment: NSTextLayoutFragment {
     override func draw(at point: CGPoint, in context: CGContext) {
         super.draw(at: point, in: context)
         let mark = mark.offsetBy(dx: point.x, dy: point.y)
-        let color = Theme.tertiary.ns.cgColor
+        let color = Theme.cobalt.ns.cgColor
         context.saveGState()
         switch depth % 3 {
         case 0:

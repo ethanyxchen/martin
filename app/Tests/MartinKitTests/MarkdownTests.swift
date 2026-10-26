@@ -119,6 +119,17 @@ struct MarkdownTests {
         #expect(Line("- not a list", code: true).continuation(in: "- not a list") == nil)
     }
 
+    @Test func indentNestsAndUnnestsTheLine() {
+        let text = "- a\n\t- b\n  - c\n- d"
+        func indent(_ location: Int, length: Int, outward: Bool) -> Markdown.Edit? {
+            Markdown.indent(NSRange(location: location, length: length), in: text, selection: NSRange(location: location + length, length: 0), outward: outward)
+        }
+        #expect(indent(14, length: 3, outward: false) == Markdown.Edit(range: NSRange(location: 14, length: 0), replacement: "\t", selection: NSRange(location: 18, length: 0)))
+        #expect(indent(4, length: 4, outward: true) == Markdown.Edit(range: NSRange(location: 4, length: 1), replacement: "", selection: NSRange(location: 7, length: 0)))
+        #expect(indent(9, length: 5, outward: true) == Markdown.Edit(range: NSRange(location: 9, length: 2), replacement: "", selection: NSRange(location: 12, length: 0)))
+        #expect(indent(14, length: 3, outward: true) == nil)
+    }
+
     @Test func toggleWrapsAndUnwraps() {
         let wrapped = Markdown.toggle("**", in: "say word now", selection: NSRange(location: 4, length: 4))
         #expect(wrapped == Markdown.Edit(range: NSRange(location: 4, length: 4), replacement: "**word**", selection: NSRange(location: 6, length: 4)))

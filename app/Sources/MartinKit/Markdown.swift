@@ -226,6 +226,15 @@ public enum Markdown {
         return Edit(range: selection, replacement: delimiter + text.substring(with: selection) + delimiter, selection: NSRange(location: selection.location + width, length: selection.length))
     }
 
+    public static func indent(_ line: NSRange, in text: String, selection: NSRange, outward: Bool) -> Edit? {
+        let lead = (text as NSString).substring(with: line).prefix { $0 == " " || $0 == "\t" }
+        let removed = lead.first == "\t" ? 1 : min(lead.count, 2)
+        if outward, removed == 0 { return nil }
+        let range = NSRange(location: line.location, length: outward ? removed : 0)
+        let shift = outward ? -removed : 1
+        return Edit(range: range, replacement: outward ? "" : "\t", selection: NSRange(location: max(line.location, selection.location + shift), length: selection.length))
+    }
+
     public static func link(in text: String, selection: NSRange) -> Edit {
         let label = (text as NSString).substring(with: selection)
         let caret = selection.length == 0 ? selection.location + 1 : NSMaxRange(selection) + 3
