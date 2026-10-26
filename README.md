@@ -1,30 +1,21 @@
 # Martin
 
-A native macOS menu bar assistant for standups and team meetings that keeps only what concerns you. While the team talks, Martin matches the live transcript against the topics you follow and jots very brief bullets of your to-dos, decisions and open questions. When you stop, the result is saved as the meeting's note.
+A native macOS menu bar notepad for standups and team meetings. Start a meeting from the menu bar or from the calendar, and Martin opens a Markdown note named after the event, with its attendees.
 
 ## Build
 
-Requires macOS 26 or newer, Xcode, [Bun](https://bun.sh) and an Apple Development signing certificate.
+Requires macOS 26 or newer, Xcode and an Apple Development signing certificate.
 
 ```sh
-brew install oven-sh/bun/bun
 git config core.hooksPath .githooks
 ./scripts/build-app.sh
 open build/Martin.app
 ```
 
-The build compiles the analyzer in `analyzer/` and bundles it into the app.
+## Calendar
 
-## Set up
-
-Open **Settings…** from the menu bar icon.
-
-**Keys.** Paste a [Deepgram](https://deepgram.com) API key; Deepgram transcribes the room while you record. Notes are written with your Claude Code sign-in.
-
-**You.** Your name, what people call you, and the teammates, projects and topics you follow. The transcript listens for these words, and Martin treats them as your interests.
-
-**Calendar.** Martin names a recording after the calendar event in progress. **Upcoming Meetings…** in the menu shows today and the next three days. For Google Calendar, add the account in System Settings → Internet Accounts with Calendars turned on.
+**New Meeting** names the note after the calendar event in progress. **Upcoming Meetings…** in the menu shows today and the next three days; click a meeting to start its note. For Google Calendar, add the account in System Settings → Internet Accounts with Calendars turned on.
 
 ## Data
 
-Each meeting is a folder in `~/Library/Application Support/Martin/meetings/` with the audio, the transcript, and `note.md`, which is the note you edit in Martin.
+Each meeting is a folder in `~/Library/Application Support/Martin/meetings/` with `meeting.json` and `note.md`, which is the note you edit in Martin.

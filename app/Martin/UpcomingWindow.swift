@@ -100,12 +100,11 @@ private struct DayView: View {
             }
             VStack(alignment: .leading, spacing: 2) {
                 ForEach(day.events, id: \.self) { event in
-                    Button { Task { await app.record(event) } } label: {
+                    Button { app.start(event) } label: {
                         EventRow(event: event, underway: event.isUnderway(at: now))
                     }
                     .buttonStyle(.plain)
                     .pointerStyle(.link)
-                    .disabled(app.recorder.phase != .idle)
                 }
             }
             .padding(.top, -6)
@@ -117,7 +116,6 @@ private struct EventRow: View {
     let event: CalendarEvent
     let underway: Bool
     @State private var hovering = false
-    @Environment(\.isEnabled) private var enabled
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 0) {
@@ -139,7 +137,7 @@ private struct EventRow: View {
         }
         .padding(.vertical, 6)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.well.opacity(hovering && enabled ? 1 : 0), in: .rect(cornerRadius: 8))
+        .background(Theme.well.opacity(hovering ? 1 : 0), in: .rect(cornerRadius: 8))
         .contentShape(.rect)
         .onHover { hovering = $0 }
         .animation(.easeOut(duration: 0.12), value: hovering)

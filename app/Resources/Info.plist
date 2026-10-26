@@ -17,10 +17,6 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>26.0</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>Martin names a recording after the calendar event it belongs to.</string>
-	<key>NSAudioCaptureUsageDescription</key>
-	<string>Martin records the other side of online meetings you choose to record.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Martin records meetings you choose to record.</string>
+	<string>Martin names a meeting after the calendar event it belongs to.</string>
 </dict>
 </plist>

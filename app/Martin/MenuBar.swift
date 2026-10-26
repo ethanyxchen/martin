@@ -6,17 +6,7 @@ struct MenuBar: View {
     let app: AppState
 
     var body: some View {
-        switch app.recorder.phase {
-        case .idle:
-            Button("Start Recording") { Task { await app.toggleRecording() } }
-        case .recording(_, let since):
-            Button { Task { await app.toggleRecording() } } label: {
-                Text("Stop Recording")
-                Text(Duration.seconds(Date.now.timeIntervalSince(since)).formatted(.time(pattern: .minuteSecond)))
-            }
-        case .analyzing(let meeting):
-            Button("Writing Notes…") { app.open(meeting) }
-        }
+        Button("New Meeting") { Task { app.start(await CalendarLookup.currentEvent()) } }
 
         Button("Upcoming Meetings…") { app.openUpcoming() }
 
@@ -32,15 +22,13 @@ struct MenuBar: View {
         }
 
         Divider()
-        Button("Settings…") { app.openSettings() }
-            .keyboardShortcut(",")
         Button("Quit Martin") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
     }
 }
 
 extension NSImage {
-    static func menuBarIcon(awake: Bool) -> NSImage {
+    static let menuBarIcon: NSImage = {
         let heights: [CGFloat] = [4, 8, 11, 6]
         let image = NSImage(size: NSSize(width: 20, height: 16), flipped: false) { bounds in
             let bars = NSBezierPath()
@@ -49,16 +37,10 @@ extension NSImage {
                 bars.append(NSBezierPath(roundedRect: NSRect(x: x - 1, y: bounds.midY - height / 2, width: 2, height: height), xRadius: 1, yRadius: 1))
             }
             NSColor.black.setFill()
-            guard awake else {
-                bars.fill()
-                return true
-            }
-            NSBezierPath(roundedRect: bounds.insetBy(dx: 0, dy: 1), xRadius: 7, yRadius: 7).fill()
-            NSGraphicsContext.current?.compositingOperation = .destinationOut
             bars.fill()
             return true
         }
         image.isTemplate = true
         return image
-    }
+    }()
 }
