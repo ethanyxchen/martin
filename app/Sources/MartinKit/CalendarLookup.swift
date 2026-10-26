@@ -2,12 +2,14 @@ import EventKit
 import Foundation
 
 public struct CalendarEvent: Sendable, Hashable {
+    public let occurrence: Occurrence
     public let title: String
     public let start: Date
     public let end: Date
     public let attendees: [String]
 
-    init(title: String, start: Date, end: Date, attendees: [String] = []) {
+    init(occurrence: Occurrence, title: String, start: Date, end: Date, attendees: [String] = []) {
+        self.occurrence = occurrence
         self.title = title
         self.start = start
         self.end = end
@@ -16,6 +18,7 @@ public struct CalendarEvent: Sendable, Hashable {
 
     init(_ event: EKEvent) {
         self.init(
+            occurrence: Occurrence(series: event.calendarItemExternalIdentifier ?? event.calendarItemIdentifier, start: event.occurrenceDate ?? event.startDate),
             title: event.title ?? "",
             start: event.startDate,
             end: event.endDate,

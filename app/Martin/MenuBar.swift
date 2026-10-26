@@ -6,7 +6,7 @@ struct MenuBar: View {
     let app: AppState
 
     var body: some View {
-        Button("New Meeting") { Task { app.start(await CalendarLookup.currentEvent()) } }
+        Button("Take Notes") { Task { app.start(await CalendarLookup.currentEvent()) } }
 
         Button("Upcoming Meetings…") { app.openUpcoming() }
 

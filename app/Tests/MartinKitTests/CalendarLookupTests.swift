@@ -19,7 +19,7 @@ struct CalendarLookupTests {
     }
 
     private static func event(_ title: String, _ start: Date, _ end: Date) -> CalendarEvent {
-        CalendarEvent(title: title, start: start, end: end)
+        CalendarEvent(occurrence: Occurrence(series: title, start: start), title: title, start: start, end: end)
     }
 
     private static func agenda(_ events: [CalendarEvent], at now: Date) -> [[String]] {
