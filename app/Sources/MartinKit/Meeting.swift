@@ -3,7 +3,7 @@ import Foundation
 public struct Meeting: Identifiable, Hashable, Codable, Sendable {
     public let id: String
     public let startedAt: Date
-    public let scheduledAt: Date?
+    public var scheduledAt: Date?
     public let occurrence: Occurrence?
     public var title: String?
 

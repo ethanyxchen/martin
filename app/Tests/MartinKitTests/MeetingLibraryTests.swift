@@ -7,9 +7,8 @@ struct MeetingLibraryTests {
 
     @Test func createdMeetingKeepsCalendarDetails() throws {
         let occurrence = Occurrence(series: "standup@example.com", start: Date(timeIntervalSince1970: 1_750_000_000))
-        let meeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_749_999_000), scheduledAt: Date(timeIntervalSince1970: 1_750_000_300), occurrence: occurrence, title: "Standup")
+        let meeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_749_999_000), occurrence: occurrence, title: "Standup")
         let reloaded = try #require(try library.meetings().first)
-        #expect(reloaded.date == Date(timeIntervalSince1970: 1_750_000_300))
         #expect(reloaded.occurrence == occurrence)
         #expect(reloaded.title == "Standup")
         #expect(library.note(of: meeting) == nil)
@@ -31,6 +30,17 @@ struct MeetingLibraryTests {
         let first = try library.create(startedAt: startedAt, title: "Standup")
         #expect(throws: (any Error).self) { try library.create(startedAt: startedAt.addingTimeInterval(0.5), title: "Retro") }
         #expect(try library.meetings() == [first])
+    }
+
+    @Test func meetingForEventIsDatedByTheEventAndFollowsItsReschedule() throws {
+        let occurrence = Occurrence(series: "review@example.com")
+        let event = CalendarEvent(occurrence: occurrence, title: "Review", start: Date(timeIntervalSince1970: 1_750_172_800), end: Date(timeIntervalSince1970: 1_750_176_400))
+        let meeting = try library.meeting(for: event)
+        #expect(meeting.date == event.start)
+        #expect(meeting.title == "Review")
+        let moved = CalendarEvent(occurrence: occurrence, title: "Review", start: Date(timeIntervalSince1970: 1_750_259_200), end: Date(timeIntervalSince1970: 1_750_262_800))
+        #expect(try library.meeting(for: moved).id == meeting.id)
+        #expect(try library.meetings().map(\.date) == [moved.start])
     }
 
     @Test func meetingWithoutScheduleIsDatedWhenStarted() throws {
