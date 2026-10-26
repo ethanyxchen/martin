@@ -63,7 +63,7 @@ struct NoteView: View {
     private var details: String {
         let start = current.startedAt
         let year = Calendar.current.isDate(start, equalTo: .now, toGranularity: .year) ? [] : [start.formatted(.dateTime.year())]
-        return (year + [start.formatted(date: .omitted, time: .shortened)]).joined(separator: "  ·  ")
+        return ([start.formatted(.dateTime.weekday(.wide))] + year + [start.formatted(date: .omitted, time: .shortened)]).joined(separator: "  ·  ")
     }
 
     private func save() {
@@ -73,32 +73,28 @@ struct NoteView: View {
 }
 
 private struct DateLeaf: View {
+    private static let unit: CGFloat = 46 / 20
     let date: Date
 
     var body: some View {
         VStack(spacing: 0) {
             Text(date.formatted(.dateTime.month(.abbreviated)).uppercased())
-                .font(.system(size: 9, weight: .bold))
-                .tracking(1.2)
+                .font(.system(size: 3.75 * Self.unit, weight: .bold))
+                .tracking(-0.0375 * Self.unit)
                 .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 3)
-                .background(Theme.ember)
+                .offset(y: 0.625 * Self.unit)
+                .frame(maxWidth: .infinity, maxHeight: 6.25 * Self.unit)
+                .background(LinearGradient(colors: [Color(red: 0.996, green: 0.373, blue: 0.341), Color(red: 0.922, green: 0.322, blue: 0.290)], startPoint: .top, endPoint: .bottom))
             Text(date.formatted(.dateTime.day()))
-                .font(.system(size: 24, weight: .semibold, design: .serif).monospacedDigit())
-                .foregroundStyle(Theme.ink)
-                .padding(.top, 3)
-            Text(date.formatted(.dateTime.weekday(.abbreviated)).uppercased())
-                .font(.system(size: 8, weight: .semibold))
-                .tracking(1)
-                .foregroundStyle(Theme.tertiary)
-                .padding(.bottom, 6)
+                .font(.system(size: 12.5 * Self.unit))
+                .foregroundStyle(.black)
+                .offset(y: 0.225 * Self.unit)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(LinearGradient(colors: [.white, Color(red: 0.949, green: 0.945, blue: 0.933)], startPoint: .top, endPoint: .bottom))
         }
-        .frame(width: 48)
-        .background(Theme.well)
-        .clipShape(.rect(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Theme.tertiary.opacity(0.35), lineWidth: 0.5))
-        .shadow(color: .black.opacity(0.06), radius: 3, y: 1)
+        .frame(width: 20 * Self.unit, height: 20 * Self.unit)
+        .clipShape(.rect(cornerRadius: 5.15625 * Self.unit, style: .continuous))
+        .shadow(color: .black.opacity(0.13), radius: 0.546 * Self.unit, y: 0.437 * Self.unit)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(date.formatted(date: .complete, time: .omitted))
     }
