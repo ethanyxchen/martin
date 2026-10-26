@@ -32,6 +32,22 @@ struct MeetingLibraryTests {
         #expect(try library.meetings() == [first])
     }
 
+    @Test func meetingForEventIsDatedByTheEventAndFollowsItsReschedule() throws {
+        let occurrence = Occurrence(series: "review@example.com")
+        let event = CalendarEvent(occurrence: occurrence, title: "Review", start: Date(timeIntervalSince1970: 1_750_172_800), end: Date(timeIntervalSince1970: 1_750_176_400))
+        let meeting = try library.meeting(for: event)
+        #expect(meeting.date == event.start)
+        #expect(meeting.title == "Review")
+        let moved = CalendarEvent(occurrence: occurrence, title: "Review", start: Date(timeIntervalSince1970: 1_750_259_200), end: Date(timeIntervalSince1970: 1_750_262_800))
+        #expect(try library.meeting(for: moved).id == meeting.id)
+        #expect(try library.meetings().map(\.date) == [moved.start])
+    }
+
+    @Test func meetingWithoutScheduleIsDatedWhenStarted() throws {
+        let meeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_750_000_000))
+        #expect(meeting.date == meeting.startedAt)
+    }
+
     @Test func noteRoundTripsByteForByte() throws {
         let meeting = try library.create()
         let note = "# Café ☕️ 会议\r\n\n- [x] **done** \t\n```\n  indented `code`\n```\n> “quoted” — 👩🏽‍💻"

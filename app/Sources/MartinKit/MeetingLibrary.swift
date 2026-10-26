@@ -16,7 +16,15 @@ public struct MeetingLibrary: Sendable {
             .sorted { $0.startedAt > $1.startedAt }
     }
 
-    public func meeting(for occurrence: Occurrence) throws -> Meeting? {
+    public func meeting(for event: CalendarEvent) throws -> Meeting {
+        var meeting = try meeting(for: event.occurrence) ?? create(occurrence: event.occurrence, title: event.title)
+        guard meeting.scheduledAt != event.start else { return meeting }
+        meeting.scheduledAt = event.start
+        try save(meeting)
+        return meeting
+    }
+
+    func meeting(for occurrence: Occurrence) throws -> Meeting? {
         try meetings().first { $0.occurrence == occurrence }
     }
 

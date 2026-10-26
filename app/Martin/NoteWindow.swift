@@ -38,18 +38,21 @@ struct NoteView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            TextField("Meeting", text: $title)
-                .textFieldStyle(.plain)
-                .font(Theme.title)
-                .foregroundStyle(Theme.ink)
-                .focused($editingTitle)
-                .onSubmit { editingTitle = false }
-            Text(details)
-                .font(Theme.meta)
-                .foregroundStyle(Theme.secondary)
-                .lineLimit(1)
-                .truncationMode(.tail)
+        HStack(spacing: 18) {
+            VStack(alignment: .leading, spacing: 6) {
+                TextField("Meeting", text: $title)
+                    .textFieldStyle(.plain)
+                    .font(Theme.title)
+                    .foregroundStyle(Theme.ink)
+                    .focused($editingTitle)
+                    .onSubmit { editingTitle = false }
+                if let year {
+                    Text(year)
+                        .font(Theme.meta)
+                        .foregroundStyle(Theme.secondary)
+                }
+            }
+            DateLeaf(date: current.date)
         }
         .column()
         .padding(.top, 46)
@@ -57,14 +60,41 @@ struct NoteView: View {
         .movesWindow()
     }
 
-    private var details: String {
-        let day = current.startedAt.formatted(.dateTime.weekday(.wide).day().month(.wide))
-        let time = current.startedAt.formatted(date: .omitted, time: .shortened)
-        return "\(day)  ·  \(time)"
+    private var year: String? {
+        let start = current.date
+        return Calendar.current.isDate(start, equalTo: .now, toGranularity: .year) ? nil : start.formatted(.dateTime.year())
     }
 
     private func save() {
         guard !((library.note(of: meeting) ?? "") as NSString).isEqual(to: note) else { return }
         try? library.saveNote(note, for: meeting)
+    }
+}
+
+private struct DateLeaf: View {
+    private static let unit: CGFloat = 46 / 20
+    let date: Date
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Text(date.formatted(.dateTime.month(.abbreviated)).uppercased())
+                .font(.system(size: 3.75 * Self.unit, weight: .bold))
+                .tracking(-0.0375 * Self.unit)
+                .foregroundStyle(.white)
+                .offset(y: 0.625 * Self.unit)
+                .frame(maxWidth: .infinity, maxHeight: 6.25 * Self.unit)
+                .background(LinearGradient(colors: [Color(red: 0.996, green: 0.373, blue: 0.341), Color(red: 0.922, green: 0.322, blue: 0.290)], startPoint: .top, endPoint: .bottom))
+            Text(date.formatted(.dateTime.day()))
+                .font(.system(size: 12.5 * Self.unit))
+                .foregroundStyle(.black)
+                .offset(y: 0.225 * Self.unit)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(LinearGradient(colors: [.white, Color(red: 0.949, green: 0.945, blue: 0.933)], startPoint: .top, endPoint: .bottom))
+        }
+        .frame(width: 20 * Self.unit, height: 20 * Self.unit)
+        .clipShape(.rect(cornerRadius: 5.15625 * Self.unit, style: .continuous))
+        .shadow(color: .black.opacity(0.13), radius: 0.546 * Self.unit, y: 0.437 * Self.unit)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(date.formatted(date: .complete, time: .omitted))
     }
 }
