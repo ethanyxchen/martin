@@ -7,11 +7,11 @@ struct MeetingLibraryTests {
 
     @Test func createdMeetingKeepsCalendarDetails() throws {
         let occurrence = Occurrence(series: "standup@example.com", start: Date(timeIntervalSince1970: 1_750_000_000))
-        let meeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_749_999_000), occurrence: occurrence, title: "Standup", attendees: ["Ada"])
+        let meeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_749_999_000), occurrence: occurrence, title: "Standup", attendees: [Person(email: "ada@example.com", name: "Ada Lovelace"), Person(email: "kim.k@example.com")])
         let reloaded = try #require(try library.meetings().first)
         #expect(reloaded.occurrence == occurrence)
         #expect(reloaded.title == "Standup")
-        #expect(reloaded.attendees == ["Ada"])
+        #expect(reloaded.attendees == [Person(email: "ada@example.com", name: "Ada Lovelace"), Person(email: "kim.k@example.com")])
         #expect(library.note(of: meeting) == nil)
     }
 

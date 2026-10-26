@@ -20,7 +20,7 @@ public struct MeetingLibrary: Sendable {
         try meetings().first { $0.occurrence == occurrence }
     }
 
-    public func create(startedAt: Date = .now, occurrence: Occurrence? = nil, title: String? = nil, attendees: [String] = []) throws -> Meeting {
+    public func create(startedAt: Date = .now, occurrence: Occurrence? = nil, title: String? = nil, attendees: [Person] = []) throws -> Meeting {
         let startedAt = Date(timeIntervalSince1970: startedAt.timeIntervalSince1970.rounded(.down))
         let meeting = Meeting(id: Self.folderName.string(from: startedAt), startedAt: startedAt, occurrence: occurrence, title: title, attendees: attendees)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

@@ -18,4 +18,8 @@ open build/Martin.app
 
 ## Data
 
-Each meeting is a folder in `~/Library/Application Support/Martin/meetings/` with `meeting.json` and `note.md`, which is the note you edit in Martin. A meeting taken from the calendar records its `occurrence`: the event's series identifier, shared by every occurrence of a recurring meeting, and for recurring meetings that occurrence's original start, so a rescheduled meeting keeps its note.
+Each meeting is a folder in `~/Library/Application Support/Martin/meetings/` with `meeting.json` and `note.md`, which is the note you edit in Martin. A meeting taken from the calendar records its `occurrence`: the event's series identifier, shared by every occurrence of a recurring meeting, and for recurring meetings that occurrence's original start, so a rescheduled meeting keeps its note. Its `attendees` are people, each keyed by their lowercased `email` with the calendar's display `name` when there is one.
+
+## Mentions
+
+Type `@` in a note to mention someone: Martin suggests the meeting's attendees first, then everyone from earlier meetings, matching names and emails. Press Return or Tab to pick one. A mention is stored in `note.md` as a mailto link, `[@Kim K](mailto:kim.k@goodnotes.com)`, so every note that mentions a person can be found by their email; the editor shows just `@Kim K` until the caret moves inside it, and Delete right after a mention removes it whole.

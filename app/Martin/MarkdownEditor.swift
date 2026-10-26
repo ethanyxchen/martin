@@ -4,6 +4,7 @@ import SwiftUI
 
 struct MarkdownEditor: NSViewRepresentable {
     @Binding var text: String
+    let people: [Person]
 
     func makeCoordinator() -> Coordinator {
         Coordinator(text: $text)
@@ -12,6 +13,7 @@ struct MarkdownEditor: NSViewRepresentable {
     func makeNSView(context: Context) -> NSScrollView {
         let textView = NoteTextView.make()
         textView.delegate = context.coordinator
+        textView.people = people
         textView.load(text)
         NotificationCenter.default.addObserver(context.coordinator, selector: #selector(Coordinator.storageChanged(_:)), name: NSTextStorage.didProcessEditingNotification, object: textView.textStorage)
         let scroll = NSScrollView()
@@ -28,6 +30,7 @@ struct MarkdownEditor: NSViewRepresentable {
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         context.coordinator.text = $text
         guard let textView = scroll.documentView as? NoteTextView else { return }
+        textView.people = people
         if textView.textStorage?.mutableString.isEqual(to: text) == false { textView.load(text) }
     }
 
@@ -67,6 +70,8 @@ final class NoteTextView: NSTextView {
     ]
 
     private let style = MarkdownStyle()
+    var people: [Person] = []
+    private var offered: [Person] = []
 
     static func make() -> NoteTextView {
         let view = NoteTextView(usingTextLayoutManager: true)
@@ -160,6 +165,35 @@ final class NoteTextView: NSTextView {
         super.handleTextCheckingResults(prose, forRange: range, types: checkingTypes, options: options, orthography: orthography, wordCount: wordCount)
     }
 
+    override var rangeForUserCompletion: NSRange {
+        mentionQuery() ?? super.rangeForUserCompletion
+    }
+
+    override func completions(forPartialWordRange charRange: NSRange, indexOfSelectedItem index: UnsafeMutablePointer<Int>) -> [String]? {
+        guard charRange == mentionQuery() else { return super.completions(forPartialWordRange: charRange, indexOfSelectedItem: index) }
+        offered = suggestions(for: charRange)
+        return offered.map(Self.completion)
+    }
+
+    override func insertCompletion(_ word: String, forPartialWordRange charRange: NSRange, movement: Int, isFinal flag: Bool) {
+        guard charRange == mentionQuery(), let person = offered.first(where: { Self.completion($0) == word }) else {
+            return super.insertCompletion(word, forPartialWordRange: charRange, movement: movement, isFinal: flag)
+        }
+        guard flag, [NSReturnTextMovement, NSTabTextMovement].contains(movement) else { return }
+        let mention = person.mention + " "
+        apply(Markdown.Edit(range: charRange, replacement: mention, selection: NSRange(location: charRange.location + (mention as NSString).length, length: 0)))
+    }
+
+    override func didChangeText() {
+        super.didChangeText()
+        if let query = mentionQuery(), !suggestions(for: query).isEmpty { complete(nil) }
+    }
+
+    override func deleteBackward(_ sender: Any?) {
+        guard let mention = mention(endingAt: selectedRange()) else { return super.deleteBackward(sender) }
+        apply(Markdown.Edit(range: mention, replacement: "", selection: NSRange(location: mention.location, length: 0)))
+    }
+
     @objc func toggleBold(_ sender: Any?) {
         apply(Markdown.toggle("**", in: string, selection: selectedRange()))
     }
@@ -192,6 +226,29 @@ final class NoteTextView: NSTextView {
             apply(Markdown.Edit(range: caret, replacement: "\n" + next, selection: NSRange(location: caret.location + 1 + (next as NSString).length, length: 0)))
         }
         return true
+    }
+
+    private static func completion(_ person: Person) -> String {
+        person.name.map { "\($0)  \(person.email)" } ?? person.email
+    }
+
+    private func suggestions(for query: NSRange) -> [Person] {
+        people.suggestions(for: (string as NSString).substring(with: NSRange(location: query.location + 1, length: query.length - 1)))
+    }
+
+    private func mentionQuery() -> NSRange? {
+        let caret = selectedRange()
+        guard caret.length == 0, !hasMarkedText() else { return nil }
+        let (range, line) = style.line(at: caret.location, in: string as NSString)
+        return line.mentionQuery(in: (string as NSString).substring(with: range), at: caret.location - range.location)?.offset(by: range.location)
+    }
+
+    private func mention(endingAt caret: NSRange) -> NSRange? {
+        guard caret.length == 0, caret.location > 0, let (range, line) = line(at: caret.location - 1) else { return nil }
+        return line.spans.first { span in
+            guard case .mention = span.role else { return false }
+            return range.location + NSMaxRange(span.range) == caret.location
+        }?.range.offset(by: range.location)
     }
 
     private func line(at index: Int) -> (range: NSRange, line: Markdown.Line)? {
@@ -235,7 +292,7 @@ final class NoteTextView: NSTextView {
         guard line.block != .code, line.block != .fence else { return false }
         return !line.spans.contains { span in
             let literal = switch span.role {
-            case .code, .url: true
+            case .code, .url, .mention: true
             case .link(let destination): destination == span.range
             default: false
             }

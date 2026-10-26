@@ -21,7 +21,7 @@ struct NoteView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-            MarkdownEditor(text: $note)
+            MarkdownEditor(text: $note, people: app.people(for: current))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .background(Theme.paper)
@@ -64,7 +64,7 @@ struct NoteView: View {
     }
 
     private var people: [String] {
-        let attendees = current.attendees
+        let attendees = current.attendees.map(\.displayName)
         guard attendees.count > 3 else { return attendees.isEmpty ? [] : [attendees.formatted(.list(type: .and))] }
         return [attendees.prefix(2).joined(separator: ", ") + " and \(attendees.count - 2) others"]
     }
