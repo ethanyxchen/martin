@@ -15,6 +15,17 @@ struct MeetingLibraryTests {
         #expect(library.note(of: meeting) == nil)
     }
 
+    @Test func meetingForOccurrenceFindsOnlyThatOccurrence() throws {
+        let monday = Occurrence(series: "standup@example.com", start: Date(timeIntervalSince1970: 1_750_000_000))
+        let tuesday = Occurrence(series: "standup@example.com", start: Date(timeIntervalSince1970: 1_750_086_400))
+        let review = Occurrence(series: "review@example.com")
+        let mondayMeeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_750_000_000), occurrence: monday)
+        let reviewMeeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_750_000_100), occurrence: review)
+        #expect(try library.meeting(for: monday) == mondayMeeting)
+        #expect(try library.meeting(for: review) == reviewMeeting)
+        #expect(try library.meeting(for: tuesday) == nil)
+    }
+
     @Test func meetingsStartedInTheSameSecondDoNotOverwriteEachOther() throws {
         let startedAt = Date(timeIntervalSince1970: 1_750_000_000)
         let first = try library.create(startedAt: startedAt, title: "Standup")

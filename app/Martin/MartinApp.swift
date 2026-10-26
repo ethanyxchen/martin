@@ -55,12 +55,9 @@ final class AppState {
     }
 
     func start(_ event: CalendarEvent?) {
-        if let event, let meeting = meetings.first(where: { $0.occurrence == event.occurrence }) {
-            open(meeting)
-            return
-        }
         do {
-            let meeting = try library.create(occurrence: event?.occurrence, title: event?.title, attendees: event?.attendees ?? [])
+            let existing = try event.flatMap { try library.meeting(for: $0.occurrence) }
+            let meeting = try existing ?? library.create(occurrence: event?.occurrence, title: event?.title, attendees: event?.attendees ?? [])
             reload()
             open(meeting)
         } catch {

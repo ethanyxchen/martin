@@ -17,8 +17,9 @@ public struct CalendarEvent: Sendable, Hashable {
     }
 
     init(_ event: EKEvent) {
+        let recurring = event.hasRecurrenceRules || event.isDetached
         self.init(
-            occurrence: Occurrence(series: event.calendarItemExternalIdentifier ?? event.calendarItemIdentifier, start: event.occurrenceDate ?? event.startDate),
+            occurrence: Occurrence(series: event.calendarItemExternalIdentifier ?? event.calendarItemIdentifier, start: recurring ? event.occurrenceDate : nil),
             title: event.title ?? "",
             start: event.startDate,
             end: event.endDate,

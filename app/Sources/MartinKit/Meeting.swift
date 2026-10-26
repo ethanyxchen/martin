@@ -18,9 +18,9 @@ public struct Meeting: Identifiable, Hashable, Codable, Sendable {
 
 public struct Occurrence: Codable, Hashable, Sendable {
     public let series: String
-    public let start: Date
+    public let start: Date?
 
-    public init(series: String, start: Date) {
+    public init(series: String, start: Date? = nil) {
         self.series = series
         self.start = start
     }
