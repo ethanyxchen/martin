@@ -6,11 +6,24 @@ struct MeetingLibraryTests {
     let library = MeetingLibrary(root: FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory))
 
     @Test func createdMeetingKeepsCalendarDetails() throws {
-        let meeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_750_000_000), title: "Standup", attendees: ["Ada"])
+        let occurrence = Occurrence(series: "standup@example.com", start: Date(timeIntervalSince1970: 1_750_000_000))
+        let meeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_749_999_000), occurrence: occurrence, title: "Standup", attendees: ["Ada"])
         let reloaded = try #require(try library.meetings().first)
+        #expect(reloaded.occurrence == occurrence)
         #expect(reloaded.title == "Standup")
         #expect(reloaded.attendees == ["Ada"])
         #expect(library.note(of: meeting) == nil)
+    }
+
+    @Test func meetingForOccurrenceFindsOnlyThatOccurrence() throws {
+        let monday = Occurrence(series: "standup@example.com", start: Date(timeIntervalSince1970: 1_750_000_000))
+        let tuesday = Occurrence(series: "standup@example.com", start: Date(timeIntervalSince1970: 1_750_086_400))
+        let review = Occurrence(series: "review@example.com")
+        let mondayMeeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_750_000_000), occurrence: monday)
+        let reviewMeeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_750_000_100), occurrence: review)
+        #expect(try library.meeting(for: monday) == mondayMeeting)
+        #expect(try library.meeting(for: review) == reviewMeeting)
+        #expect(try library.meeting(for: tuesday) == nil)
     }
 
     @Test func meetingsStartedInTheSameSecondDoNotOverwriteEachOther() throws {
