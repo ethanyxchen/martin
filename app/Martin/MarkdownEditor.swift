@@ -45,7 +45,13 @@ struct MarkdownEditor: NSViewRepresentable {
         }
 
         func textView(_ textView: NSTextView, doCommandBy selector: Selector) -> Bool {
-            selector == #selector(NSResponder.insertNewline(_:)) && (textView as? NoteTextView)?.continueList() == true
+            guard let textView = textView as? NoteTextView else { return false }
+            return switch selector {
+            case #selector(NSResponder.insertNewline(_:)): textView.continueList()
+            case #selector(NSResponder.insertTab(_:)): textView.indentList(outward: false)
+            case #selector(NSResponder.insertBacktab(_:)): textView.indentList(outward: true)
+            default: false
+            }
         }
     }
 }
@@ -191,6 +197,18 @@ final class NoteTextView: NSTextView {
         } else {
             apply(Markdown.Edit(range: caret, replacement: "\n" + next, selection: NSRange(location: caret.location + 1 + (next as NSString).length, length: 0)))
         }
+        return true
+    }
+
+    func indentList(outward: Bool) -> Bool {
+        let selection = selectedRange()
+        guard !hasMarkedText(), let (range, line) = line(at: selection.location) else { return false }
+        switch line.block {
+        case .list, .task: break
+        default: return false
+        }
+        guard let edit = Markdown.indent(range, in: string, selection: selection, outward: outward) else { return false }
+        apply(edit)
         return true
     }
 

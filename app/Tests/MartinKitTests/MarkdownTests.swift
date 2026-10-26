@@ -43,6 +43,11 @@ struct MarkdownTests {
             #expect(line.block == block, "\(text)")
             #expect(line.prefix == prefix, "\(text)")
         }
+        #expect(Line("- top").depth == 0)
+        #expect(Line("  - nested").depth == 1)
+        #expect(Line("\t\t- tabbed").depth == 2)
+        #expect(Line("    - spaced").depth == 2)
+        #expect(Line("   1. under a number").depth == 1)
         #expect(Line("**not code**", code: true).block == .code)
         #expect(Line("**not code**", code: true).spans.isEmpty)
         #expect(Line("   - inside a fence", code: true).prefix == 3)
@@ -50,7 +55,9 @@ struct MarkdownTests {
 
     @Test func markersAreSeparateFromContent() {
         #expect(Self.spans("## Notes") == ["marker ##"])
-        #expect(Self.spans("- [x] Ship it") == ["marker -", "checkbox [x]"])
+        #expect(Self.spans("- [x] Ship it") == ["bullet -", "checkbox [x]"])
+        #expect(Self.spans("* item") == ["bullet *"])
+        #expect(Self.spans("3. third") == ["marker 3."])
         #expect(Self.spans("**bold** and *it*") == [
             "strong **bold**", "marker **", "marker **",
             "emphasis *it*", "marker *", "marker *",
@@ -66,7 +73,7 @@ struct MarkdownTests {
 
     @Test func linksPointAtTheirDestination() {
         #expect(Self.spans("- Fix [#1](https://github.com/acme/api/pull/1)") == [
-            "marker -",
+            "bullet -",
             "marker [", "link→https://github.com/acme/api/pull/1 #1", "marker ](", "url https://github.com/acme/api/pull/1", "marker )",
         ])
         #expect(Self.spans("see https://example.com/a_b_c.") == ["link→https://example.com/a_b_c https://example.com/a_b_c"])
@@ -110,6 +117,17 @@ struct MarkdownTests {
         #expect(Self.continuation("# Heading") == nil)
         #expect(Self.continuation("words") == nil)
         #expect(Line("- not a list", code: true).continuation(in: "- not a list") == nil)
+    }
+
+    @Test func indentNestsAndUnnestsTheLine() {
+        let text = "- a\n\t- b\n  - c\n- d"
+        func indent(_ location: Int, length: Int, outward: Bool) -> Markdown.Edit? {
+            Markdown.indent(NSRange(location: location, length: length), in: text, selection: NSRange(location: location + length, length: 0), outward: outward)
+        }
+        #expect(indent(14, length: 3, outward: false) == Markdown.Edit(range: NSRange(location: 14, length: 0), replacement: "\t", selection: NSRange(location: 18, length: 0)))
+        #expect(indent(4, length: 4, outward: true) == Markdown.Edit(range: NSRange(location: 4, length: 1), replacement: "", selection: NSRange(location: 7, length: 0)))
+        #expect(indent(9, length: 5, outward: true) == Markdown.Edit(range: NSRange(location: 9, length: 2), replacement: "", selection: NSRange(location: 12, length: 0)))
+        #expect(indent(14, length: 3, outward: true) == nil)
     }
 
     @Test func toggleWrapsAndUnwraps() {
