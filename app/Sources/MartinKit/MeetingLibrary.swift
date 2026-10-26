@@ -19,7 +19,8 @@ public struct MeetingLibrary: Sendable {
     public func create(startedAt: Date = .now, title: String? = nil, attendees: [String] = []) throws -> Meeting {
         let startedAt = Date(timeIntervalSince1970: startedAt.timeIntervalSince1970.rounded(.down))
         let meeting = Meeting(id: Self.folderName.string(from: startedAt), startedAt: startedAt, title: title, attendees: attendees)
-        try FileManager.default.createDirectory(at: folder(of: meeting), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: folder(of: meeting), withIntermediateDirectories: false)
         try save(meeting)
         return meeting
     }

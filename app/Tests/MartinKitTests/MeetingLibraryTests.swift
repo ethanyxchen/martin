@@ -7,8 +7,17 @@ struct MeetingLibraryTests {
 
     @Test func createdMeetingKeepsCalendarDetails() throws {
         let meeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_750_000_000), title: "Standup", attendees: ["Ada"])
-        #expect(try library.meetings() == [meeting])
+        let reloaded = try #require(try library.meetings().first)
+        #expect(reloaded.title == "Standup")
+        #expect(reloaded.attendees == ["Ada"])
         #expect(library.note(of: meeting) == nil)
+    }
+
+    @Test func meetingsStartedInTheSameSecondDoNotOverwriteEachOther() throws {
+        let startedAt = Date(timeIntervalSince1970: 1_750_000_000)
+        let first = try library.create(startedAt: startedAt, title: "Standup")
+        #expect(throws: (any Error).self) { try library.create(startedAt: startedAt.addingTimeInterval(0.5), title: "Retro") }
+        #expect(try library.meetings() == [first])
     }
 
     @Test func noteRoundTripsByteForByte() throws {
