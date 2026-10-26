@@ -6,14 +6,12 @@ public struct CalendarEvent: Sendable, Hashable {
     public let title: String
     public let start: Date
     public let end: Date
-    public let attendees: [String]
 
-    init(occurrence: Occurrence, title: String, start: Date, end: Date, attendees: [String] = []) {
+    init(occurrence: Occurrence, title: String, start: Date, end: Date) {
         self.occurrence = occurrence
         self.title = title
         self.start = start
         self.end = end
-        self.attendees = attendees
     }
 
     init(_ event: EKEvent) {
@@ -22,8 +20,7 @@ public struct CalendarEvent: Sendable, Hashable {
             occurrence: Occurrence(series: event.calendarItemExternalIdentifier ?? event.calendarItemIdentifier, start: recurring ? event.occurrenceDate : nil),
             title: event.title ?? "",
             start: event.startDate,
-            end: event.endDate,
-            attendees: (event.attendees ?? []).filter { !$0.isCurrentUser }.compactMap(CalendarLookup.name)
+            end: event.endDate
         )
     }
 
@@ -84,15 +81,5 @@ public enum CalendarLookup {
         return store.events(matching: store.predicateForEvents(withStart: date, end: soon, calendars: nil))
             .filter { !$0.isAllDay && $0.startDate <= soon && $0.endDate > date }
             .max { ($0.hasAttendees ? 1 : 0, $0.startDate) < ($1.hasAttendees ? 1 : 0, $1.startDate) }
-    }
-
-    static func name(of participant: EKParticipant) -> String? {
-        if let name = participant.name, !name.isEmpty { return name }
-        return emailName(participant.url)
-    }
-
-    static func emailName(_ url: URL) -> String? {
-        guard url.scheme == "mailto", let local = url.absoluteString.dropFirst("mailto:".count).split(separator: "@").first else { return nil }
-        return local.removingPercentEncoding
     }
 }
