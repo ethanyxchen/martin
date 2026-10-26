@@ -3,12 +3,9 @@ import MartinKit
 
 @MainActor
 final class MarkdownStyle: NSObject {
-    nonisolated static let hang: CGFloat = 40
-    nonisolated static let tail = Theme.column - hang - Theme.margin
-
     static let typing: [NSAttributedString.Key: Any] = {
         let look = Look(.text)
-        return [.font: look.font, .foregroundColor: look.color, .paragraphStyle: paragraph(look, indent: 0, marker: 0), .baselineOffset: look.baselineOffset]
+        return [.font: look.font, .foregroundColor: look.color, .paragraphStyle: paragraph(look, prefix: 0), .baselineOffset: look.baselineOffset]
     }()
 
     private static let body = NSFont.systemFont(ofSize: 15)
@@ -46,7 +43,7 @@ final class MarkdownStyle: NSObject {
         text.enumerateSubstrings(in: Self.paragraphs(of: selection, in: text), options: [.byParagraphs, .substringNotRequired]) { _, range, enclosing, _ in
             guard Markdown.mayBeHeading(range, in: text) else { return }
             let line = self.line(at: range.location, in: text).line
-            if line.block == .heading, (line.spans.first?.range.length ?? 0) > 1 { headings.insert(enclosing) }
+            if line.block == .heading { headings.insert(enclosing) }
         }
         return headings
     }
@@ -79,9 +76,6 @@ final class MarkdownStyle: NSObject {
                 text.removeAttribute(.strikethroughStyle, range: span.range)
                 if case .heading = line.block, span.range.location < line.prefix {
                     text.addAttribute(.font, value: Self.body, range: span.range)
-                    if !revealed {
-                        text.addAttributes([.font: Self.collapsed, .foregroundColor: NSColor.clear], range: NSRange(location: span.range.location, length: span.range.length - 1))
-                    }
                 }
             case .checkbox:
                 text.addAttribute(.foregroundColor, value: line.block == .task(done: true) ? Self.ember : Self.tertiary, range: span.range)
@@ -100,16 +94,17 @@ final class MarkdownStyle: NSObject {
                 text.addAttribute(.foregroundColor, value: Self.tertiary, range: span.range)
             }
         }
-        let indent = text.attributedSubstring(from: NSRange(location: 0, length: line.indent)).size().width
-        let marker = text.attributedSubstring(from: NSRange(location: line.indent, length: line.prefix - line.indent)).size().width
-        text.addAttribute(.paragraphStyle, value: Self.paragraph(look, indent: indent, marker: marker), range: all)
+        if line.block == .heading, !revealed {
+            text.addAttributes([.font: Self.collapsed, .foregroundColor: NSColor.clear], range: NSRange(location: 0, length: line.prefix))
+        }
+        let prefix = text.attributedSubstring(from: NSRange(location: 0, length: line.prefix)).size().width
+        text.addAttribute(.paragraphStyle, value: Self.paragraph(look, prefix: prefix), range: all)
     }
 
-    private static func paragraph(_ look: Look, indent: CGFloat, marker: CGFloat) -> NSParagraphStyle {
+    private static func paragraph(_ look: Look, prefix: CGFloat) -> NSParagraphStyle {
         let style = NSMutableParagraphStyle()
-        style.firstLineHeadIndent = max(0, hang - marker)
-        style.headIndent = hang + indent
-        style.tailIndent = tail
+        style.firstLineHeadIndent = Theme.gutter
+        style.headIndent = Theme.gutter + prefix
         style.minimumLineHeight = look.lineHeight
         style.maximumLineHeight = look.lineHeight
         return style
@@ -248,7 +243,7 @@ private final class CodeFragment: NSTextLayoutFragment {
 
     private var panel: CGRect {
         let width = textLayoutManager?.textContainer?.size.width ?? layoutFragmentFrame.width
-        let minX = MarkdownStyle.hang - Self.padding, maxX = width + MarkdownStyle.tail + Self.padding
+        let minX = Theme.gutter - Self.padding, maxX = width + Self.padding
         return CGRect(x: minX - layoutFragmentFrame.minX, y: 0, width: maxX - minX, height: layoutFragmentFrame.height)
     }
 }

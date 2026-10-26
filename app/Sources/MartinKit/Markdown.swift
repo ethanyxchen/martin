@@ -21,7 +21,6 @@ public enum Markdown {
         }
 
         public let block: Block
-        public let indent: Int
         public let prefix: Int
         public let spans: [Span]
 
@@ -29,7 +28,7 @@ public enum Markdown {
             let line = text as NSString
             let whole = NSRange(location: 0, length: line.length)
             let start = line.rangeOfCharacter(from: CharacterSet(charactersIn: " \t").inverted).location
-            indent = start == NSNotFound ? line.length : start
+            let indent = start == NSNotFound ? line.length : start
             if code {
                 (block, prefix, spans) = (.code, indent, [])
             } else if indent == line.length {
