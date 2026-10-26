@@ -12,22 +12,19 @@ require_app_stopped() {
   done < <(pgrep -x Martin || true)
 }
 require_app_stopped
-(cd analyzer && bun install --frozen-lockfile && bun run build)
 swift build -c release --package-path app
 binary_directory="$(swift build -c release --package-path app --show-bin-path)"
 mkdir -p "$PWD/build"
 staging_directory="$(mktemp -d "$PWD/build/.martin.XXXXXX")"
 trap 'rm -rf "$staging_directory"' EXIT
 app_bundle="$staging_directory/Martin.app"
-mkdir -p "$app_bundle/Contents/MacOS" "$app_bundle/Contents/Resources"
+mkdir -p "$app_bundle/Contents/MacOS"
 cp "$binary_directory/Martin" "$app_bundle/Contents/MacOS/Martin"
 cp app/Resources/Info.plist "$app_bundle/Contents/Info.plist"
 version="$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null || echo v0.0.0)"
 plutil -insert CFBundleShortVersionString -string "${version#v}" "$app_bundle/Contents/Info.plist"
 plutil -insert CFBundleVersion -string "${version#v}" "$app_bundle/Contents/Info.plist"
 plutil -lint "$app_bundle/Contents/Info.plist"
-cp analyzer/dist/martin-analyzer "$app_bundle/Contents/Resources/martin-analyzer"
-codesign --force --timestamp --sign "$identity" "$app_bundle/Contents/Resources/martin-analyzer"
 codesign --force --options runtime --timestamp --entitlements app/Resources/Martin.entitlements --sign "$identity" "$app_bundle"
 codesign --verify --deep --strict "$app_bundle"
 require_app_stopped

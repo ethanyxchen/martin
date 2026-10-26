@@ -5,21 +5,19 @@ import Testing
 struct MeetingLibraryTests {
     let library = MeetingLibrary(root: FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory))
 
-    @Test func transcriptRoundTrips() throws {
+    @Test func createdMeetingKeepsCalendarDetails() throws {
         let meeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_750_000_000), title: "Standup", attendees: ["Ada"])
-        let segments = [Segment(at: 1, duration: 2, text: "hello"), Segment(at: 3.5, duration: 1, text: "ship it")]
-        for segment in segments { try library.append(segment, to: meeting) }
-        #expect(try library.transcript(of: meeting) == segments)
-        #expect(try library.meetings() == [meeting])
+        let reloaded = try #require(try library.meetings().first)
+        #expect(reloaded.title == "Standup")
+        #expect(reloaded.attendees == ["Ada"])
+        #expect(library.note(of: meeting) == nil)
     }
 
-    @Test func savingNoteClearsError() throws {
-        let meeting = try library.create()
-        try library.saveAnalysisError("boom", for: meeting)
-        #expect(library.analysisError(of: meeting) == "boom")
-        try library.saveNote("# Note", for: meeting)
-        #expect(library.note(of: meeting) == "# Note")
-        #expect(library.analysisError(of: meeting) == nil)
+    @Test func meetingsStartedInTheSameSecondDoNotOverwriteEachOther() throws {
+        let startedAt = Date(timeIntervalSince1970: 1_750_000_000)
+        let first = try library.create(startedAt: startedAt, title: "Standup")
+        #expect(throws: (any Error).self) { try library.create(startedAt: startedAt.addingTimeInterval(0.5), title: "Retro") }
+        #expect(try library.meetings() == [first])
     }
 
     @Test func noteRoundTripsByteForByte() throws {

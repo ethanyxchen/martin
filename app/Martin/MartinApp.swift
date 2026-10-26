@@ -10,13 +10,9 @@ struct MartinApp: App {
         MenuBarExtra {
             MenuBar(app: delegate.app)
         } label: {
-            Image(nsImage: .menuBarIcon(awake: delegate.app.recorder.phase != .idle))
+            Image(nsImage: .menuBarIcon)
         }
         .commands {
-            CommandGroup(replacing: .appSettings) {
-                Button("Settings…") { delegate.app.openSettings() }
-                    .keyboardShortcut(",")
-            }
             TextEditingCommands()
             CommandMenu("Format") {
                 ForEach(NoteTextView.formats, id: \.title) { format in
@@ -42,18 +38,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 @Observable
 final class AppState {
     private static let page = NSSize(width: 520, height: 640)
-    let recorder = Recorder()
+    let library = MeetingLibrary()
     private(set) var meetings: [Meeting] = []
     @ObservationIgnored private var windows: [String: NSWindow] = [:]
-    @ObservationIgnored private var pill: RecordingPill?
 
     init() {
-        pill = RecordingPill(recorder: recorder)
         reload()
-        recorder.onNoteReady = { [weak self] meeting in
-            self?.reload()
-            self?.open(meeting, activating: false)
-        }
     }
 
     func meeting(_ id: Meeting.ID) -> Meeting? {
@@ -61,26 +51,14 @@ final class AppState {
     }
 
     func reload() {
-        meetings = (try? recorder.library.meetings()) ?? []
+        meetings = (try? library.meetings()) ?? []
     }
 
-    func toggleRecording() async {
-        switch recorder.phase {
-        case .idle:
-            await record(await CalendarLookup.currentEvent())
-        case .recording:
-            await recorder.stop()
-        case .analyzing:
-            return
-        }
-        reload()
-    }
-
-    func record(_ event: CalendarEvent?) async {
+    func start(_ event: CalendarEvent?) {
         do {
-            try await recorder.start(event)
+            let meeting = try library.create(title: event?.title, attendees: event?.attendees ?? [])
             reload()
-            if case .recording(let meeting, _) = recorder.phase { open(meeting, activating: false) }
+            open(meeting)
         } catch {
             explain(error)
         }
@@ -90,18 +68,13 @@ final class AppState {
         var renamed = meeting
         renamed.title = title.isEmpty ? nil : title
         guard renamed != meeting else { return }
-        try? recorder.library.save(renamed)
+        try? library.save(renamed)
         reload()
         windows[meeting.id]?.title = renamed.displayTitle
     }
 
-    func open(_ meeting: Meeting, activating: Bool = true) {
-        let window = windows[meeting.id] ?? present(NoteView(app: self, meeting: meeting), id: meeting.id, title: meeting.displayTitle, size: Self.page)
-        if activating {
-            show(window)
-        } else {
-            window.orderFrontRegardless()
-        }
+    func open(_ meeting: Meeting) {
+        show(windows[meeting.id] ?? present(NoteView(app: self, meeting: meeting), id: meeting.id, title: meeting.displayTitle, size: Self.page))
     }
 
     func reopen() {
@@ -110,10 +83,6 @@ final class AppState {
 
     func openUpcoming() {
         show(windows["upcoming"] ?? present(UpcomingView(app: self), id: "upcoming", title: "Upcoming Meetings", size: Self.page))
-    }
-
-    func openSettings() {
-        show(windows["settings"] ?? present(SettingsView(), id: "settings", title: "Settings", size: NSSize(width: 560, height: 680)))
     }
 
     private func show(_ window: NSWindow) {
@@ -148,14 +117,9 @@ final class AppState {
     private func explain(_ error: Error) {
         NSApp.activate()
         let alert = NSAlert()
-        alert.messageText = "Martin can't start recording"
+        alert.messageText = "Martin can't start the meeting"
         alert.informativeText = error.localizedDescription
-        let needsKey = Secrets.get(Secrets.deepgram) == nil
-        if needsKey {
-            alert.addButton(withTitle: "Open Settings")
-            alert.addButton(withTitle: "Cancel")
-        }
-        if alert.runModal() == .alertFirstButtonReturn, needsKey { openSettings() }
+        alert.runModal()
     }
 }
 

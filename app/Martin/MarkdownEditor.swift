@@ -4,7 +4,6 @@ import SwiftUI
 
 struct MarkdownEditor: NSViewRepresentable {
     @Binding var text: String
-    var editable = true
 
     func makeCoordinator() -> Coordinator {
         Coordinator(text: $text)
@@ -13,7 +12,6 @@ struct MarkdownEditor: NSViewRepresentable {
     func makeNSView(context: Context) -> NSScrollView {
         let textView = NoteTextView.make()
         textView.delegate = context.coordinator
-        textView.isEditable = editable
         textView.load(text)
         NotificationCenter.default.addObserver(context.coordinator, selector: #selector(Coordinator.storageChanged(_:)), name: NSTextStorage.didProcessEditingNotification, object: textView.textStorage)
         let scroll = NSScrollView()
@@ -30,7 +28,6 @@ struct MarkdownEditor: NSViewRepresentable {
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         context.coordinator.text = $text
         guard let textView = scroll.documentView as? NoteTextView else { return }
-        textView.isEditable = editable
         if textView.textStorage?.mutableString.isEqual(to: text) == false { textView.load(text) }
     }
 

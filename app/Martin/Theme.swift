@@ -28,9 +28,7 @@ enum Theme {
     static let ink = Tone(light: 0x1F1E1B, dark: 0xECEAE3)
     static let secondary = Tone(light: 0x6E6A61, dark: 0xA19C91)
     static let tertiary = Tone(light: 0xA8A49A, dark: 0x6C685F)
-    static let hairline = Tone(light: 0xE5E2D7, dark: 0x33312D)
     static let ember = Tone(light: 0xEE5F22, dark: 0xFF7A3D)
-    static let moss = Tone(light: 0x4F7D4A, dark: 0x7DB576)
 
     static let gutter: CGFloat = 26
     static let margin: CGFloat = 28
@@ -40,31 +38,13 @@ enum Theme {
 
     static let title = Font.system(size: 22, weight: .semibold, design: .serif)
     static let meta = Font.system(size: 12)
-    static let label = Font.system(size: 13, weight: .semibold).lowercaseSmallCaps().uppercaseSmallCaps()
 }
 
 extension View {
     func movesWindow() -> some View {
         contentShape(.rect).gesture(WindowDragGesture())
     }
-}
 
-struct SectionLabel: View {
-    let text: String
-
-    init(_ text: String) {
-        self.text = text
-    }
-
-    var body: some View {
-        Text(text)
-            .font(Theme.label)
-            .kerning(0.8)
-            .foregroundStyle(Theme.secondary)
-    }
-}
-
-extension View {
     func column() -> some View {
         padding(.leading, Theme.column)
             .padding(.trailing, Theme.margin)

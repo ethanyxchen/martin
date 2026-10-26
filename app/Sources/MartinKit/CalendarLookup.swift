@@ -6,14 +6,12 @@ public struct CalendarEvent: Sendable, Hashable {
     public let start: Date
     public let end: Date
     public let attendees: [String]
-    public let notes: String?
 
-    init(title: String, start: Date, end: Date, attendees: [String] = [], notes: String? = nil) {
+    init(title: String, start: Date, end: Date, attendees: [String] = []) {
         self.title = title
         self.start = start
         self.end = end
         self.attendees = attendees
-        self.notes = notes
     }
 
     init(_ event: EKEvent) {
@@ -21,8 +19,7 @@ public struct CalendarEvent: Sendable, Hashable {
             title: event.title ?? "",
             start: event.startDate,
             end: event.endDate,
-            attendees: (event.attendees ?? []).filter { !$0.isCurrentUser }.compactMap(CalendarLookup.name),
-            notes: event.notes
+            attendees: (event.attendees ?? []).filter { !$0.isCurrentUser }.compactMap(CalendarLookup.name)
         )
     }
 

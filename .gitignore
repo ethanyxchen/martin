@@ -2,8 +2,5 @@
 .DS_Store
 .build/
 .swiftpm/
-node_modules/
-analyzer/dist/
 plans/
-*.bun-build
 build/
