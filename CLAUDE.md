@@ -4,7 +4,7 @@ When launching Martin for testing, build it with `./scripts/build-app.sh` and al
 
 Quit Martin when you are done testing (`osascript -e "quit app \"$PWD/build/Martin.app\""`), and close every window or panel you opened, including any test harness that puts panels on screen. Never leave seeded meetings in `~/Library/Application Support/Martin/`; seed test data in a temporary directory instead.
 
-In a linked git worktree, `./scripts/build-app.sh` builds a separate app, `Martin (<worktree>)`, with its own bundle identifier and its data in the worktree's `.local-app-data/`, so it runs beside the main checkout's Martin without touching its data. The first build copies the main app's data there; delete `.local-app-data/` to copy it again.
+In a linked git worktree, `./scripts/build-app.sh` builds a separate app, `Martin (<worktree>)`, with its own bundle identifier, a Dock icon tinted with a colour picked from the worktree path, and its data in the worktree's `.local-app-data/`, so it runs beside the main checkout's Martin without touching its data. The first build copies the main app's data there; delete `.local-app-data/` to copy it again.
 
 # Compiler warnings
 
