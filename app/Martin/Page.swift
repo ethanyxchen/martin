@@ -11,12 +11,12 @@ struct Page<Header: View, Content: View>: View {
     var body: some View {
         VStack(spacing: 0) {
             Text(title)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Theme.ink)
                 .lineLimit(1)
                 .opacity(collapsed ? 1 : 0)
                 .offset(y: collapsed ? 0 : 6)
-                .animation(.easeOut(duration: 0.18), value: collapsed)
+                .animation(.easeOut(duration: 0.12), value: collapsed)
                 .padding(.leading, Theme.controls)
                 .padding(.trailing, Theme.margin)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
@@ -25,10 +25,10 @@ struct Page<Header: View, Content: View>: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     header
+                        .onGeometryChange(for: Bool.self) { $0.frame(in: .scrollView).maxY <= 0 } action: { collapsed = $0 }
                         .padding(.top, 18)
                         .padding(.bottom, 22)
                         .movesWindow()
-                        .onGeometryChange(for: Bool.self) { $0.frame(in: .scrollView).maxY <= 0 } action: { collapsed = $0 }
                     content
                 }
                 .frame(minHeight: viewport, alignment: .top)
