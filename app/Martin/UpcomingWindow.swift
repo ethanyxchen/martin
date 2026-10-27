@@ -11,42 +11,30 @@ struct UpcomingView: View {
     var body: some View {
         TimelineView(.everyMinute) { context in
             let today = Calendar.current.startOfDay(for: context.date)
-            VStack(alignment: .leading, spacing: 0) {
-                header
+            Page(title: "Upcoming") {
+                Text("Upcoming")
+                    .font(Theme.title)
+                    .foregroundStyle(Theme.ink)
+                    .padding(.leading, Theme.column)
+                    .padding(.trailing, Theme.margin)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } content: {
                 content(at: context.date)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .task(id: today) { await watch(from: today) }
         }
-        .background(Theme.paper)
-        .ignoresSafeArea(edges: .top)
-    }
-
-    private var header: some View {
-        Text("Upcoming")
-            .font(Theme.title)
-            .foregroundStyle(Theme.ink)
-        .padding(.leading, Theme.column)
-        .padding(.trailing, Theme.margin)
-        .padding(.top, 46)
-        .padding(.bottom, 22)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .movesWindow()
     }
 
     @ViewBuilder
     private func content(at now: Date) -> some View {
         if let events {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 30) {
-                    ForEach(CalendarLookup.agenda(of: events, days: Self.days, at: now), id: \.start) { day in
-                        DayView(app: app, day: day, now: now)
-                    }
+            LazyVStack(alignment: .leading, spacing: 30) {
+                ForEach(CalendarLookup.agenda(of: events, days: Self.days, at: now), id: \.start) { day in
+                    DayView(app: app, day: day, now: now)
                 }
-                .padding(.leading, Theme.margin)
-                .padding(.trailing, Theme.margin)
-                .padding(.bottom, 28)
             }
+            .padding(.horizontal, Theme.margin)
+            .padding(.bottom, 28)
         } else if denied {
             CalendarAccess()
         }
