@@ -48,11 +48,20 @@ public enum Markdown {
             }
         }
 
-        public func continuation(in text: String) -> String? {
+        private var continues: Bool {
             switch block {
-            case .list, .task, .quote: break
-            default: return nil
+            case .list, .task, .quote: true
+            default: false
             }
+        }
+
+        public func marker(before caret: Int) -> NSRange? {
+            guard continues, caret == prefix, let start = spans.first?.range.location else { return nil }
+            return NSRange(location: start, length: prefix - start)
+        }
+
+        public func continuation(in text: String) -> String? {
+            guard continues else { return nil }
             let prefix = NSMutableString(string: (text as NSString).substring(to: self.prefix))
             if let checkbox = spans.first(where: { $0.role == .checkbox }) {
                 prefix.replaceCharacters(in: checkbox.range, with: "[ ]")

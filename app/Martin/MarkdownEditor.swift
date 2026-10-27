@@ -208,8 +208,11 @@ final class NoteTextView: NSTextView {
 
     override func deleteBackward(_ sender: Any?) {
         let caret = selectedRange()
-        guard caret.length == 0, let mention = mentions(near: caret.location).first(where: { NSMaxRange($0) == caret.location }) else { return super.deleteBackward(sender) }
-        delete(mention)
+        guard caret.length == 0, !hasMarkedText() else { return super.deleteBackward(sender) }
+        if let mention = mentions(near: caret.location).first(where: { NSMaxRange($0) == caret.location }) { return delete(mention) }
+        let (range, line) = style.line(at: caret.location, in: string as NSString)
+        guard let marker = line.marker(before: caret.location - range.location)?.offset(by: range.location) else { return super.deleteBackward(sender) }
+        delete(marker)
     }
 
     override func deleteForward(_ sender: Any?) {
@@ -312,8 +315,8 @@ final class NoteTextView: NSTextView {
         mentions(near: index).first { $0.location < index && index < NSMaxRange($0) }
     }
 
-    private func delete(_ mention: NSRange) {
-        apply(Markdown.Edit(range: mention, replacement: "", selection: NSRange(location: mention.location, length: 0)))
+    private func delete(_ range: NSRange) {
+        apply(Markdown.Edit(range: range, replacement: "", selection: NSRange(location: range.location, length: 0)))
     }
 
     private func line(at index: Int) -> (range: NSRange, line: Markdown.Line)? {

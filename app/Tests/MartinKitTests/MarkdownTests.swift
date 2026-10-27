@@ -148,6 +148,16 @@ struct MarkdownTests {
         #expect(Line("- not a list", code: true).continuation(in: "- not a list") == nil)
     }
 
+    @Test func markerBeforeTheContentIsDeletedWholeKeepingTheIndent() {
+        #expect(Line("- ").marker(before: 2) == NSRange(location: 0, length: 2))
+        #expect(Line("\t- [ ] ").marker(before: 7) == NSRange(location: 1, length: 6))
+        #expect(Line("  12) twelve").marker(before: 6) == NSRange(location: 2, length: 4))
+        #expect(Line("   > said").marker(before: 5) == NSRange(location: 3, length: 2))
+        #expect(Line("- item").marker(before: 3) == nil)
+        #expect(Line("# Heading").marker(before: 2) == nil)
+        #expect(Line("  text").marker(before: 2) == nil)
+    }
+
     @Test func indentNestsAndUnnestsTheLine() {
         let text = "- a\n\t- b\n  - c\n- d"
         func indent(_ location: Int, length: Int, outward: Bool) -> Markdown.Edit? {
