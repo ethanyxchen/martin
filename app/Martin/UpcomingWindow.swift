@@ -12,7 +12,7 @@ struct UpcomingView: View {
         TimelineView(.everyMinute) { context in
             let today = Calendar.current.startOfDay(for: context.date)
             VStack(alignment: .leading, spacing: 0) {
-                header(from: today)
+                header
                 content(at: context.date)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -22,15 +22,10 @@ struct UpcomingView: View {
         .ignoresSafeArea(edges: .top)
     }
 
-    private func header(from today: Date) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Upcoming")
-                .font(Theme.title)
-                .foregroundStyle(Theme.ink)
-            Text((today..<Calendar.current.date(byAdding: .day, value: Self.days - 1, to: today)!).formatted(.interval.month(.wide).day()))
-                .font(Theme.meta)
-                .foregroundStyle(Theme.secondary)
-        }
+    private var header: some View {
+        Text("Upcoming")
+            .font(Theme.title)
+            .foregroundStyle(Theme.ink)
         .padding(.leading, Theme.column)
         .padding(.trailing, Theme.margin)
         .padding(.top, 46)
