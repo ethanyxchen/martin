@@ -34,7 +34,7 @@ if [[ "$(git rev-parse --absolute-git-dir)" != "$(git rev-parse --path-format=ab
   [[ -e "$data_directory" || ! -e "$main_data_directory" ]] || cp -Rp "$main_data_directory" "$data_directory"
   plutil -insert MartinDataDirectory -string "$data_directory" "$app_bundle/Contents/Info.plist"
   worktree_tiles=(E0452B D97800 1F9E5A 0F95A3 7A3FE0 D43F8D 4F6475 A2652E)
-  tile="${worktree_tiles[$(( $(printf '%s' "$PWD" | cksum | cut -d ' ' -f 1) % ${#worktree_tiles[@]} ))]}"
+  tile="${worktree_tiles[$(( $(printf '%s' "$worktree" | cksum | cut -d ' ' -f 1) % ${#worktree_tiles[@]} ))]}"
 fi
 mkdir -p "$app_bundle/Contents/Resources"
 swift scripts/render-icon.swift "$tile" "$staging_directory/Martin.iconset"
