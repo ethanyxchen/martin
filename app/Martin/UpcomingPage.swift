@@ -5,8 +5,6 @@ import SwiftUI
 struct UpcomingView: View {
     private static let days = 4
     let app: AppState
-    @State private var events: [CalendarEvent]?
-    @State private var denied = false
 
     var body: some View {
         TimelineView(.everyMinute) { context in
@@ -19,15 +17,15 @@ struct UpcomingView: View {
                     .padding(.trailing, Theme.margin)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } content: {
-                content(at: context.date)
+                content(from: today, at: context.date)
             }
-            .task(id: today) { await watch(from: today) }
         }
     }
 
-    @ViewBuilder
-    private func content(at now: Date) -> some View {
-        if let events {
+    private func content(from today: Date, at now: Date) -> some View {
+        CalendarFeed(query: Span(start: today, hidden: app.hiddenCalendars), promise: "your next few days of meetings will appear here") { span in
+            CalendarLookup.events(from: span.start, to: Calendar.current.date(byAdding: .day, value: Self.days, to: span.start)!, hiding: span.hidden)
+        } content: { events in
             LazyVStack(alignment: .leading, spacing: 30) {
                 ForEach(CalendarLookup.agenda(of: events, days: Self.days, at: now), id: \.start) { day in
                     DayView(app: app, day: day, now: now)
@@ -35,22 +33,13 @@ struct UpcomingView: View {
             }
             .padding(.horizontal, Theme.margin)
             .padding(.bottom, 28)
-        } else if denied {
-            CalendarAccess()
         }
     }
+}
 
-    private func watch(from today: Date) async {
-        let end = Calendar.current.date(byAdding: .day, value: Self.days, to: today)!
-        while !Task.isCancelled {
-            for await events in CalendarLookup.events(from: today, to: end) {
-                self.events = events
-            }
-            guard !Task.isCancelled else { return }
-            denied = true
-            for await _ in NotificationCenter.default.notifications(named: NSApplication.didBecomeActiveNotification) { break }
-        }
-    }
+private struct Span: Equatable {
+    let start: Date
+    let hidden: Set<EventCalendar.ID>
 }
 
 private struct DayView: View {
@@ -153,25 +142,5 @@ private struct EventRow: View {
         case (false, true): return event.end.formatted(format)
         case (false, false): return nil
         }
-    }
-}
-
-private struct CalendarAccess: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Martin can’t see your calendar")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Theme.ink)
-            Text("Allow Martin to use your calendars, and your next few days of meetings will appear here.")
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.secondary)
-                .lineSpacing(3)
-            Button("Open System Settings") {
-                NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars")!)
-            }
-            .padding(.top, 8)
-        }
-        .padding(.leading, Theme.column)
-        .padding(.trailing, Theme.margin)
     }
 }

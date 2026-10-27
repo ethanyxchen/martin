@@ -14,6 +14,9 @@ struct MartinApp: App {
         }
         .commands {
             TextEditingCommands()
+            CommandGroup(replacing: .appSettings) {
+                SettingsButton(app: delegate.app)
+            }
             CommandMenu("Format") {
                 ForEach(NoteTextView.formats, id: \.title) { format in
                     Button(format.title) { NSApp.sendAction(format.action, to: nil, from: nil) }
@@ -37,9 +40,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 @MainActor
 @Observable
 final class AppState {
-    private static let page = NSSize(width: 520, height: 640)
+    private static let windowSize = NSSize(width: 520, height: 640)
+    private static let hiddenCalendarsKey = "hiddenCalendars"
     let library = MeetingLibrary()
     private(set) var meetings: [Meeting] = []
+    var page = HomePage.upcoming
+    var hiddenCalendars = Set(UserDefaults.standard.stringArray(forKey: hiddenCalendarsKey) ?? []) {
+        didSet { UserDefaults.standard.set(hiddenCalendars.sorted(), forKey: Self.hiddenCalendarsKey) }
+    }
     @ObservationIgnored private var windows: [String: NSWindow] = [:]
 
     init() {
@@ -78,15 +86,16 @@ final class AppState {
     }
 
     func open(_ meeting: Meeting) {
-        show(windows[meeting.id] ?? present(NoteView(app: self, meeting: meeting), id: meeting.id, title: meeting.displayTitle, size: Self.page))
+        show(windows[meeting.id] ?? present(NoteView(app: self, meeting: meeting), id: meeting.id, title: meeting.displayTitle, size: Self.windowSize))
     }
 
     func reopen() {
-        if windows.isEmpty { openUpcoming() }
+        if windows.isEmpty { openHome(on: .upcoming) }
     }
 
-    func openUpcoming() {
-        show(windows["upcoming"] ?? present(UpcomingView(app: self), id: "upcoming", title: "Upcoming Meetings", size: Self.page))
+    func openHome(on page: HomePage) {
+        self.page = page
+        show(windows["home"] ?? present(HomeView(app: self), id: "home", title: "Martin", size: Self.windowSize))
     }
 
     private func show(_ window: NSWindow) {
