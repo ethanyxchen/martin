@@ -50,6 +50,10 @@ final class AppState {
         meetings.first { $0.id == id }
     }
 
+    var people: [Person] {
+        meetings.flatMap(\.attendees)
+    }
+
     func reload() {
         meetings = (try? library.meetings()) ?? []
     }

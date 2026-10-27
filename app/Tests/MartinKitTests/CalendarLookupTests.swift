@@ -3,6 +3,11 @@ import Testing
 @testable import MartinKit
 
 struct CalendarLookupTests {
+    @Test func emailComesFromMailtoURLs() {
+        #expect(CalendarLookup.email(URL(string: "mailto:ada%2Blabs@example.com")!) == "ada+labs@example.com")
+        #expect(CalendarLookup.email(URL(string: "https://example.com/ada")!) == nil)
+    }
+
     private static let calendar = {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "UTC")!

@@ -21,7 +21,7 @@ struct NoteView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-            MarkdownEditor(text: $note)
+            MarkdownEditor(text: $note, attendees: current.attendees, acquaintances: app.people)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .background(Theme.paper)

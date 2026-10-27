@@ -7,7 +7,7 @@ public enum Markdown {
         }
 
         public enum Role: Equatable, Sendable {
-            case marker, bullet, checkbox, strong, emphasis, strikethrough, code, link(destination: NSRange), reference(destination: String), url
+            case marker, bullet, checkbox, strong, emphasis, strikethrough, code, link(destination: NSRange), reference(destination: String), url, mention(label: NSRange)
         }
 
         public struct Span: Equatable, Sendable {
@@ -63,6 +63,17 @@ public enum Markdown {
             return prefix as String
         }
 
+        public func mentionQuery(in text: String, at caret: Int) -> NSRange? {
+            guard block != .code, block != .fence, let query = Pattern.mentionQuery.firstMatch(in: text, range: NSRange(location: 0, length: caret))?.range else { return nil }
+            let shielded = spans.contains { span in
+                switch span.role {
+                case .code, .url, .mention: NSLocationInRange(query.location, span.range)
+                default: false
+                }
+            }
+            return shielded ? nil : query
+        }
+
         private static func block(of text: String, in whole: NSRange, indent: Int) -> (Block, Int, [Span]) {
             func match(_ pattern: NSRegularExpression) -> NSTextCheckingResult? {
                 pattern.firstMatch(in: text, options: .anchored, range: whole)
@@ -96,6 +107,11 @@ public enum Markdown {
             for match in Pattern.code.matches(in: text, range: content) {
                 let ticks = match.range(at: 1)
                 spans += [Span(.code, match.range), Span(.marker, ticks), Span(.marker, NSRange(location: NSMaxRange(match.range) - ticks.length, length: ticks.length))]
+                claimed.append(match.range)
+            }
+            for match in Pattern.mention.matches(in: text, range: content) where free(match.range) {
+                let label = match.range(at: 1).location != NSNotFound ? match.range(at: 1) : match.range(at: 2)
+                spans.append(Span(.mention(label: label), match.range))
                 claimed.append(match.range)
             }
             for match in Pattern.link.matches(in: text, range: content) {
@@ -294,6 +310,8 @@ private enum Pattern {
     static let definition = regex(#" {0,3}(\[([^\]\n]+)\]:)[ \t]*(\S+)(?:[ \t]+"[^"\n]*")?[ \t]*$"#)
     static let reference = regex(#"(\[)([^\[\]\n]+)(\]\[)([^\[\]\n]*)(\])"#)
     static let shortcut = regex(#"(?<![\]\\!])(\[)([^\[\]\n]+)(\])(?![(\[:])"#)
+    static let mention = regex(#"@\{(?:([^{}<>\n]+) <[^{}<>\s@]+@[^{}<>\s]+>|([^{}<>\s@]+)@[^{}<>\s]+)\}"#)
+    static let mentionQuery = regex(#"(?<![\w.+@-])@[\w.+-]*$"#)
     static let address = regex(#"(?<![\w/])https?://[^\s<>()\[\]]*[^\s<>()\[\].,:;!?'"*_~]"#)
     static let delimited: [(NSRegularExpression, [Markdown.Line.Role], Int)] = [
         (regex(#"(?<![\\*])\*\*\*(?![\s*])(.+?)(?<![\s\\*])\*\*\*(?!\*)"#), [.strong, .emphasis], 3),

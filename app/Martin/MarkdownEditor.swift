@@ -4,6 +4,8 @@ import SwiftUI
 
 struct MarkdownEditor: NSViewRepresentable {
     @Binding var text: String
+    let attendees: [Person]
+    let acquaintances: [Person]
 
     func makeCoordinator() -> Coordinator {
         Coordinator(text: $text)
@@ -12,6 +14,8 @@ struct MarkdownEditor: NSViewRepresentable {
     func makeNSView(context: Context) -> NSScrollView {
         let textView = NoteTextView.make()
         textView.delegate = context.coordinator
+        textView.attendees = attendees
+        textView.acquaintances = acquaintances
         textView.load(text)
         NotificationCenter.default.addObserver(context.coordinator, selector: #selector(Coordinator.storageChanged(_:)), name: NSTextStorage.didProcessEditingNotification, object: textView.textStorage)
         let scroll = NSScrollView()
@@ -28,6 +32,8 @@ struct MarkdownEditor: NSViewRepresentable {
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         context.coordinator.text = $text
         guard let textView = scroll.documentView as? NoteTextView else { return }
+        textView.attendees = attendees
+        textView.acquaintances = acquaintances
         if textView.textStorage?.mutableString.isEqual(to: text) == false { textView.load(text) }
     }
 
@@ -44,8 +50,15 @@ struct MarkdownEditor: NSViewRepresentable {
             text.wrappedValue = storage.nativeString
         }
 
+        func textView(_ textView: NSTextView, willChangeSelectionFromCharacterRanges old: [NSValue], toCharacterRanges new: [NSValue]) -> [NSValue] {
+            guard let textView = textView as? NoteTextView else { return new }
+            let from = old.first?.rangeValue.location ?? 0
+            return new.map { NSValue(range: textView.skippingMentions($0.rangeValue, from: from)) }
+        }
+
         func textView(_ textView: NSTextView, doCommandBy selector: Selector) -> Bool {
             guard let textView = textView as? NoteTextView else { return false }
+            if textView.pickMention(for: selector) { return true }
             return switch selector {
             case #selector(NSResponder.insertNewline(_:)): textView.continueList()
             case #selector(NSResponder.insertTab(_:)): textView.indentList(outward: false)
@@ -73,6 +86,10 @@ final class NoteTextView: NSTextView {
     ]
 
     private let style = MarkdownStyle()
+    var attendees: [Person] = []
+    var acquaintances: [Person] = []
+    private lazy var picker = MentionPicker { [weak self] in self?.insertMention($0) }
+    private var dismissedMention: Int?
 
     static func make() -> NoteTextView {
         let view = NoteTextView(usingTextLayoutManager: true)
@@ -131,7 +148,14 @@ final class NoteTextView: NSTextView {
     override func resignFirstResponder() -> Bool {
         let resigned = super.resignFirstResponder()
         if resigned { reveal(nil) }
+        picker.hide()
         return resigned
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard let window else { return picker.hide() }
+        NotificationCenter.default.addObserver(self, selector: #selector(hideMentions), name: NSWindow.didResignKeyNotification, object: window)
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -164,6 +188,41 @@ final class NoteTextView: NSTextView {
     override func handleTextCheckingResults(_ results: [NSTextCheckingResult], forRange range: NSRange, types checkingTypes: NSTextCheckingTypes, options: [NSSpellChecker.OptionKey: Any] = [:], orthography: NSOrthography, wordCount: Int) {
         let prose = results.filter { $0.resultType != .spelling || isProse($0.range) }
         super.handleTextCheckingResults(prose, forRange: range, types: checkingTypes, options: options, orthography: orthography, wordCount: wordCount)
+    }
+
+    func pickMention(for selector: Selector) -> Bool {
+        guard picker.isShown else { return false }
+        switch selector {
+        case #selector(moveUp(_:)): picker.move(by: -1)
+        case #selector(moveDown(_:)): picker.move(by: 1)
+        case #selector(insertNewline(_:)), #selector(insertTab(_:)): picker.selection.map(insertMention)
+        case #selector(cancelOperation(_:)):
+            dismissedMention = mentionQuery()?.location
+            picker.hide()
+        default: return false
+        }
+        return true
+    }
+
+    override func deleteBackward(_ sender: Any?) {
+        let caret = selectedRange()
+        guard caret.length == 0, let mention = mentions(near: caret.location).first(where: { NSMaxRange($0) == caret.location }) else { return super.deleteBackward(sender) }
+        delete(mention)
+    }
+
+    override func deleteForward(_ sender: Any?) {
+        let caret = selectedRange()
+        guard caret.length == 0, let mention = mentions(near: caret.location).first(where: { $0.location == caret.location }) else { return super.deleteForward(sender) }
+        delete(mention)
+    }
+
+    func skippingMentions(_ range: NSRange, from origin: Int) -> NSRange {
+        let start = mention(around: range.location), end = mention(around: NSMaxRange(range))
+        if range.length == 0, let start {
+            return NSRange(location: range.location < origin ? start.location : NSMaxRange(start), length: 0)
+        }
+        let location = start?.location ?? range.location
+        return NSRange(location: location, length: (end.map(NSMaxRange) ?? NSMaxRange(range)) - location)
     }
 
     @objc func toggleBold(_ sender: Any?) {
@@ -212,6 +271,49 @@ final class NoteTextView: NSTextView {
         return true
     }
 
+    private func insertMention(_ person: Person) {
+        guard let query = mentionQuery() else { return }
+        let mention = person.mention + " "
+        apply(Markdown.Edit(range: query, replacement: mention, selection: NSRange(location: query.location + (mention as NSString).length, length: 0)))
+    }
+
+    private func showMentions() {
+        let query = window?.isKeyWindow == true && window?.firstResponder === self ? mentionQuery() : nil
+        if query?.location != dismissedMention { dismissedMention = nil }
+        guard let window, let query, dismissedMention == nil else { return picker.hide() }
+        let typed = (string as NSString).substring(with: NSRange(location: query.location + 1, length: query.length - 1))
+        let people = (attendees + acquaintances).suggestions(for: typed)
+        guard !people.isEmpty else { return picker.hide() }
+        picker.show(people, attending: Set(attendees.map(\.email)), matching: typed, under: firstRect(forCharacterRange: query, actualRange: nil), in: window)
+    }
+
+    @objc private func hideMentions() {
+        picker.hide()
+    }
+
+    private func mentionQuery() -> NSRange? {
+        let caret = selectedRange()
+        guard caret.length == 0, !hasMarkedText() else { return nil }
+        let (range, line) = style.line(at: caret.location, in: string as NSString)
+        return line.mentionQuery(in: (string as NSString).substring(with: range), at: caret.location - range.location)?.offset(by: range.location)
+    }
+
+    private func mentions(near index: Int) -> [NSRange] {
+        guard let (range, line) = line(at: index) else { return [] }
+        return line.spans.compactMap { span in
+            guard case .mention = span.role else { return nil }
+            return span.range.offset(by: range.location)
+        }
+    }
+
+    private func mention(around index: Int) -> NSRange? {
+        mentions(near: index).first { $0.location < index && index < NSMaxRange($0) }
+    }
+
+    private func delete(_ mention: NSRange) {
+        apply(Markdown.Edit(range: mention, replacement: "", selection: NSRange(location: mention.location, length: 0)))
+    }
+
     private func line(at index: Int) -> (range: NSRange, line: Markdown.Line)? {
         let text = string as NSString
         return text.length == 0 ? nil : style.line(at: min(index, text.length - 1), in: text)
@@ -253,7 +355,7 @@ final class NoteTextView: NSTextView {
         guard line.block != .code, line.block != .fence else { return false }
         return !line.spans.contains { span in
             let literal = switch span.role {
-            case .code, .url: true
+            case .code, .url, .mention: true
             case .link(let destination): destination == span.range
             default: false
             }
@@ -263,6 +365,7 @@ final class NoteTextView: NSTextView {
 
     @objc private func selectionChanged() {
         reveal(window?.firstResponder === self ? selectedRange() : nil)
+        showMentions()
     }
 
     private func reveal(_ selection: NSRange?) {

@@ -98,6 +98,12 @@ final class MarkdownStyle: NSObject {
                 text.addAttributes([.underlineStyle: NSUnderlineStyle.single.rawValue, .underlineColor: Self.tertiary], range: span.range)
             case .url:
                 text.addAttribute(.foregroundColor, value: Self.tertiary, range: span.range)
+            case .mention(let label):
+                let brace = NSRange(location: span.range.location + 1, length: label.location - span.range.location - 1)
+                let address = NSRange(location: NSMaxRange(label), length: NSMaxRange(span.range) - NSMaxRange(label))
+                text.addAttribute(.foregroundColor, value: Self.cobalt, range: span.range)
+                text.addAttributes([.font: Self.collapsed, .foregroundColor: NSColor.clear], range: brace)
+                text.addAttributes([.font: Self.collapsed, .foregroundColor: NSColor.clear], range: address)
             }
         }
         if line.block == .heading, !revealed {

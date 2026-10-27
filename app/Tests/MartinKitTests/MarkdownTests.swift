@@ -9,6 +9,7 @@ struct MarkdownTests {
         Line(text).spans.map { span in
             let role = switch span.role {
             case .link(let destination): "link→" + (text as NSString).substring(with: destination)
+            case .mention(let label): "mention→" + (text as NSString).substring(with: label)
             default: "\(span.role)"
             }
             return role + " " + (text as NSString).substring(with: span.range)
@@ -77,6 +78,34 @@ struct MarkdownTests {
             "marker [", "link→https://github.com/acme/api/pull/1 #1", "marker ](", "url https://github.com/acme/api/pull/1", "marker )",
         ])
         #expect(Self.spans("see https://example.com/a_b_c.") == ["link→https://example.com/a_b_c https://example.com/a_b_c"])
+    }
+
+    @Test func mentionsShowTheirNameOrTheEmailsLocalPart() {
+        #expect(Self.spans("- ask @{Kim K <kim.k@goodnotes.com>} **now**") == [
+            "bullet -", "mention→Kim K @{Kim K <kim.k@goodnotes.com>}", "strong **now**", "marker **", "marker **",
+        ])
+        #expect(Self.spans("cc @{inamiy@goodnotes.com}, @{snake_case_dev@x.com}") == [
+            "mention→inamiy @{inamiy@goodnotes.com}", "mention→snake_case_dev @{snake_case_dev@x.com}",
+        ])
+        #expect(Self.spans("@{Kim <kim.k@goodnotes.com}").isEmpty)
+        #expect(Self.spans("@{no email}").isEmpty)
+        #expect(Self.spans("`@{kim@x.com}`") == ["code `@{kim@x.com}`", "marker `", "marker `"])
+    }
+
+    @Test func mentionQueryIsTheAtWordBeforeTheCaret() {
+        func query(_ text: String, at caret: Int? = nil, code: Bool = false) -> String? {
+            Line(text, code: code).mentionQuery(in: text, at: caret ?? (text as NSString).length).map { (text as NSString).substring(with: $0) }
+        }
+        #expect(query("@") == "@")
+        #expect(query("- [ ] ask @kim.k") == "@kim.k")
+        #expect(query("(@ki") == "@ki")
+        #expect(query("ask @kim later", at: 7) == "@ki")
+        #expect(query("ask @kim later") == nil)
+        #expect(query("mail kim@goodnotes") == nil)
+        #expect(query("`@kim`", at: 5) == nil)
+        #expect(query("@kim", code: true) == nil)
+        #expect(query("@{kim@x.com}", at: 6) == nil)
+        #expect(query("@{kim@x.com} @k") == "@k")
     }
 
     @Test func referenceLinksResolveOnlyWhenDefined() {

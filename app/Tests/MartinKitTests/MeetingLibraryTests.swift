@@ -43,6 +43,17 @@ struct MeetingLibraryTests {
         #expect(try library.meetings().map(\.date) == [moved.start])
     }
 
+    @Test func meetingForEventKeepsTheEventsAttendeesInStep() throws {
+        let occurrence = Occurrence(series: "review@example.com")
+        let ada = Person(email: "ada@example.com", name: "Ada Lovelace"), kim = Person(email: "kim.k@example.com")
+        let start = Date(timeIntervalSince1970: 1_750_172_800), end = Date(timeIntervalSince1970: 1_750_176_400)
+        let meeting = try library.meeting(for: CalendarEvent(occurrence: occurrence, title: "Review", start: start, end: end, attendees: [ada]))
+        #expect(try library.meetings().map(\.attendees) == [[ada]])
+        let invited = try library.meeting(for: CalendarEvent(occurrence: occurrence, title: "Review", start: start, end: end, attendees: [ada, kim]))
+        #expect(invited.id == meeting.id)
+        #expect(try library.meetings().map(\.attendees) == [[ada, kim]])
+    }
+
     @Test func meetingWithoutScheduleIsDatedWhenStarted() throws {
         let meeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_750_000_000))
         #expect(meeting.date == meeting.startedAt)
