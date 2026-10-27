@@ -74,11 +74,17 @@ func render(pixels: Int) -> CGImage {
 }
 
 try FileManager.default.createDirectory(at: iconset, withIntermediateDirectories: true)
+var rendered: [Int: CGImage] = [:]
 for points in [16, 32, 128, 256, 512] {
     for density in [1, 2] {
-        let name = "icon_\(points)x\(points)\(density == 1 ? "" : "@2x").png"
-        let destination = CGImageDestinationCreateWithURL(iconset.appendingPathComponent(name) as CFURL, UTType.png.identifier as CFString, 1, nil)!
-        CGImageDestinationAddImage(destination, render(pixels: points * density), nil)
-        guard CGImageDestinationFinalize(destination) else { exit(1) }
+        let pixels = points * density
+        let image = rendered[pixels] ?? render(pixels: pixels)
+        rendered[pixels] = image
+        let file = iconset.appendingPathComponent("icon_\(points)x\(points)\(density == 1 ? "" : "@2x").png")
+        guard let destination = CGImageDestinationCreateWithURL(file as CFURL, UTType.png.identifier as CFString, 1, nil) else {
+            fatalError("Cannot create \(file.path)")
+        }
+        CGImageDestinationAddImage(destination, image, nil)
+        guard CGImageDestinationFinalize(destination) else { fatalError("Cannot write \(file.path)") }
     }
 }
