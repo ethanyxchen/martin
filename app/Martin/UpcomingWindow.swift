@@ -11,47 +11,30 @@ struct UpcomingView: View {
     var body: some View {
         TimelineView(.everyMinute) { context in
             let today = Calendar.current.startOfDay(for: context.date)
-            VStack(alignment: .leading, spacing: 0) {
-                header(from: today)
+            Page(title: "Upcoming") {
+                Text("Upcoming")
+                    .font(Theme.title)
+                    .foregroundStyle(Theme.ink)
+                    .padding(.leading, Theme.column)
+                    .padding(.trailing, Theme.margin)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } content: {
                 content(at: context.date)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .task(id: today) { await watch(from: today) }
         }
-        .background(Theme.paper)
-        .ignoresSafeArea(edges: .top)
-    }
-
-    private func header(from today: Date) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Upcoming")
-                .font(Theme.title)
-                .foregroundStyle(Theme.ink)
-            Text((today..<Calendar.current.date(byAdding: .day, value: Self.days - 1, to: today)!).formatted(.interval.month(.wide).day()))
-                .font(Theme.meta)
-                .foregroundStyle(Theme.secondary)
-        }
-        .padding(.leading, Theme.column)
-        .padding(.trailing, Theme.margin)
-        .padding(.top, 46)
-        .padding(.bottom, 22)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .movesWindow()
     }
 
     @ViewBuilder
     private func content(at now: Date) -> some View {
         if let events {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 30) {
-                    ForEach(CalendarLookup.agenda(of: events, days: Self.days, at: now), id: \.start) { day in
-                        DayView(app: app, day: day, now: now)
-                    }
+            LazyVStack(alignment: .leading, spacing: 30) {
+                ForEach(CalendarLookup.agenda(of: events, days: Self.days, at: now), id: \.start) { day in
+                    DayView(app: app, day: day, now: now)
                 }
-                .padding(.leading, Theme.margin)
-                .padding(.trailing, Theme.margin)
-                .padding(.bottom, 28)
             }
+            .padding(.horizontal, Theme.margin)
+            .padding(.bottom, 28)
         } else if denied {
             CalendarAccess()
         }
@@ -101,7 +84,7 @@ private struct DayView: View {
             VStack(alignment: .leading, spacing: 2) {
                 ForEach(day.events, id: \.self) { event in
                     Button { app.start(event) } label: {
-                        EventRow(event: event, underway: event.isUnderway(at: now))
+                        EventRow(event: event, day: day, underway: event.isUnderway(at: now))
                     }
                     .buttonStyle(.plain)
                     .pointerStyle(.link)
@@ -114,39 +97,62 @@ private struct DayView: View {
 
 private struct EventRow: View {
     let event: CalendarEvent
+    let day: AgendaDay
     let underway: Bool
     @State private var hovering = false
+    private static let inset: CGFloat = 10
+
+    private var startsEarlier: Bool { event.start < day.start }
+    private var endsLater: Bool { event.end > day.end }
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 0) {
-            Circle()
-                .fill(Theme.cobalt)
-                .frame(width: 6, height: 6)
-                .opacity(underway ? 1 : 0)
-                .frame(width: Theme.gutter, alignment: .leading)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(event.title.isEmpty ? "Untitled" : event.title)
-                    .font(.system(size: 14))
-                    .foregroundStyle(Theme.ink)
-                Text(time)
-                    .font(Theme.meta.monospacedDigit())
+        HStack(spacing: 16) {
+            Text(event.title.isEmpty ? "Untitled" : event.title)
+                .font(.system(size: 14))
+                .foregroundStyle(Theme.ink)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .trailing, spacing: 2) {
+                time
+                    .font(.system(size: 13).monospacedDigit())
+                    .foregroundStyle(underway ? Theme.cobalt : Theme.ink)
+                if let span {
+                    HStack(spacing: 4) {
+                        Image(systemName: "calendar")
+                        Text(span)
+                    }
+                    .font(Theme.meta)
                     .foregroundStyle(Theme.secondary)
+                }
             }
-            .lineLimit(1)
-            .truncationMode(.tail)
+            .fixedSize()
         }
-        .padding(.vertical, 6)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, Self.inset)
+        .padding(.vertical, 8)
         .background(Theme.well.opacity(hovering ? 1 : 0), in: .rect(cornerRadius: 8))
         .contentShape(.rect)
+        .padding(.horizontal, Theme.gutter - Self.inset)
         .onHover { hovering = $0 }
         .animation(.easeOut(duration: 0.12), value: hovering)
     }
 
-    private var time: String {
-        underway
-            ? "Now until \(event.end.formatted(date: .omitted, time: .shortened))"
-            : (event.start..<event.end).formatted(.interval.hour().minute())
+    private var time: Text {
+        let arrow = Text("→").foregroundStyle(underway ? Theme.cobalt : Theme.tertiary)
+        let end = event.end.formatted(.dateTime.hour().minute())
+        if underway { return Text("Now \(arrow) \(end)") }
+        if startsEarlier { return Text("\(arrow) \(end)") }
+        return Text("\(event.start.formatted(.dateTime.hour().minute())) \(arrow) \(end)")
+    }
+
+    private var span: String? {
+        let format = Date.FormatStyle.dateTime.weekday(.abbreviated).day()
+        switch (startsEarlier, endsLater) {
+        case (true, true): return "\(event.start.formatted(format)) → \(event.end.formatted(format))"
+        case (true, false): return "from \(event.start.formatted(format))"
+        case (false, true): return event.end.formatted(format)
+        case (false, false): return nil
+        }
     }
 }
 

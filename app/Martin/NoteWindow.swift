@@ -19,13 +19,13 @@ struct NoteView: View {
     private var current: Meeting { app.meeting(meeting.id) ?? meeting }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        Page(title: current.displayTitle) {
             header
+        } content: {
             MarkdownEditor(text: $note, attendees: current.attendees, acquaintances: app.people)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .frame(maxHeight: .infinity)
+                .padding(.bottom, Theme.margin)
         }
-        .background(Theme.paper)
-        .ignoresSafeArea(edges: .top)
         .onChange(of: editingTitle) {
             if !editingTitle { app.rename(current, to: title) }
         }
@@ -55,9 +55,6 @@ struct NoteView: View {
             DateLeaf(date: current.date)
         }
         .column()
-        .padding(.top, 46)
-        .padding(.bottom, 22)
-        .movesWindow()
     }
 
     private var year: String? {
