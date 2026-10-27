@@ -84,7 +84,7 @@ private struct DayView: View {
             VStack(alignment: .leading, spacing: 2) {
                 ForEach(day.events, id: \.self) { event in
                     Button { app.start(event) } label: {
-                        EventRow(event: event, day: day.start, underway: event.isUnderway(at: now))
+                        EventRow(event: event, day: day, underway: event.isUnderway(at: now))
                     }
                     .buttonStyle(.plain)
                     .pointerStyle(.link)
@@ -97,13 +97,13 @@ private struct DayView: View {
 
 private struct EventRow: View {
     let event: CalendarEvent
-    let day: Date
+    let day: AgendaDay
     let underway: Bool
     @State private var hovering = false
     private static let inset: CGFloat = 10
 
-    private var startsEarlier: Bool { event.start < day }
-    private var endsLater: Bool { event.end > Calendar.current.date(byAdding: .day, value: 1, to: day)! }
+    private var startsEarlier: Bool { event.start < day.start }
+    private var endsLater: Bool { event.end > day.end }
 
     var body: some View {
         HStack(spacing: 16) {
