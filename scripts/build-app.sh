@@ -3,6 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 destination="$PWD/build/Martin.app"
 identity="${CODESIGN_IDENTITY:-Apple Development}"
+tile=0055E0
 require_app_stopped() {
   while read -r app_pid; do
     if [[ "$(ps -p "$app_pid" -o comm=)" == "$destination/Contents/MacOS/Martin" ]]; then
@@ -21,9 +22,6 @@ app_bundle="$staging_directory/Martin.app"
 mkdir -p "$app_bundle/Contents/MacOS"
 cp "$binary_directory/Martin" "$app_bundle/Contents/MacOS/Martin"
 cp app/Resources/Info.plist "$app_bundle/Contents/Info.plist"
-mkdir -p "$app_bundle/Contents/Resources"
-swift scripts/render-icon.swift 0055E0 "$staging_directory/Martin.iconset"
-iconutil --convert icns "$staging_directory/Martin.iconset" --output "$app_bundle/Contents/Resources/Martin.icns"
 version="$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null || echo v0.0.0)"
 plutil -insert CFBundleShortVersionString -string "${version#v}" "$app_bundle/Contents/Info.plist"
 plutil -insert CFBundleVersion -string "${version#v}" "$app_bundle/Contents/Info.plist"
@@ -35,7 +33,12 @@ if [[ "$(git rev-parse --absolute-git-dir)" != "$(git rev-parse --path-format=ab
   main_data_directory="$HOME/Library/Application Support/Martin"
   [[ -e "$data_directory" || ! -e "$main_data_directory" ]] || cp -Rp "$main_data_directory" "$data_directory"
   plutil -insert MartinDataDirectory -string "$data_directory" "$app_bundle/Contents/Info.plist"
+  worktree_tiles=(E0452B D97800 1F9E5A 0F95A3 7A3FE0 D43F8D 4F6475 A2652E)
+  tile="${worktree_tiles[$(( $(printf '%s' "$worktree" | cksum | cut -d ' ' -f 1) % ${#worktree_tiles[@]} ))]}"
 fi
+mkdir -p "$app_bundle/Contents/Resources"
+swift scripts/render-icon.swift "$tile" "$staging_directory/Martin.iconset"
+iconutil --convert icns "$staging_directory/Martin.iconset" --output "$app_bundle/Contents/Resources/Martin.icns"
 plutil -lint "$app_bundle/Contents/Info.plist"
 codesign --force --options runtime --timestamp --entitlements app/Resources/Martin.entitlements --sign "$identity" "$app_bundle"
 codesign --verify --deep --strict "$app_bundle"
