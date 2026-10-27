@@ -22,10 +22,18 @@ struct MenuBar: View {
         }
 
         Divider()
-        Button("Settings…") { app.openHome(on: .settings) }
-            .keyboardShortcut(",")
+        SettingsButton(app: app)
         Button("Quit \(Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Martin")") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
+    }
+}
+
+struct SettingsButton: View {
+    let app: AppState
+
+    var body: some View {
+        Button("Settings…") { app.openHome(on: .settings) }
+            .keyboardShortcut(",")
     }
 }
 

@@ -41,24 +41,25 @@ public struct AgendaDay: Sendable, Hashable {
 public struct EventCalendar: Sendable, Hashable, Identifiable {
     public let id: String
     public let title: String
-    public let account: String
     public let color: CGColor
+}
 
-    init(id: String, title: String, account: String, color: CGColor) {
-        self.id = id
-        self.title = title
-        self.account = account
-        self.color = color
-    }
-
+extension EventCalendar {
     init(_ calendar: EKCalendar) {
-        self.init(id: calendar.calendarIdentifier, title: calendar.title, account: calendar.source?.title ?? "", color: calendar.cgColor)
+        self.init(id: calendar.calendarIdentifier, title: calendar.title, color: calendar.cgColor)
     }
 }
 
-public struct CalendarAccount: Sendable, Hashable {
+public struct CalendarAccount: Sendable, Hashable, Identifiable {
+    public let id: String
     public let title: String
     public let calendars: [EventCalendar]
+}
+
+extension CalendarAccount {
+    init(_ source: EKSource) {
+        self.init(id: source.sourceIdentifier, title: source.title, calendars: source.calendars(for: .event).map(EventCalendar.init))
+    }
 }
 
 public enum CalendarLookup {
@@ -77,13 +78,18 @@ public enum CalendarLookup {
     }
 
     public static func accounts() -> AsyncStream<[CalendarAccount]> {
-        watch { store in accounts(of: store.calendars(for: .event).map(EventCalendar.init)) }
+        watch { store in ordered(store.sources.map(CalendarAccount.init)) }
     }
 
-    static func accounts(of calendars: [EventCalendar]) -> [CalendarAccount] {
-        Dictionary(grouping: calendars, by: \.account)
-            .map { CalendarAccount(title: $0.key, calendars: $0.value.sorted { ($0.title, $0.id) < ($1.title, $1.id) }) }
-            .sorted { $0.title < $1.title }
+    static func ordered(_ accounts: [CalendarAccount]) -> [CalendarAccount] {
+        accounts
+            .filter { !$0.calendars.isEmpty }
+            .map { CalendarAccount(id: $0.id, title: $0.title, calendars: $0.calendars.sorted { precedes($0.title, $1.title) }) }
+            .sorted { precedes($0.title, $1.title) }
+    }
+
+    private static func precedes(_ title: String, _ other: String) -> Bool {
+        title.localizedStandardCompare(other) == .orderedAscending
     }
 
     private static func watch<Value: Sendable>(_ read: @escaping @Sendable (EKEventStore) -> Value) -> AsyncStream<Value> {
@@ -103,7 +109,7 @@ public enum CalendarLookup {
 
     private static func events(from start: Date, to end: Date, hiding hidden: Set<EventCalendar.ID>, in store: EKEventStore) -> [EKEvent] {
         store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: nil))
-            .filter { !hidden.contains($0.calendar.calendarIdentifier) }
+            .filter { $0.calendar.map { !hidden.contains($0.calendarIdentifier) } ?? true }
     }
 
     public static func agenda(of events: [CalendarEvent], days: Int, at now: Date, calendar: Calendar = .current) -> [AgendaDay] {

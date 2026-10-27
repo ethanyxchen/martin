@@ -15,8 +15,7 @@ struct MartinApp: App {
         .commands {
             TextEditingCommands()
             CommandGroup(replacing: .appSettings) {
-                Button("Settings…") { delegate.app.openHome(on: .settings) }
-                    .keyboardShortcut(",")
+                SettingsButton(app: delegate.app)
             }
             CommandMenu("Format") {
                 ForEach(NoteTextView.formats, id: \.title) { format in
@@ -41,7 +40,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 @MainActor
 @Observable
 final class AppState {
-    private static let page = NSSize(width: 520, height: 640)
+    private static let windowSize = NSSize(width: 520, height: 640)
     private static let hiddenCalendarsKey = "hiddenCalendars"
     let library = MeetingLibrary()
     private(set) var meetings: [Meeting] = []
@@ -87,7 +86,7 @@ final class AppState {
     }
 
     func open(_ meeting: Meeting) {
-        show(windows[meeting.id] ?? present(NoteView(app: self, meeting: meeting), id: meeting.id, title: meeting.displayTitle, size: Self.page))
+        show(windows[meeting.id] ?? present(NoteView(app: self, meeting: meeting), id: meeting.id, title: meeting.displayTitle, size: Self.windowSize))
     }
 
     func reopen() {
@@ -96,7 +95,7 @@ final class AppState {
 
     func openHome(on page: HomePage) {
         self.page = page
-        show(windows["home"] ?? present(HomeView(app: self), id: "home", title: "Martin", size: Self.page))
+        show(windows["home"] ?? present(HomeView(app: self), id: "home", title: "Martin", size: Self.windowSize))
     }
 
     private func show(_ window: NSWindow) {

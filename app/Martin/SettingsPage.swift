@@ -22,7 +22,7 @@ struct SettingsView: View {
                 CalendarLookup.accounts()
             } content: { accounts in
                 VStack(alignment: .leading, spacing: 26) {
-                    ForEach(accounts, id: \.title) { account in
+                    ForEach(accounts) { account in
                         AccountView(account: account, hidden: $app.hiddenCalendars)
                     }
                 }
