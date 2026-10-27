@@ -117,6 +117,7 @@ private struct EventRow: View {
     let day: Date
     let underway: Bool
     @State private var hovering = false
+    private static let inset: CGFloat = 10
 
     private var startsEarlier: Bool { event.start < day }
     private var endsLater: Bool { event.end > Calendar.current.date(byAdding: .day, value: 1, to: day)! }
@@ -144,10 +145,11 @@ private struct EventRow: View {
             }
             .fixedSize()
         }
-        .padding(.horizontal, Theme.gutter)
+        .padding(.horizontal, Self.inset)
         .padding(.vertical, 8)
         .background(Theme.well.opacity(hovering ? 1 : 0), in: .rect(cornerRadius: 8))
         .contentShape(.rect)
+        .padding(.horizontal, Theme.gutter - Self.inset)
         .onHover { hovering = $0 }
         .animation(.easeOut(duration: 0.12), value: hovering)
     }
