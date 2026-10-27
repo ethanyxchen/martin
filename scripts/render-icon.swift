@@ -17,6 +17,10 @@ func color(_ hex: UInt32, lightened amount: CGFloat = 0) -> CGColor {
     return CGColor(srgbRed: mixed[0], green: mixed[1], blue: mixed[2], alpha: 1)
 }
 
+func squircle(_ rect: CGRect, radius: CGFloat) -> CGPath {
+    RoundedRectangle(cornerRadius: radius, style: .continuous).path(in: rect).cgPath
+}
+
 func render(pixels: Int) -> CGImage {
     let context = CGContext(
         data: nil, width: pixels, height: pixels, bitsPerComponent: 8, bytesPerRow: 0,
@@ -24,42 +28,48 @@ func render(pixels: Int) -> CGImage {
         bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
     )!
     let scale = CGFloat(pixels) / 1024
-    context.saveGState()
-    context.scaleBy(x: scale, y: scale)
+    context.translateBy(x: 0, y: CGFloat(pixels))
+    context.scaleBy(x: scale, y: -scale)
 
     let tile = CGRect(x: 100, y: 100, width: 824, height: 824)
-    let shape = RoundedRectangle(cornerRadius: 185.4, style: .continuous).path(in: tile).cgPath
+    let shape = squircle(tile, radius: 185.4)
     context.saveGState()
-    context.setShadow(offset: CGSize(width: 0, height: -10), blur: 20, color: CGColor(gray: 0, alpha: 0.3))
+    context.setShadow(offset: CGSize(width: 0, height: -10 * scale), blur: 20 * scale, color: CGColor(gray: 0, alpha: 0.3))
     context.addPath(shape)
     context.setFillColor(color(hex))
     context.fillPath()
     context.restoreGState()
 
+    context.saveGState()
     context.addPath(shape)
     context.clip()
     let gradient = CGGradient(colorsSpace: nil, colors: [color(hex, lightened: 0.16), color(hex)] as CFArray, locations: [0, 1])!
-    context.drawLinearGradient(gradient, start: CGPoint(x: 512, y: tile.maxY), end: CGPoint(x: 512, y: tile.minY), options: [])
+    context.drawLinearGradient(gradient, start: CGPoint(x: 512, y: tile.minY), end: CGPoint(x: 512, y: tile.maxY), options: [])
     context.restoreGState()
 
-    let lengths: [CGFloat] = [400, 300, 360]
-    let thickness = max(1, (64 * scale).rounded())
-    let pitch = max(thickness + 1, (150 * scale).rounded())
-    let gap = max(1, (56 * scale).rounded())
-    let radius = thickness > 1 ? thickness / 2 : 0
-    let centre = CGFloat(pixels) / 2
-    let left = (centre - (thickness + gap + (lengths.max()! * scale).rounded()) / 2).rounded()
-    let top = (centre + (pitch * CGFloat(lengths.count - 1) + thickness) / 2).rounded()
-    context.setFillColor(.white)
-    for (index, length) in lengths.enumerated() {
-        let y = top - thickness - CGFloat(index) * pitch
-        let bullet = CGRect(x: left, y: y, width: thickness, height: thickness)
-        let line = CGRect(x: left + thickness + gap, y: y, width: max(1, (length * scale).rounded()), height: thickness)
-        for rect in [bullet, line] {
-            context.addPath(CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil))
+    let windows: [(lightened: CGFloat, degrees: CGFloat)] = [(0.3, -12), (0.58, -5), (1, 3)]
+    for (index, window) in windows.enumerated() {
+        let frame = CGRect(x: 176 + 96 * CGFloat(index), y: 221 + 96 * CGFloat(index), width: 480, height: 390)
+        let focused = index == windows.count - 1
+        context.saveGState()
+        context.translateBy(x: frame.midX, y: frame.midY)
+        context.rotate(by: window.degrees * .pi / 180)
+        context.translateBy(x: -frame.midX, y: -frame.midY)
+        if focused {
+            context.setShadow(offset: CGSize(width: 0, height: -14 * scale), blur: 32 * scale, color: CGColor(srgbRed: 0, green: 0.1, blue: 0.33, alpha: 0.28))
         }
+        context.addPath(squircle(frame, radius: 60))
+        context.setFillColor(color(hex, lightened: window.lightened))
+        context.fillPath()
+        if focused {
+            context.setShadow(offset: .zero, blur: 0, color: nil)
+            context.setFillColor(color(hex, lightened: 0.7))
+            for dot in 0..<3 {
+                context.fillEllipse(in: CGRect(x: frame.minX + 41 + 44 * CGFloat(dot), y: frame.minY + 37, width: 30, height: 30))
+            }
+        }
+        context.restoreGState()
     }
-    context.fillPath()
     return context.makeImage()!
 }
 

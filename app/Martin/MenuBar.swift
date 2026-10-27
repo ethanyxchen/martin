@@ -29,15 +29,25 @@ struct MenuBar: View {
 
 extension NSImage {
     static let menuBarIcon: NSImage = {
-        let heights: [CGFloat] = [4, 8, 11, 6]
-        let image = NSImage(size: NSSize(width: 20, height: 16), flipped: false) { bounds in
-            let bars = NSBezierPath()
-            for (index, height) in heights.enumerated() {
-                let x = 5 + CGFloat(index) * 3.4
-                bars.append(NSBezierPath(roundedRect: NSRect(x: x - 1, y: bounds.midY - height / 2, width: 2, height: height), xRadius: 1, yRadius: 1))
+        let image = NSImage(size: NSSize(width: 20, height: 16), flipped: true) { _ in
+            func window(_ frame: NSRect, degrees: CGFloat, inset: CGFloat = 0) -> NSBezierPath {
+                let path = NSBezierPath(roundedRect: frame.insetBy(dx: inset, dy: inset), xRadius: 2 - inset, yRadius: 2 - inset)
+                var tilt = AffineTransform(translationByX: frame.midX, byY: frame.midY)
+                tilt.rotate(byDegrees: degrees)
+                tilt.translate(x: -frame.midX, y: -frame.midY)
+                path.transform(using: tilt)
+                return path
             }
+            let earlier = window(NSRect(x: 1.75, y: 2.25, width: 11, height: 8.5), degrees: -10)
+            let focused = NSRect(x: 6.75, y: 5.75, width: 11.5, height: 8.5)
+            NSColor.black.withAlphaComponent(0.5).setStroke()
+            earlier.lineWidth = 1.5
+            earlier.stroke()
+            NSGraphicsContext.current?.compositingOperation = .destinationOut
+            window(focused, degrees: 4, inset: -1.5).fill()
+            NSGraphicsContext.current?.compositingOperation = .sourceOver
             NSColor.black.setFill()
-            bars.fill()
+            window(focused, degrees: 4).fill()
             return true
         }
         image.isTemplate = true
