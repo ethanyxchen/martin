@@ -28,7 +28,10 @@ if [[ "$(git rev-parse --absolute-git-dir)" != "$(git rev-parse --path-format=ab
   worktree="$(basename "$PWD" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//; s/-*$//')"
   plutil -replace CFBundleIdentifier -string "dev.ethanchen.martin.$worktree" "$app_bundle/Contents/Info.plist"
   plutil -replace CFBundleName -string "Martin ($worktree)" "$app_bundle/Contents/Info.plist"
-  plutil -insert MartinDataDirectory -string "$PWD/.local-app-data" "$app_bundle/Contents/Info.plist"
+  data_directory="$PWD/.local-app-data"
+  main_data_directory="$HOME/Library/Application Support/Martin"
+  [[ -e "$data_directory" || ! -e "$main_data_directory" ]] || cp -Rp "$main_data_directory" "$data_directory"
+  plutil -insert MartinDataDirectory -string "$data_directory" "$app_bundle/Contents/Info.plist"
 fi
 plutil -lint "$app_bundle/Contents/Info.plist"
 codesign --force --options runtime --timestamp --entitlements app/Resources/Martin.entitlements --sign "$identity" "$app_bundle"
