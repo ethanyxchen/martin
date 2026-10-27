@@ -144,8 +144,7 @@ private struct EventRow: View {
             }
             .fixedSize()
         }
-        .padding(.leading, Theme.gutter)
-        .padding(.trailing, 12)
+        .padding(.horizontal, Theme.gutter)
         .padding(.vertical, 8)
         .background(Theme.well.opacity(hovering ? 1 : 0), in: .rect(cornerRadius: 8))
         .contentShape(.rect)
