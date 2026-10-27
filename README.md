@@ -1,6 +1,6 @@
 # Martin
 
-A native macOS menu bar notepad for standups and team meetings. Take notes from the menu bar or from the calendar, and Martin opens the Markdown note for that meeting, named after the event, with its attendees. Each calendar occurrence has one note, so coming back to a meeting reopens what you wrote.
+A native macOS menu bar notepad for standups and team meetings. Take notes from the menu bar or from the calendar, and Martin opens the Markdown note for that meeting, named after the event. Each calendar occurrence has one note, so coming back to a meeting reopens what you wrote.
 
 ## Build
 
@@ -18,7 +18,7 @@ open build/Martin.app
 
 ## Data
 
-Each meeting is a folder in `~/Library/Application Support/Martin/meetings/` with `meeting.json` and `note.md`, which is the note you edit in Martin. A meeting taken from the calendar records its `occurrence`: the event's series identifier, shared by every occurrence of a recurring meeting, and for recurring meetings that occurrence's original start, so a rescheduled meeting keeps its note. Its `attendees` are people, each keyed by their lowercased `email` with the calendar's display `name` when there is one.
+Each meeting is a folder in `~/Library/Application Support/Martin/meetings/` with `meeting.json` and `note.md`, which is the note you edit in Martin. A meeting taken from the calendar records `scheduledAt`, the event's start, which dates the note and follows the calendar each time you open the note from the event, and its `occurrence`: the event's series identifier, shared by every occurrence of a recurring meeting, and for recurring meetings that occurrence's original start, so a rescheduled meeting keeps its note. Its `attendees` are the event's guests, kept in step with the calendar the same way, each keyed by their lowercased `email` with the calendar's display `name` when there is one.
 
 ## Mentions
 

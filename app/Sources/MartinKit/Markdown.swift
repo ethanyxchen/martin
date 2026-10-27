@@ -7,7 +7,7 @@ public enum Markdown {
         }
 
         public enum Role: Equatable, Sendable {
-            case marker, checkbox, strong, emphasis, strikethrough, code, link(destination: NSRange), reference(destination: String), url, mention(label: NSRange)
+            case marker, bullet, checkbox, strong, emphasis, strikethrough, code, link(destination: NSRange), reference(destination: String), url, mention(label: NSRange)
         }
 
         public struct Span: Equatable, Sendable {
@@ -21,7 +21,7 @@ public enum Markdown {
         }
 
         public let block: Block
-        public let indent: Int
+        public let depth: Int
         public let prefix: Int
         public let spans: [Span]
 
@@ -29,7 +29,8 @@ public enum Markdown {
             let line = text as NSString
             let whole = NSRange(location: 0, length: line.length)
             let start = line.rangeOfCharacter(from: CharacterSet(charactersIn: " \t").inverted).location
-            indent = start == NSNotFound ? line.length : start
+            let indent = start == NSNotFound ? line.length : start
+            depth = line.substring(to: indent).reduce(0) { $0 + ($1 == "\t" ? 2 : 1) } / 2
             if code {
                 (block, prefix, spans) = (.code, indent, [])
             } else if indent == line.length {
@@ -83,12 +84,15 @@ public enum Markdown {
             if let quote = match(Pattern.quote) {
                 return (.quote, quote.range.length, [Span(.marker, quote.range(at: 1))])
             }
+            func marker(_ range: NSRange) -> Span {
+                Span(range.length == 1 ? .bullet : .marker, range)
+            }
             if let task = match(Pattern.task) {
                 let done = (text as NSString).substring(with: task.range(at: 3)) != "[ ]"
-                return (.task(done: done), task.range.length, [Span(.marker, task.range(at: 2)), Span(.checkbox, task.range(at: 3))])
+                return (.task(done: done), task.range.length, [marker(task.range(at: 2)), Span(.checkbox, task.range(at: 3))])
             }
             if let list = match(Pattern.list) {
-                return (.list, list.range.length, [Span(.marker, list.range(at: 2))])
+                return (.list, list.range.length, [marker(list.range(at: 2))])
             }
             return (.text, indent, [])
         }
@@ -235,6 +239,15 @@ public enum Markdown {
             return Edit(range: selection, replacement: text.substring(with: inner), selection: NSRange(location: selection.location, length: inner.length))
         }
         return Edit(range: selection, replacement: delimiter + text.substring(with: selection) + delimiter, selection: NSRange(location: selection.location + width, length: selection.length))
+    }
+
+    public static func indent(_ line: NSRange, in text: String, selection: NSRange, outward: Bool) -> Edit? {
+        let lead = (text as NSString).substring(with: line).prefix { $0 == " " || $0 == "\t" }
+        let removed = lead.first == "\t" ? 1 : min(lead.count, 2)
+        if outward, removed == 0 { return nil }
+        let range = NSRange(location: line.location, length: outward ? removed : 0)
+        let shift = outward ? -removed : 1
+        return Edit(range: range, replacement: outward ? "" : "\t", selection: NSRange(location: max(line.location, selection.location + shift), length: selection.length))
     }
 
     public static func link(in text: String, selection: NSRange) -> Edit {

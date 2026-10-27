@@ -3,19 +3,18 @@ import MartinKit
 
 @MainActor
 final class MarkdownStyle: NSObject {
-    nonisolated static let hang: CGFloat = 40
-    nonisolated static let tail = Theme.column - hang - Theme.margin
+    nonisolated static let step: CGFloat = 18
 
     static let typing: [NSAttributedString.Key: Any] = {
         let look = Look(.text)
-        return [.font: look.font, .foregroundColor: look.color, .paragraphStyle: paragraph(look, indent: 0, marker: 0), .baselineOffset: look.baselineOffset]
+        return [.font: look.font, .foregroundColor: look.color, .paragraphStyle: paragraph(look, first: 0, head: 0, nested: false), .baselineOffset: look.baselineOffset]
     }()
 
     private static let body = NSFont.systemFont(ofSize: 15)
     private static let ink = Theme.ink.ns
     private static let secondary = Theme.secondary.ns
     private static let tertiary = Theme.tertiary.ns
-    private static let ember = Theme.ember.ns
+    private static let cobalt = Theme.cobalt.ns
     private static let collapsed = NSFont.systemFont(ofSize: 0.01)
 
     private var codeBlocks: [NSRange] = []
@@ -46,7 +45,7 @@ final class MarkdownStyle: NSObject {
         text.enumerateSubstrings(in: Self.paragraphs(of: selection, in: text), options: [.byParagraphs, .substringNotRequired]) { _, range, enclosing, _ in
             guard Markdown.mayConceal(range, in: text) else { return }
             let line = self.line(at: range.location, in: text).line
-            if line.block == .heading, (line.spans.first?.range.length ?? 0) > 1 { revealed.insert(enclosing) }
+            if line.block == .heading { revealed.insert(enclosing) }
             for span in line.spans {
                 guard case .mention = span.role else { continue }
                 let mention = NSRange(location: range.location + span.range.location, length: span.range.length)
@@ -89,12 +88,13 @@ final class MarkdownStyle: NSObject {
                 text.removeAttribute(.strikethroughStyle, range: span.range)
                 if case .heading = line.block, span.range.location < line.prefix {
                     text.addAttribute(.font, value: Self.body, range: span.range)
-                    if !revealed {
-                        text.addAttributes([.font: Self.collapsed, .foregroundColor: NSColor.clear], range: NSRange(location: span.range.location, length: span.range.length - 1))
-                    }
                 }
+            case .bullet:
+                let end = line.spans.first { $0.role == .checkbox }?.range.location ?? line.prefix
+                text.addAttributes([.font: Self.collapsed, .foregroundColor: NSColor.clear], range: NSRange(location: span.range.location, length: end - span.range.location))
+                if line.block == .list { text.addAttribute(.bullet, value: line.depth, range: all) }
             case .checkbox:
-                text.addAttribute(.foregroundColor, value: line.block == .task(done: true) ? Self.ember : Self.tertiary, range: span.range)
+                text.addAttribute(.foregroundColor, value: line.block == .task(done: true) ? Self.cobalt : Self.tertiary, range: span.range)
                 text.removeAttribute(.strikethroughStyle, range: span.range)
             case .strong:
                 Self.add(.bold, to: text, in: span.range)
@@ -113,19 +113,32 @@ final class MarkdownStyle: NSObject {
                 let markup: [NSAttributedString.Key: Any] = editing ? [.foregroundColor: Self.tertiary] : [.font: Self.collapsed, .foregroundColor: NSColor.clear]
                 text.addAttributes(markup, range: NSRange(location: span.range.location, length: label.location - span.range.location))
                 text.addAttributes(markup, range: NSRange(location: NSMaxRange(label), length: NSMaxRange(span.range) - NSMaxRange(label)))
-                text.addAttribute(.foregroundColor, value: Self.ember, range: label)
+                text.addAttribute(.foregroundColor, value: Self.cobalt, range: label)
             }
         }
-        let indent = text.attributedSubstring(from: NSRange(location: 0, length: line.indent)).size().width
-        let marker = text.attributedSubstring(from: NSRange(location: line.indent, length: line.prefix - line.indent)).size().width
-        text.addAttribute(.paragraphStyle, value: Self.paragraph(look, indent: indent, marker: marker), range: all)
+        if line.block == .heading, !revealed {
+            text.addAttributes([.font: Self.collapsed, .foregroundColor: NSColor.clear], range: NSRange(location: 0, length: line.prefix))
+        }
+        let nested = switch line.block {
+        case .list, .task: true
+        default: false
+        }
+        let lead = nested ? line.spans[0].range.location : 0
+        text.addAttribute(.font, value: Self.collapsed, range: NSRange(location: 0, length: lead))
+        let indent = nested ? CGFloat(line.depth) * Self.step : 0
+        let marker = text.attribute(.bullet, at: 0, effectiveRange: nil) == nil ? text.attributedSubstring(from: NSRange(location: lead, length: line.prefix - lead)).size().width : 0
+        let content = indent + (nested ? max(marker, Self.step) : marker)
+        text.addAttribute(.paragraphStyle, value: Self.paragraph(look, first: content - marker, head: content, nested: nested), range: all)
     }
 
-    private static func paragraph(_ look: Look, indent: CGFloat, marker: CGFloat) -> NSParagraphStyle {
+    private static func paragraph(_ look: Look, first: CGFloat, head: CGFloat, nested: Bool) -> NSParagraphStyle {
         let style = NSMutableParagraphStyle()
-        style.firstLineHeadIndent = max(0, hang - marker)
-        style.headIndent = hang + indent
-        style.tailIndent = tail
+        style.firstLineHeadIndent = Theme.gutter + first
+        style.headIndent = Theme.gutter + head
+        if nested {
+            style.tabStops = []
+            style.defaultTabInterval = 0.01
+        }
         style.minimumLineHeight = look.lineHeight
         style.maximumLineHeight = look.lineHeight
         return style
@@ -156,6 +169,10 @@ final class MarkdownStyle: NSObject {
 
         var baselineOffset: CGFloat {
             (lineHeight - font.ascender + font.descender) / 2
+        }
+
+        var midline: CGFloat {
+            lineHeight + font.descender - baselineOffset - font.xHeight / 2
         }
 
         init(_ block: Markdown.Line.Block) {
@@ -211,11 +228,18 @@ extension MarkdownStyle: @preconcurrency NSTextStorageDelegate {
 
 extension MarkdownStyle: @preconcurrency NSTextLayoutManagerDelegate {
     func textLayoutManager(_ textLayoutManager: NSTextLayoutManager, textLayoutFragmentFor location: any NSTextLocation, in textElement: NSTextElement) -> NSTextLayoutFragment {
-        guard let paragraph = textElement as? NSTextParagraph, paragraph.attributedString.length > 0,
-              let edge = paragraph.attributedString.attribute(.codeBlock, at: 0, effectiveRange: nil) as? CodeEdge else {
-            return NSTextLayoutFragment(textElement: textElement, range: textElement.elementRange)
+        let range = textElement.elementRange
+        guard let paragraph = textElement as? NSTextParagraph, paragraph.attributedString.length > 0 else {
+            return NSTextLayoutFragment(textElement: textElement, range: range)
         }
-        return CodeFragment(textElement: textElement, range: textElement.elementRange, edge: edge)
+        let attributes = paragraph.attributedString.attributes(at: 0, effectiveRange: nil)
+        if let edge = attributes[.codeBlock] as? CodeEdge {
+            return CodeFragment(textElement: textElement, range: range, edge: edge)
+        }
+        if let depth = attributes[.bullet] as? Int {
+            return BulletFragment(textElement: textElement, range: range, depth: depth, midline: Look(.list).midline)
+        }
+        return NSTextLayoutFragment(textElement: textElement, range: range)
     }
 }
 
@@ -225,6 +249,52 @@ private enum CodeEdge {
 
 private extension NSAttributedString.Key {
     static let codeBlock = NSAttributedString.Key("martin.codeBlock")
+    static let bullet = NSAttributedString.Key("martin.bullet")
+}
+
+private final class BulletFragment: NSTextLayoutFragment {
+    private static let size: CGFloat = 5.5
+    private let depth: Int
+    private let midline: CGFloat
+
+    init(textElement: NSTextElement, range: NSTextRange?, depth: Int, midline: CGFloat) {
+        self.depth = depth
+        self.midline = midline
+        super.init(textElement: textElement, range: range)
+    }
+
+    required init?(coder: NSCoder) {
+        return nil
+    }
+
+    override var renderingSurfaceBounds: CGRect {
+        super.renderingSurfaceBounds.union(mark)
+    }
+
+    override func draw(at point: CGPoint, in context: CGContext) {
+        super.draw(at: point, in: context)
+        let mark = mark.offsetBy(dx: point.x, dy: point.y)
+        let color = Theme.cobalt.ns.cgColor
+        context.saveGState()
+        switch depth % 3 {
+        case 0:
+            context.setFillColor(color)
+            context.fillEllipse(in: mark)
+        case 1:
+            context.setStrokeColor(color)
+            context.setLineWidth(1.3)
+            context.strokeEllipse(in: mark.insetBy(dx: 0.65, dy: 0.65))
+        default:
+            context.setFillColor(color)
+            context.fill(mark.insetBy(dx: 0.75, dy: 0.75))
+        }
+        context.restoreGState()
+    }
+
+    private var mark: CGRect {
+        let x = Theme.gutter + CGFloat(depth) * MarkdownStyle.step - layoutFragmentFrame.minX
+        return CGRect(x: x, y: midline - Self.size / 2, width: Self.size, height: Self.size)
+    }
 }
 
 private final class CodeFragment: NSTextLayoutFragment {
@@ -264,7 +334,7 @@ private final class CodeFragment: NSTextLayoutFragment {
 
     private var panel: CGRect {
         let width = textLayoutManager?.textContainer?.size.width ?? layoutFragmentFrame.width
-        let minX = MarkdownStyle.hang - Self.padding, maxX = width + MarkdownStyle.tail + Self.padding
+        let minX = Theme.gutter - Self.padding, maxX = width + Self.padding
         return CGRect(x: minX - layoutFragmentFrame.minX, y: 0, width: maxX - minX, height: layoutFragmentFrame.height)
     }
 }

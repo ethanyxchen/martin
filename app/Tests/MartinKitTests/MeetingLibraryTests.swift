@@ -7,11 +7,10 @@ struct MeetingLibraryTests {
 
     @Test func createdMeetingKeepsCalendarDetails() throws {
         let occurrence = Occurrence(series: "standup@example.com", start: Date(timeIntervalSince1970: 1_750_000_000))
-        let meeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_749_999_000), occurrence: occurrence, title: "Standup", attendees: [Person(email: "ada@example.com", name: "Ada Lovelace"), Person(email: "kim.k@example.com")])
+        let meeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_749_999_000), occurrence: occurrence, title: "Standup")
         let reloaded = try #require(try library.meetings().first)
         #expect(reloaded.occurrence == occurrence)
         #expect(reloaded.title == "Standup")
-        #expect(reloaded.attendees == [Person(email: "ada@example.com", name: "Ada Lovelace"), Person(email: "kim.k@example.com")])
         #expect(library.note(of: meeting) == nil)
     }
 
@@ -31,6 +30,33 @@ struct MeetingLibraryTests {
         let first = try library.create(startedAt: startedAt, title: "Standup")
         #expect(throws: (any Error).self) { try library.create(startedAt: startedAt.addingTimeInterval(0.5), title: "Retro") }
         #expect(try library.meetings() == [first])
+    }
+
+    @Test func meetingForEventIsDatedByTheEventAndFollowsItsReschedule() throws {
+        let occurrence = Occurrence(series: "review@example.com")
+        let event = CalendarEvent(occurrence: occurrence, title: "Review", start: Date(timeIntervalSince1970: 1_750_172_800), end: Date(timeIntervalSince1970: 1_750_176_400))
+        let meeting = try library.meeting(for: event)
+        #expect(meeting.date == event.start)
+        #expect(meeting.title == "Review")
+        let moved = CalendarEvent(occurrence: occurrence, title: "Review", start: Date(timeIntervalSince1970: 1_750_259_200), end: Date(timeIntervalSince1970: 1_750_262_800))
+        #expect(try library.meeting(for: moved).id == meeting.id)
+        #expect(try library.meetings().map(\.date) == [moved.start])
+    }
+
+    @Test func meetingForEventKeepsTheEventsAttendeesInStep() throws {
+        let occurrence = Occurrence(series: "review@example.com")
+        let ada = Person(email: "ada@example.com", name: "Ada Lovelace"), kim = Person(email: "kim.k@example.com")
+        let start = Date(timeIntervalSince1970: 1_750_172_800), end = Date(timeIntervalSince1970: 1_750_176_400)
+        let meeting = try library.meeting(for: CalendarEvent(occurrence: occurrence, title: "Review", start: start, end: end, attendees: [ada]))
+        #expect(try library.meetings().map(\.attendees) == [[ada]])
+        let invited = try library.meeting(for: CalendarEvent(occurrence: occurrence, title: "Review", start: start, end: end, attendees: [ada, kim]))
+        #expect(invited.id == meeting.id)
+        #expect(try library.meetings().map(\.attendees) == [[ada, kim]])
+    }
+
+    @Test func meetingWithoutScheduleIsDatedWhenStarted() throws {
+        let meeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_750_000_000))
+        #expect(meeting.date == meeting.startedAt)
     }
 
     @Test func noteRoundTripsByteForByte() throws {

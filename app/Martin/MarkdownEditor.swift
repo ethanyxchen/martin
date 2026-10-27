@@ -48,7 +48,13 @@ struct MarkdownEditor: NSViewRepresentable {
         }
 
         func textView(_ textView: NSTextView, doCommandBy selector: Selector) -> Bool {
-            selector == #selector(NSResponder.insertNewline(_:)) && (textView as? NoteTextView)?.continueList() == true
+            guard let textView = textView as? NoteTextView else { return false }
+            return switch selector {
+            case #selector(NSResponder.insertNewline(_:)): textView.continueList()
+            case #selector(NSResponder.insertTab(_:)): textView.indentList(outward: false)
+            case #selector(NSResponder.insertBacktab(_:)): textView.indentList(outward: true)
+            default: false
+            }
         }
     }
 }
@@ -95,7 +101,7 @@ final class NoteTextView: NSTextView {
         view.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
         view.textContainer?.widthTracksTextView = true
         view.textContainer?.lineFragmentPadding = 0
-        view.textContainerInset = NSSize(width: Theme.column - MarkdownStyle.hang, height: 2)
+        view.textContainerInset = NSSize(width: Theme.margin, height: 2)
         view.isContinuousSpellCheckingEnabled = true
         NotificationCenter.default.addObserver(view, selector: #selector(selectionChanged), name: NSTextView.didChangeSelectionNotification, object: view)
         view.insertionPointColor = Theme.ink.ns
@@ -117,7 +123,7 @@ final class NoteTextView: NSTextView {
     override func setFrameSize(_ size: NSSize) {
         super.setFrameSize(size)
         let width = enclosingScrollView?.frame.width ?? size.width
-        let inset = Theme.column - MarkdownStyle.hang + max(0, (width - Theme.page) / 2)
+        let inset = Theme.margin + max(0, (width - Theme.page) / 2)
         if textContainerInset.width != inset { textContainerInset.width = inset }
     }
 
@@ -225,6 +231,18 @@ final class NoteTextView: NSTextView {
         } else {
             apply(Markdown.Edit(range: caret, replacement: "\n" + next, selection: NSRange(location: caret.location + 1 + (next as NSString).length, length: 0)))
         }
+        return true
+    }
+
+    func indentList(outward: Bool) -> Bool {
+        let selection = selectedRange()
+        guard !hasMarkedText(), let (range, line) = line(at: selection.location) else { return false }
+        switch line.block {
+        case .list, .task: break
+        default: return false
+        }
+        guard let edit = Markdown.indent(range, in: string, selection: selection, outward: outward) else { return false }
+        apply(edit)
         return true
     }
 

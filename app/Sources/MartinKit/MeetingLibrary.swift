@@ -16,13 +16,22 @@ public struct MeetingLibrary: Sendable {
             .sorted { $0.startedAt > $1.startedAt }
     }
 
-    public func meeting(for occurrence: Occurrence) throws -> Meeting? {
+    public func meeting(for event: CalendarEvent) throws -> Meeting {
+        var meeting = try meeting(for: event.occurrence) ?? create(occurrence: event.occurrence, title: event.title)
+        guard meeting.scheduledAt != event.start || meeting.attendees != event.attendees else { return meeting }
+        meeting.scheduledAt = event.start
+        meeting.attendees = event.attendees
+        try save(meeting)
+        return meeting
+    }
+
+    func meeting(for occurrence: Occurrence) throws -> Meeting? {
         try meetings().first { $0.occurrence == occurrence }
     }
 
-    public func create(startedAt: Date = .now, occurrence: Occurrence? = nil, title: String? = nil, attendees: [Person] = []) throws -> Meeting {
+    public func create(startedAt: Date = .now, occurrence: Occurrence? = nil, title: String? = nil) throws -> Meeting {
         let startedAt = Date(timeIntervalSince1970: startedAt.timeIntervalSince1970.rounded(.down))
-        let meeting = Meeting(id: Self.folderName.string(from: startedAt), startedAt: startedAt, occurrence: occurrence, title: title, attendees: attendees)
+        let meeting = Meeting(id: Self.folderName.string(from: startedAt), startedAt: startedAt, occurrence: occurrence, title: title)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: folder(of: meeting), withIntermediateDirectories: false)
         try save(meeting)
