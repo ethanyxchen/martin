@@ -24,6 +24,12 @@ cp app/Resources/Info.plist "$app_bundle/Contents/Info.plist"
 version="$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null || echo v0.0.0)"
 plutil -insert CFBundleShortVersionString -string "${version#v}" "$app_bundle/Contents/Info.plist"
 plutil -insert CFBundleVersion -string "${version#v}" "$app_bundle/Contents/Info.plist"
+if [[ "$(git rev-parse --absolute-git-dir)" != "$(git rev-parse --path-format=absolute --git-common-dir)" ]]; then
+  worktree="$(basename "$PWD" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//; s/-*$//')"
+  plutil -replace CFBundleIdentifier -string "dev.ethanchen.martin.$worktree" "$app_bundle/Contents/Info.plist"
+  plutil -replace CFBundleName -string "Martin ($worktree)" "$app_bundle/Contents/Info.plist"
+  plutil -insert MartinDataDirectory -string "$PWD/.local-app-data" "$app_bundle/Contents/Info.plist"
+fi
 plutil -lint "$app_bundle/Contents/Info.plist"
 codesign --force --options runtime --timestamp --entitlements app/Resources/Martin.entitlements --sign "$identity" "$app_bundle"
 codesign --verify --deep --strict "$app_bundle"
