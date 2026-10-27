@@ -382,6 +382,7 @@ final class NoteTextView: NSTextView {
                   let end = content.location(start, offsetBy: range.length) else { continue }
             textLayoutManager.invalidateLayout(for: NSTextRange(location: start, end: end)!)
         }
+        invalidateIntrinsicContentSize()
     }
 
     private func apply(_ edit: Markdown.Edit) {
