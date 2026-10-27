@@ -8,7 +8,7 @@ struct MenuBar: View {
     var body: some View {
         Button("Take Notes") { Task { app.start(await CalendarLookup.currentEvent(hiding: app.hiddenCalendars)) } }
 
-        Button("Upcoming Meetings…") { app.openUpcoming() }
+        Button("Upcoming Meetings…") { app.openHome(on: .upcoming) }
 
         if !app.meetings.isEmpty {
             Section("Recent") {
@@ -22,7 +22,7 @@ struct MenuBar: View {
         }
 
         Divider()
-        Button("Settings…") { app.openSettings() }
+        Button("Settings…") { app.openHome(on: .settings) }
             .keyboardShortcut(",")
         Button("Quit \(Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Martin")") { NSApp.terminate(nil) }
             .keyboardShortcut("q")

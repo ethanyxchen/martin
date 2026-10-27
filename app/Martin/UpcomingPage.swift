@@ -10,29 +10,10 @@ struct UpcomingView: View {
         TimelineView(.everyMinute) { context in
             let today = Calendar.current.startOfDay(for: context.date)
             VStack(alignment: .leading, spacing: 0) {
-                header(from: today)
+                PageHeader(title: "Upcoming", subtitle: (today..<Calendar.current.date(byAdding: .day, value: Self.days - 1, to: today)!).formatted(.interval.month(.wide).day()))
                 content(from: today, at: context.date)
             }
         }
-        .background(Theme.paper)
-        .ignoresSafeArea(edges: .top)
-    }
-
-    private func header(from today: Date) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Upcoming")
-                .font(Theme.title)
-                .foregroundStyle(Theme.ink)
-            Text((today..<Calendar.current.date(byAdding: .day, value: Self.days - 1, to: today)!).formatted(.interval.month(.wide).day()))
-                .font(Theme.meta)
-                .foregroundStyle(Theme.secondary)
-        }
-        .padding(.leading, Theme.column)
-        .padding(.trailing, Theme.margin)
-        .padding(.top, 46)
-        .padding(.bottom, 22)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .movesWindow()
     }
 
     private func content(from today: Date, at now: Date) -> some View {

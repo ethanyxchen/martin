@@ -14,6 +14,10 @@ struct MartinApp: App {
         }
         .commands {
             TextEditingCommands()
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings…") { delegate.app.openHome(on: .settings) }
+                    .keyboardShortcut(",")
+            }
             CommandMenu("Format") {
                 ForEach(NoteTextView.formats, id: \.title) { format in
                     Button(format.title) { NSApp.sendAction(format.action, to: nil, from: nil) }
@@ -41,6 +45,7 @@ final class AppState {
     private static let hiddenCalendarsKey = "hiddenCalendars"
     let library = MeetingLibrary()
     private(set) var meetings: [Meeting] = []
+    var page = Page.upcoming
     var hiddenCalendars = Set(UserDefaults.standard.stringArray(forKey: hiddenCalendarsKey) ?? []) {
         didSet { UserDefaults.standard.set(hiddenCalendars.sorted(), forKey: Self.hiddenCalendarsKey) }
     }
@@ -86,15 +91,12 @@ final class AppState {
     }
 
     func reopen() {
-        if windows.isEmpty { openUpcoming() }
+        if windows.isEmpty { openHome(on: .upcoming) }
     }
 
-    func openUpcoming() {
-        show(windows["upcoming"] ?? present(UpcomingView(app: self), id: "upcoming", title: "Upcoming Meetings", size: Self.page))
-    }
-
-    func openSettings() {
-        show(windows["settings"] ?? present(SettingsView(app: self), id: "settings", title: "Settings", size: NSSize(width: 420, height: 520)))
+    func openHome(on page: Page) {
+        self.page = page
+        show(windows["home"] ?? present(HomeView(app: self), id: "home", title: "Martin", size: Self.page))
     }
 
     private func show(_ window: NSWindow) {

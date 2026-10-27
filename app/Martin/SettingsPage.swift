@@ -6,7 +6,7 @@ struct SettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            header
+            PageHeader(title: "Settings", subtitle: "Choose the calendars Martin shows and takes notes for.")
             CalendarFeed(query: true, promise: "you can choose which of them Martin follows") { _ in
                 CalendarLookup.accounts()
             } content: { accounts in
@@ -23,25 +23,6 @@ struct SettingsView: View {
                 }
             }
         }
-        .background(Theme.paper)
-        .ignoresSafeArea(edges: .top)
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Calendars")
-                .font(Theme.title)
-                .foregroundStyle(Theme.ink)
-            Text("Martin shows and takes notes for meetings on the calendars you choose.")
-                .font(Theme.meta)
-                .foregroundStyle(Theme.secondary)
-        }
-        .padding(.leading, Theme.column)
-        .padding(.trailing, Theme.margin)
-        .padding(.top, 46)
-        .padding(.bottom, 22)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .movesWindow()
     }
 }
 
