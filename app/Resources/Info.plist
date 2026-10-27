@@ -6,6 +6,8 @@
 	<string>en</string>
 	<key>CFBundleExecutable</key>
 	<string>Martin</string>
+	<key>CFBundleIconFile</key>
+	<string>Martin</string>
 	<key>CFBundleIdentifier</key>
 	<string>dev.ethanchen.martin</string>
 	<key>CFBundleInfoDictionaryVersion</key>
