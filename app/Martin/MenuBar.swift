@@ -22,7 +22,7 @@ struct MenuBar: View {
         }
 
         Divider()
-        Button("Quit Martin") { NSApp.terminate(nil) }
+        Button("Quit \(Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Martin")") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
     }
 }

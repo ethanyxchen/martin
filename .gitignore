@@ -4,3 +4,4 @@
 .swiftpm/
 plans/
 build/
+.local-app-data/
