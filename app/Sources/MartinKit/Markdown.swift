@@ -56,7 +56,8 @@ public enum Markdown {
         }
 
         public func marker(before caret: Int) -> NSRange? {
-            continues && caret == prefix ? NSRange(location: 0, length: prefix) : nil
+            guard continues, caret == prefix, let start = spans.first?.range.location else { return nil }
+            return NSRange(location: start, length: prefix - start)
         }
 
         public func continuation(in text: String) -> String? {
