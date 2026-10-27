@@ -11,7 +11,7 @@ struct Page<Header: View, Content: View>: View {
     var body: some View {
         VStack(spacing: 0) {
             Text(title)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold, design: .serif))
                 .foregroundStyle(Theme.ink)
                 .lineLimit(1)
                 .opacity(collapsed ? 1 : 0)
