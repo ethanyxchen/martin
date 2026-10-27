@@ -156,6 +156,8 @@ final class NoteTextView: NSTextView {
         super.viewDidMoveToWindow()
         guard let window else { return picker.hide() }
         NotificationCenter.default.addObserver(self, selector: #selector(hideMentions), name: NSWindow.didResignKeyNotification, object: window)
+        setSelectedRange(NSRange(location: (string as NSString).length, length: 0))
+        window.makeFirstResponder(self)
     }
 
     override func mouseDown(with event: NSEvent) {
