@@ -11,30 +11,25 @@ struct MarkdownEditor: NSViewRepresentable {
         Coordinator(text: $text)
     }
 
-    func makeNSView(context: Context) -> NSScrollView {
+    func makeNSView(context: Context) -> NoteTextView {
         let textView = NoteTextView.make()
         textView.delegate = context.coordinator
         textView.attendees = attendees
         textView.acquaintances = acquaintances
         textView.load(text)
         NotificationCenter.default.addObserver(context.coordinator, selector: #selector(Coordinator.storageChanged(_:)), name: NSTextStorage.didProcessEditingNotification, object: textView.textStorage)
-        let scroll = NSScrollView()
-        scroll.drawsBackground = false
-        scroll.hasVerticalScroller = true
-        scroll.autohidesScrollers = true
-        scroll.automaticallyAdjustsContentInsets = false
-        scroll.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: Theme.margin, right: 0)
-        scroll.scrollerInsets = NSEdgeInsets(top: 0, left: 0, bottom: -Theme.margin, right: 0)
-        scroll.documentView = textView
-        return scroll
+        return textView
     }
 
-    func updateNSView(_ scroll: NSScrollView, context: Context) {
+    func updateNSView(_ textView: NoteTextView, context: Context) {
         context.coordinator.text = $text
-        guard let textView = scroll.documentView as? NoteTextView else { return }
         textView.attendees = attendees
         textView.acquaintances = acquaintances
         if textView.textStorage?.mutableString.isEqual(to: text) == false { textView.load(text) }
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView textView: NoteTextView, context: Context) -> CGSize? {
+        CGSize(width: proposal.width ?? textView.frame.width, height: max(textView.intrinsicContentSize.height, proposal.height ?? 0))
     }
 
     final class Coordinator: NSObject, NSTextViewDelegate {
@@ -107,10 +102,8 @@ final class NoteTextView: NSTextView {
         view.isAutomaticLinkDetectionEnabled = false
         view.isAutomaticDataDetectionEnabled = false
         view.drawsBackground = false
-        view.isVerticallyResizable = true
+        view.isVerticallyResizable = false
         view.isHorizontallyResizable = false
-        view.autoresizingMask = .width
-        view.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
         view.textContainer?.widthTracksTextView = true
         view.textContainer?.lineFragmentPadding = 0
         view.textContainerInset = NSSize(width: Theme.margin, height: 2)
@@ -130,13 +123,26 @@ final class NoteTextView: NSTextView {
         textStorage?.setAttributedString(NSAttributedString(string: markdown, attributes: MarkdownStyle.typing))
         undoManager?.removeAllActions()
         selectionChanged()
+        invalidateIntrinsicContentSize()
+    }
+
+    override var intrinsicContentSize: NSSize {
+        guard let textLayoutManager else { return super.intrinsicContentSize }
+        textLayoutManager.ensureLayout(for: textLayoutManager.documentRange)
+        return NSSize(width: NSView.noIntrinsicMetric, height: textLayoutManager.usageBoundsForTextContainer.height + textContainerInset.height * 2)
+    }
+
+    override func didChangeText() {
+        super.didChangeText()
+        invalidateIntrinsicContentSize()
     }
 
     override func setFrameSize(_ size: NSSize) {
+        let resized = size.width != frame.width
         super.setFrameSize(size)
-        let width = enclosingScrollView?.frame.width ?? size.width
-        let inset = Theme.margin + max(0, (width - Theme.page) / 2)
+        let inset = Theme.margin + max(0, (size.width - Theme.page) / 2)
         if textContainerInset.width != inset { textContainerInset.width = inset }
+        if resized { invalidateIntrinsicContentSize() }
     }
 
     override func becomeFirstResponder() -> Bool {
@@ -156,6 +162,8 @@ final class NoteTextView: NSTextView {
         super.viewDidMoveToWindow()
         guard let window else { return picker.hide() }
         NotificationCenter.default.addObserver(self, selector: #selector(hideMentions), name: NSWindow.didResignKeyNotification, object: window)
+        setSelectedRange(NSRange(location: (string as NSString).length, length: 0))
+        window.makeFirstResponder(self)
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -206,8 +214,11 @@ final class NoteTextView: NSTextView {
 
     override func deleteBackward(_ sender: Any?) {
         let caret = selectedRange()
-        guard caret.length == 0, let mention = mentions(near: caret.location).first(where: { NSMaxRange($0) == caret.location }) else { return super.deleteBackward(sender) }
-        delete(mention)
+        guard caret.length == 0, !hasMarkedText() else { return super.deleteBackward(sender) }
+        if let mention = mentions(near: caret.location).first(where: { NSMaxRange($0) == caret.location }) { return delete(mention) }
+        let (range, line) = style.line(at: caret.location, in: string as NSString)
+        guard let marker = line.marker(before: caret.location - range.location)?.offset(by: range.location) else { return super.deleteBackward(sender) }
+        delete(marker)
     }
 
     override func deleteForward(_ sender: Any?) {
@@ -310,8 +321,8 @@ final class NoteTextView: NSTextView {
         mentions(near: index).first { $0.location < index && index < NSMaxRange($0) }
     }
 
-    private func delete(_ mention: NSRange) {
-        apply(Markdown.Edit(range: mention, replacement: "", selection: NSRange(location: mention.location, length: 0)))
+    private func delete(_ range: NSRange) {
+        apply(Markdown.Edit(range: range, replacement: "", selection: NSRange(location: range.location, length: 0)))
     }
 
     private func line(at index: Int) -> (range: NSRange, line: Markdown.Line)? {
@@ -376,6 +387,7 @@ final class NoteTextView: NSTextView {
                   let end = content.location(start, offsetBy: range.length) else { continue }
             textLayoutManager.invalidateLayout(for: NSTextRange(location: start, end: end)!)
         }
+        invalidateIntrinsicContentSize()
     }
 
     private func apply(_ edit: Markdown.Edit) {

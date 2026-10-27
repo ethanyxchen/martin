@@ -34,6 +34,7 @@ public struct CalendarEvent: Sendable, Hashable {
 
 public struct AgendaDay: Sendable, Hashable {
     public let start: Date
+    public let end: Date
     public let events: [CalendarEvent]
 }
 
@@ -112,6 +113,7 @@ public enum CalendarLookup {
             let end = calendar.date(byAdding: .day, value: 1, to: start)!
             return AgendaDay(
                 start: start,
+                end: end,
                 events: events
                     .filter { $0.start < end && $0.end > max(start, now) }
                     .sorted { ($0.start, $0.title) < ($1.start, $1.title) }

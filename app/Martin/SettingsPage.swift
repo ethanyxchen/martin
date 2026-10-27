@@ -5,22 +5,31 @@ struct SettingsView: View {
     @Bindable var app: AppState
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            PageHeader(title: "Settings", subtitle: "Choose the calendars Martin shows and takes notes for.")
+        Page(title: "Settings") {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Settings")
+                    .font(Theme.title)
+                    .foregroundStyle(Theme.ink)
+                Text("Choose the calendars Martin shows and takes notes for.")
+                    .font(Theme.meta)
+                    .foregroundStyle(Theme.secondary)
+            }
+            .padding(.leading, Theme.column)
+            .padding(.trailing, Theme.margin)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } content: {
             CalendarFeed(query: true, promise: "you can choose which of them Martin follows") { _ in
                 CalendarLookup.accounts()
             } content: { accounts in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 26) {
-                        ForEach(accounts, id: \.title) { account in
-                            AccountView(account: account, hidden: $app.hiddenCalendars)
-                        }
+                VStack(alignment: .leading, spacing: 26) {
+                    ForEach(accounts, id: \.title) { account in
+                        AccountView(account: account, hidden: $app.hiddenCalendars)
                     }
-                    .padding(.leading, Theme.column)
-                    .padding(.trailing, Theme.margin)
-                    .padding(.bottom, 28)
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .padding(.leading, Theme.column)
+                .padding(.trailing, Theme.margin)
+                .padding(.bottom, 28)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }

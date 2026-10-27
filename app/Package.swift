@@ -11,5 +11,6 @@ let package = Package(
         .target(name: "MartinKit"),
         .executableTarget(name: "Martin", dependencies: ["MartinKit"], path: "Martin"),
         .testTarget(name: "MartinKitTests", dependencies: ["MartinKit"]),
+        .testTarget(name: "MartinTests", dependencies: ["Martin"]),
     ]
 )

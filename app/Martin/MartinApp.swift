@@ -45,7 +45,7 @@ final class AppState {
     private static let hiddenCalendarsKey = "hiddenCalendars"
     let library = MeetingLibrary()
     private(set) var meetings: [Meeting] = []
-    var page = Page.upcoming
+    var page = HomePage.upcoming
     var hiddenCalendars = Set(UserDefaults.standard.stringArray(forKey: hiddenCalendarsKey) ?? []) {
         didSet { UserDefaults.standard.set(hiddenCalendars.sorted(), forKey: Self.hiddenCalendarsKey) }
     }
@@ -94,7 +94,7 @@ final class AppState {
         if windows.isEmpty { openHome(on: .upcoming) }
     }
 
-    func openHome(on page: Page) {
+    func openHome(on page: HomePage) {
         self.page = page
         show(windows["home"] ?? present(HomeView(app: self), id: "home", title: "Martin", size: Self.page))
     }

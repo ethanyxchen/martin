@@ -29,6 +29,7 @@ struct CalendarLookupTests {
     @Test func agendaCoversTodayAndTheNextThreeDays() {
         let days = CalendarLookup.agenda(of: [], days: 4, at: Self.at(20, 15), calendar: Self.calendar)
         #expect(days.map(\.start) == [Self.at(20, 0), Self.at(21, 0), Self.at(22, 0), Self.at(23, 0)])
+        #expect(days.map(\.end) == [Self.at(21, 0), Self.at(22, 0), Self.at(23, 0), Self.at(24, 0)])
         #expect(days.allSatisfy { $0.events.isEmpty })
     }
 

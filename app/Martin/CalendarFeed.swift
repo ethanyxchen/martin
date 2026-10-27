@@ -17,7 +17,7 @@ struct CalendarFeed<Query: Equatable, Value: Sendable, Content: View>: View {
                 CalendarAccess(promise: promise)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .task(id: query) { await watch() }
     }
 

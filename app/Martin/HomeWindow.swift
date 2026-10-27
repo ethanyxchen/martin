@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum Page: CaseIterable {
+enum HomePage: CaseIterable {
     case upcoming
     case settings
 
@@ -29,23 +29,21 @@ struct HomeView: View {
             case .settings: SettingsView(app: app)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .overlay(alignment: .topTrailing) {
             PageTabs(page: $app.page)
                 .padding(.top, 5)
                 .padding(.trailing, 10)
+                .ignoresSafeArea(edges: .top)
         }
-        .background(Theme.paper)
-        .ignoresSafeArea(edges: .top)
     }
 }
 
 private struct PageTabs: View {
-    @Binding var page: Page
+    @Binding var page: HomePage
 
     var body: some View {
         HStack(spacing: 2) {
-            ForEach(Page.allCases, id: \.self) { tab in
+            ForEach(HomePage.allCases, id: \.self) { tab in
                 Button { page = tab } label: {
                     Label(tab.title, systemImage: tab.symbol)
                         .labelStyle(.iconOnly)
@@ -62,27 +60,5 @@ private struct PageTabs: View {
         .padding(2)
         .background(Theme.well, in: .capsule)
         .animation(.easeOut(duration: 0.12), value: page)
-    }
-}
-
-struct PageHeader: View {
-    let title: String
-    let subtitle: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(Theme.title)
-                .foregroundStyle(Theme.ink)
-            Text(subtitle)
-                .font(Theme.meta)
-                .foregroundStyle(Theme.secondary)
-        }
-        .padding(.leading, Theme.column)
-        .padding(.trailing, Theme.margin)
-        .padding(.top, 46)
-        .padding(.bottom, 22)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .movesWindow()
     }
 }
