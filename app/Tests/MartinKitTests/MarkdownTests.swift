@@ -80,14 +80,16 @@ struct MarkdownTests {
         #expect(Self.spans("see https://example.com/a_b_c.") == ["link→https://example.com/a_b_c https://example.com/a_b_c"])
     }
 
-    @Test func mentionsAreMailtoLinksLabelledWithAnAt() {
-        #expect(Self.spans("- ask [@Kim K](mailto:kim.k@goodnotes.com) **now**") == [
-            "bullet -", "mention→@Kim K [@Kim K](mailto:kim.k@goodnotes.com)", "strong **now**", "marker **", "marker **",
+    @Test func mentionsShowTheirNameOrTheEmailsLocalPart() {
+        #expect(Self.spans("- ask @{Kim K <kim.k@goodnotes.com>} **now**") == [
+            "bullet -", "mention→Kim K @{Kim K <kim.k@goodnotes.com>}", "strong **now**", "marker **", "marker **",
         ])
-        #expect(Self.spans("[Kim](mailto:kim.k@goodnotes.com)").first == "marker [")
-        #expect(Self.spans("`[@Kim](mailto:kim.k@goodnotes.com)`") == ["code `[@Kim](mailto:kim.k@goodnotes.com)`", "marker `", "marker `"])
-        #expect(Markdown.mayConceal(NSRange(location: 0, length: 32), in: "ask [@Kim](mailto:kim@x.com) now"))
-        #expect(!Markdown.mayConceal(NSRange(location: 0, length: 9), in: "plain @me"))
+        #expect(Self.spans("cc @{inamiy@goodnotes.com}, @{snake_case_dev@x.com}") == [
+            "mention→inamiy @{inamiy@goodnotes.com}", "mention→snake_case_dev @{snake_case_dev@x.com}",
+        ])
+        #expect(Self.spans("@{Kim <kim.k@goodnotes.com}").isEmpty)
+        #expect(Self.spans("@{no email}").isEmpty)
+        #expect(Self.spans("`@{kim@x.com}`") == ["code `@{kim@x.com}`", "marker `", "marker `"])
     }
 
     @Test func mentionQueryIsTheAtWordBeforeTheCaret() {
@@ -102,7 +104,8 @@ struct MarkdownTests {
         #expect(query("mail kim@goodnotes") == nil)
         #expect(query("`@kim`", at: 5) == nil)
         #expect(query("@kim", code: true) == nil)
-        #expect(query("[@Kim](mailto:kim@x.com)", at: 13) == nil)
+        #expect(query("@{kim@x.com}", at: 6) == nil)
+        #expect(query("@{kim@x.com} @k") == "@k")
     }
 
     @Test func referenceLinksResolveOnlyWhenDefined() {

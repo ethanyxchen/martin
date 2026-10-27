@@ -14,7 +14,8 @@ public struct Person: Codable, Hashable, Sendable {
     }
 
     public var mention: String {
-        "[@\(displayName.filter { $0 != "[" && $0 != "]" })](mailto:\(email))"
+        guard let name = name?.filter({ !"{}<>\n".contains($0) }), !name.isEmpty else { return "@{\(email)}" }
+        return "@{\(name) <\(email)>}"
     }
 
     public static func matches(of query: String, in text: String) -> [Range<String.Index>] {

@@ -110,7 +110,8 @@ public enum Markdown {
                 claimed.append(match.range)
             }
             for match in Pattern.mention.matches(in: text, range: content) where free(match.range) {
-                spans.append(Span(.mention(label: match.range(at: 1)), match.range))
+                let label = match.range(at: 1).location != NSNotFound ? match.range(at: 1) : match.range(at: 2)
+                spans.append(Span(.mention(label: label), match.range))
                 claimed.append(match.range)
             }
             for match in Pattern.link.matches(in: text, range: content) {
@@ -209,8 +210,8 @@ public enum Markdown {
         return references
     }
 
-    public static func mayConceal(_ line: NSRange, in text: NSString) -> Bool {
-        text.blockStart(in: line).map { text.character(at: $0) == 0x23 } == true || text.range(of: "](mailto:", range: line).location != NSNotFound
+    public static func mayBeHeading(_ line: NSRange, in text: NSString) -> Bool {
+        text.blockStart(in: line).map { text.character(at: $0) == 0x23 } ?? false
     }
 
     static func label(_ name: String) -> String {
@@ -309,7 +310,7 @@ private enum Pattern {
     static let definition = regex(#" {0,3}(\[([^\]\n]+)\]:)[ \t]*(\S+)(?:[ \t]+"[^"\n]*")?[ \t]*$"#)
     static let reference = regex(#"(\[)([^\[\]\n]+)(\]\[)([^\[\]\n]*)(\])"#)
     static let shortcut = regex(#"(?<![\]\\!])(\[)([^\[\]\n]+)(\])(?![(\[:])"#)
-    static let mention = regex(#"\[(@[^\[\]\n]+)\]\(mailto:[^)\s]+\)"#)
+    static let mention = regex(#"@\{(?:([^{}<>\n]+) <[^{}<>\s@]+@[^{}<>\s]+>|([^{}<>\s@]+)@[^{}<>\s]+)\}"#)
     static let mentionQuery = regex(#"(?<![\w.+@-])@[\w.+-]*$"#)
     static let address = regex(#"(?<![\w/])https?://[^\s<>()\[\]]*[^\s<>()\[\].,:;!?'"*_~]"#)
     static let delimited: [(NSRegularExpression, [Markdown.Line.Role], Int)] = [

@@ -50,6 +50,12 @@ struct MarkdownEditor: NSViewRepresentable {
             text.wrappedValue = storage.nativeString
         }
 
+        func textView(_ textView: NSTextView, willChangeSelectionFromCharacterRanges old: [NSValue], toCharacterRanges new: [NSValue]) -> [NSValue] {
+            guard let textView = textView as? NoteTextView else { return new }
+            let from = old.first?.rangeValue.location ?? 0
+            return new.map { NSValue(range: textView.skippingMentions($0.rangeValue, from: from)) }
+        }
+
         func textView(_ textView: NSTextView, doCommandBy selector: Selector) -> Bool {
             guard let textView = textView as? NoteTextView else { return false }
             if textView.pickMention(for: selector) { return true }
@@ -199,8 +205,24 @@ final class NoteTextView: NSTextView {
     }
 
     override func deleteBackward(_ sender: Any?) {
-        guard let mention = mention(endingAt: selectedRange()) else { return super.deleteBackward(sender) }
-        apply(Markdown.Edit(range: mention, replacement: "", selection: NSRange(location: mention.location, length: 0)))
+        let caret = selectedRange()
+        guard caret.length == 0, let mention = mentions(near: caret.location).first(where: { NSMaxRange($0) == caret.location }) else { return super.deleteBackward(sender) }
+        delete(mention)
+    }
+
+    override func deleteForward(_ sender: Any?) {
+        let caret = selectedRange()
+        guard caret.length == 0, let mention = mentions(near: caret.location).first(where: { $0.location == caret.location }) else { return super.deleteForward(sender) }
+        delete(mention)
+    }
+
+    func skippingMentions(_ range: NSRange, from origin: Int) -> NSRange {
+        let start = mention(around: range.location), end = mention(around: NSMaxRange(range))
+        if range.length == 0, let start {
+            return NSRange(location: range.location < origin ? start.location : NSMaxRange(start), length: 0)
+        }
+        let location = start?.location ?? range.location
+        return NSRange(location: location, length: (end.map(NSMaxRange) ?? NSMaxRange(range)) - location)
     }
 
     @objc func toggleBold(_ sender: Any?) {
@@ -276,12 +298,20 @@ final class NoteTextView: NSTextView {
         return line.mentionQuery(in: (string as NSString).substring(with: range), at: caret.location - range.location)?.offset(by: range.location)
     }
 
-    private func mention(endingAt caret: NSRange) -> NSRange? {
-        guard caret.length == 0, caret.location > 0, let (range, line) = line(at: caret.location - 1) else { return nil }
-        return line.spans.first { span in
-            guard case .mention = span.role else { return false }
-            return range.location + NSMaxRange(span.range) == caret.location
-        }?.range.offset(by: range.location)
+    private func mentions(near index: Int) -> [NSRange] {
+        guard let (range, line) = line(at: index) else { return [] }
+        return line.spans.compactMap { span in
+            guard case .mention = span.role else { return nil }
+            return span.range.offset(by: range.location)
+        }
+    }
+
+    private func mention(around index: Int) -> NSRange? {
+        mentions(near: index).first { $0.location < index && index < NSMaxRange($0) }
+    }
+
+    private func delete(_ mention: NSRange) {
+        apply(Markdown.Edit(range: mention, replacement: "", selection: NSRange(location: mention.location, length: 0)))
     }
 
     private func line(at index: Int) -> (range: NSRange, line: Markdown.Line)? {

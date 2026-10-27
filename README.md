@@ -22,4 +22,4 @@ Each meeting is a folder in `~/Library/Application Support/Martin/meetings/` wit
 
 ## Mentions
 
-Type `@` in a note to mention someone: Martin suggests the meeting's attendees first, then everyone from earlier meetings, matching names and emails. Press Return or Tab to pick one. A mention is stored in `note.md` as a mailto link, `[@Kim K](mailto:kim.k@goodnotes.com)`, so every note that mentions a person can be found by their email; the editor shows just `@Kim K` until the caret moves inside it, and Delete right after a mention removes it whole.
+Type `@` in a note to mention someone: Martin suggests the meeting's attendees first, then everyone from earlier meetings, matching names and emails. Press Return or Tab to pick one. A mention is stored in `note.md` as `@{Kim Kam <kim.k@goodnotes.com>}`, or `@{inamiy@goodnotes.com}` for someone without a calendar name, so every note that mentions a person can be found by their email. The editor shows only `@Kim Kam` or `@inamiy`, moves the caret over a mention as one piece, and deletes it whole.

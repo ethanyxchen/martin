@@ -23,9 +23,9 @@ final class MarkdownStyle: NSObject {
 
     func select(_ selection: NSRange?, in text: NSString) -> Set<NSRange> {
         guard selection != self.selection else { return [] }
-        let before = revealedMarkup(by: self.selection, in: text)
+        let before = headings(revealedBy: self.selection, in: text)
         self.selection = selection
-        return Set(before.symmetricDifference(revealedMarkup(by: selection, in: text)).map(text.paragraphRange(for:)))
+        return before.symmetricDifference(headings(revealedBy: selection, in: text))
     }
 
     func line(at location: Int, in text: NSString) -> (range: NSRange, line: Markdown.Line) {
@@ -39,25 +39,15 @@ final class MarkdownStyle: NSObject {
         return (range, closing ? line : Markdown.Line(contents, code: true))
     }
 
-    private func revealedMarkup(by selection: NSRange?, in text: NSString) -> Set<NSRange> {
+    private func headings(revealedBy selection: NSRange?, in text: NSString) -> Set<NSRange> {
         guard let selection else { return [] }
-        var revealed: Set<NSRange> = []
+        var headings: Set<NSRange> = []
         text.enumerateSubstrings(in: Self.paragraphs(of: selection, in: text), options: [.byParagraphs, .substringNotRequired]) { _, range, enclosing, _ in
-            guard Markdown.mayConceal(range, in: text) else { return }
+            guard Markdown.mayBeHeading(range, in: text) else { return }
             let line = self.line(at: range.location, in: text).line
-            if line.block == .heading { revealed.insert(enclosing) }
-            for span in line.spans {
-                guard case .mention = span.role else { continue }
-                let mention = NSRange(location: range.location + span.range.location, length: span.range.length)
-                if Self.reveals(selection, mention) { revealed.insert(mention) }
-            }
+            if line.block == .heading { headings.insert(enclosing) }
         }
-        return revealed
-    }
-
-    private static func reveals(_ selection: NSRange?, _ mention: NSRange) -> Bool {
-        guard let selection else { return false }
-        return NSIntersectionRange(selection, mention).length > 0 || (mention.location < selection.location && selection.location < NSMaxRange(mention))
+        return headings
     }
 
     private static func paragraphs(of selection: NSRange, in text: NSString) -> NSRange {
@@ -73,7 +63,7 @@ final class MarkdownStyle: NSObject {
         }
     }
 
-    private func style(_ text: NSMutableAttributedString, as line: Markdown.Line, length: Int, edge: CodeEdge?, revealed: Bool, at location: Int) {
+    private func style(_ text: NSMutableAttributedString, as line: Markdown.Line, length: Int, edge: CodeEdge?, revealed: Bool) {
         let look = Look(line.block)
         let all = NSRange(location: 0, length: text.length)
         text.addAttributes([.font: look.font, .foregroundColor: look.color, .baselineOffset: look.baselineOffset], range: all)
@@ -109,11 +99,11 @@ final class MarkdownStyle: NSObject {
             case .url:
                 text.addAttribute(.foregroundColor, value: Self.tertiary, range: span.range)
             case .mention(let label):
-                let editing = Self.reveals(selection, NSRange(location: location + span.range.location, length: span.range.length))
-                let markup: [NSAttributedString.Key: Any] = editing ? [.foregroundColor: Self.tertiary] : [.font: Self.collapsed, .foregroundColor: NSColor.clear]
-                text.addAttributes(markup, range: NSRange(location: span.range.location, length: label.location - span.range.location))
-                text.addAttributes(markup, range: NSRange(location: NSMaxRange(label), length: NSMaxRange(span.range) - NSMaxRange(label)))
-                text.addAttribute(.foregroundColor, value: Self.cobalt, range: label)
+                let brace = NSRange(location: span.range.location + 1, length: label.location - span.range.location - 1)
+                let address = NSRange(location: NSMaxRange(label), length: NSMaxRange(span.range) - NSMaxRange(label))
+                text.addAttribute(.foregroundColor, value: Self.cobalt, range: span.range)
+                text.addAttributes([.font: Self.collapsed, .foregroundColor: NSColor.clear], range: brace)
+                text.addAttributes([.font: Self.collapsed, .foregroundColor: NSColor.clear], range: address)
             }
         }
         if line.block == .heading, !revealed {
@@ -202,7 +192,7 @@ extension MarkdownStyle: @preconcurrency NSTextContentStorageDelegate {
         let text = NSMutableAttributedString(attributedString: source.attributedSubstring(from: range))
         let (contents, line) = line(at: range.location, in: source.string as NSString)
         let revealed = selection.map { NSIntersectionRange(Self.paragraphs(of: $0, in: source.string as NSString), range).length > 0 } ?? false
-        style(text, as: line, length: contents.length, edge: edge(of: line, at: range.location), revealed: revealed, at: range.location)
+        style(text, as: line, length: contents.length, edge: edge(of: line, at: range.location), revealed: revealed)
         return NSTextParagraph(attributedString: text)
     }
 }

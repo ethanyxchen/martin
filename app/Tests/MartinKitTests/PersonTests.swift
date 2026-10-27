@@ -13,9 +13,11 @@ struct PersonTests {
         #expect(Person(email: "kim.k@goodnotes.com", name: "Kim Kam").displayName == "Kim Kam")
     }
 
-    @Test func mentionLinksTheNameToTheEmail() {
-        #expect(Person(email: "kim.k@goodnotes.com").mention == "[@kim.k](mailto:kim.k@goodnotes.com)")
-        #expect(Person(email: "a@x.com", name: "Ada [Labs]").mention == "[@Ada Labs](mailto:a@x.com)")
+    @Test func mentionNamesTheEmailWithoutLinkingIt() {
+        #expect(Person(email: "inamiy@goodnotes.com").mention == "@{inamiy@goodnotes.com}")
+        #expect(Person(email: "kim.k@goodnotes.com", name: "Kim Kam").mention == "@{Kim Kam <kim.k@goodnotes.com>}")
+        #expect(Person(email: "a@x.com", name: "Ada <Labs>").mention == "@{Ada Labs <a@x.com>}")
+        #expect(Person(email: "a@x.com", name: "{}").mention == "@{a@x.com}")
     }
 
     @Test func matchesAreTheQueryAtTheStartOfEachWord() {
