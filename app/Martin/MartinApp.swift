@@ -106,7 +106,11 @@ final class AppState {
         window.contentMinSize = NSSize(width: 420, height: 420)
         window.contentView = NSHostingView(rootView: view)
         window.setContentSize(size)
-        window.center()
+        if let front = NSApp.orderedWindows.first(where: windows.values.contains) {
+            window.cascadeTopLeft(from: front.cascadeTopLeft(from: .zero))
+        } else {
+            window.center()
+        }
         windows[id] = window
         NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.windows[id] = nil }
