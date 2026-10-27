@@ -38,8 +38,7 @@ struct HomeView: View {
         .animation(.default, value: app.page)
         .overlay(alignment: .topTrailing) {
             PageTabs(page: $app.page, animation: reduceMotion ? nil : .spring(duration: 0.35, bounce: 0.1))
-                .padding(.top, 5)
-                .padding(.trailing, 10)
+                .padding([.top, .trailing], 4)
                 .ignoresSafeArea(edges: .top)
         }
     }
@@ -67,7 +66,7 @@ private struct PageTabs: View {
                         .labelStyle(.iconOnly)
                         .font(.system(size: 13))
                         .foregroundStyle(tab == page ? AnyShapeStyle(Theme.ink) : AnyShapeStyle(Theme.tertiary))
-                        .frame(width: 30, height: 22)
+                        .frame(width: 28, height: 20)
                         .background {
                             if tab == page {
                                 Capsule()
