@@ -6,7 +6,7 @@ struct MenuBar: View {
     let app: AppState
 
     var body: some View {
-        Button("Take Notes") { Task { app.start(await CalendarLookup.currentEvent()) } }
+        Button("Take Notes") { Task { app.start(await CalendarLookup.currentEvent(hiding: app.hiddenCalendars)) } }
 
         Button("Upcoming Meetings…") { app.openUpcoming() }
 
@@ -22,6 +22,8 @@ struct MenuBar: View {
         }
 
         Divider()
+        Button("Settings…") { app.openSettings() }
+            .keyboardShortcut(",")
         Button("Quit \(Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Martin")") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
     }

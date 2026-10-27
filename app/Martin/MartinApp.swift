@@ -38,8 +38,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 @Observable
 final class AppState {
     private static let page = NSSize(width: 520, height: 640)
+    private static let hiddenCalendarsKey = "hiddenCalendars"
     let library = MeetingLibrary()
     private(set) var meetings: [Meeting] = []
+    var hiddenCalendars = Set(UserDefaults.standard.stringArray(forKey: hiddenCalendarsKey) ?? []) {
+        didSet { UserDefaults.standard.set(hiddenCalendars.sorted(), forKey: Self.hiddenCalendarsKey) }
+    }
     @ObservationIgnored private var windows: [String: NSWindow] = [:]
 
     init() {
@@ -87,6 +91,10 @@ final class AppState {
 
     func openUpcoming() {
         show(windows["upcoming"] ?? present(UpcomingView(app: self), id: "upcoming", title: "Upcoming Meetings", size: Self.page))
+    }
+
+    func openSettings() {
+        show(windows["settings"] ?? present(SettingsView(app: self), id: "settings", title: "Settings", size: NSSize(width: 420, height: 520)))
     }
 
     private func show(_ window: NSWindow) {

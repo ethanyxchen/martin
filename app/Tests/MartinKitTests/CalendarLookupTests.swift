@@ -66,4 +66,14 @@ struct CalendarLookupTests {
         #expect(!standup.isUnderway(at: Self.at(20, 9, 15)))
     }
 
+    @Test func calendarsAreGroupedByAccountInOrder() {
+        let calendars = [
+            EventCalendar(id: "3", title: "Work", account: "iCloud", color: .black),
+            EventCalendar(id: "1", title: "Team", account: "ada@example.com", color: .black),
+            EventCalendar(id: "2", title: "Home", account: "iCloud", color: .black),
+        ]
+        let accounts = CalendarLookup.accounts(of: calendars)
+        #expect(accounts.map(\.title) == ["ada@example.com", "iCloud"])
+        #expect(accounts.map { $0.calendars.map(\.id) } == [["1"], ["2", "3"]])
+    }
 }
