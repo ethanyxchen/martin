@@ -17,9 +17,16 @@ public struct Person: Codable, Hashable, Sendable {
         "[@\(displayName.filter { $0 != "[" && $0 != "]" })](mailto:\(email))"
     }
 
+    public static func matches(of query: String, in text: String) -> [Range<String.Index>] {
+        let starts = text.indices.filter { $0 == text.startIndex || text[text.index(before: $0)] == " " }
+        return starts.compactMap { start in
+            guard let end = text.index(start, offsetBy: query.count, limitedBy: text.endIndex), text[start..<end].lowercased() == query.lowercased() else { return nil }
+            return start..<end
+        }
+    }
+
     func matches(_ query: String) -> Bool {
-        let query = query.lowercased()
-        return ([email, displayName] + displayName.split(separator: " ").map(String.init)).contains { $0.lowercased().hasPrefix(query) }
+        !Self.matches(of: query, in: displayName).isEmpty || !Self.matches(of: query, in: email).isEmpty
     }
 }
 

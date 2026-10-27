@@ -50,8 +50,8 @@ final class AppState {
         meetings.first { $0.id == id }
     }
 
-    func people(for meeting: Meeting) -> [Person] {
-        meeting.attendees + meetings.flatMap(\.attendees)
+    var people: [Person] {
+        meetings.flatMap(\.attendees)
     }
 
     func reload() {

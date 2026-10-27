@@ -18,6 +18,17 @@ struct PersonTests {
         #expect(Person(email: "a@x.com", name: "Ada [Labs]").mention == "[@Ada Labs](mailto:a@x.com)")
     }
 
+    @Test func matchesAreTheQueryAtTheStartOfEachWord() {
+        func matched(_ query: String, in text: String) -> [String] {
+            Person.matches(of: query, in: text).map { String(text[$0]) }
+        }
+        #expect(matched("k", in: "Kim Kam") == ["K", "K"])
+        #expect(matched("ka", in: "Kim Kam") == ["Ka"])
+        #expect(matched("kim.k", in: "kim.k@goodnotes.com") == ["kim.k"])
+        #expect(matched("goodnotes", in: "kim.k@goodnotes.com").isEmpty)
+        #expect(matched("kimberly", in: "Kim").isEmpty)
+    }
+
     @Test func suggestionsMatchNameWordsOrEmailOncePerPerson() {
         let kim = Person(email: "kim.k@goodnotes.com")
         let kevin = Person(email: "kevin@goodnotes.com", name: "Kevin Kam")

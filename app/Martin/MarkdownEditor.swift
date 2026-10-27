@@ -4,7 +4,8 @@ import SwiftUI
 
 struct MarkdownEditor: NSViewRepresentable {
     @Binding var text: String
-    let people: [Person]
+    let attendees: [Person]
+    let acquaintances: [Person]
 
     func makeCoordinator() -> Coordinator {
         Coordinator(text: $text)
@@ -13,7 +14,8 @@ struct MarkdownEditor: NSViewRepresentable {
     func makeNSView(context: Context) -> NSScrollView {
         let textView = NoteTextView.make()
         textView.delegate = context.coordinator
-        textView.people = people
+        textView.attendees = attendees
+        textView.acquaintances = acquaintances
         textView.load(text)
         NotificationCenter.default.addObserver(context.coordinator, selector: #selector(Coordinator.storageChanged(_:)), name: NSTextStorage.didProcessEditingNotification, object: textView.textStorage)
         let scroll = NSScrollView()
@@ -30,7 +32,8 @@ struct MarkdownEditor: NSViewRepresentable {
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         context.coordinator.text = $text
         guard let textView = scroll.documentView as? NoteTextView else { return }
-        textView.people = people
+        textView.attendees = attendees
+        textView.acquaintances = acquaintances
         if textView.textStorage?.mutableString.isEqual(to: text) == false { textView.load(text) }
     }
 
@@ -77,7 +80,8 @@ final class NoteTextView: NSTextView {
     ]
 
     private let style = MarkdownStyle()
-    var people: [Person] = []
+    var attendees: [Person] = []
+    var acquaintances: [Person] = []
     private lazy var picker = MentionPicker { [weak self] in self?.insertMention($0) }
     private var dismissedMention: Int?
 
@@ -255,17 +259,14 @@ final class NoteTextView: NSTextView {
         let query = window?.isKeyWindow == true && window?.firstResponder === self ? mentionQuery() : nil
         if query?.location != dismissedMention { dismissedMention = nil }
         guard let window, let query, dismissedMention == nil else { return picker.hide() }
-        let people = suggestions(for: query)
+        let typed = (string as NSString).substring(with: NSRange(location: query.location + 1, length: query.length - 1))
+        let people = (attendees + acquaintances).suggestions(for: typed)
         guard !people.isEmpty else { return picker.hide() }
-        picker.show(people, under: firstRect(forCharacterRange: query, actualRange: nil), in: window)
+        picker.show(people, attending: Set(attendees.map(\.email)), matching: typed, under: firstRect(forCharacterRange: query, actualRange: nil), in: window)
     }
 
     @objc private func hideMentions() {
         picker.hide()
-    }
-
-    private func suggestions(for query: NSRange) -> [Person] {
-        people.suggestions(for: (string as NSString).substring(with: NSRange(location: query.location + 1, length: query.length - 1)))
     }
 
     private func mentionQuery() -> NSRange? {
