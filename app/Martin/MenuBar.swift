@@ -29,7 +29,7 @@ struct MenuBar: View {
 
 extension NSImage {
     static let menuBarIcon: NSImage = {
-        let image = NSImage(size: NSSize(width: 20, height: 16), flipped: true) { _ in
+        let image = NSImage(size: NSSize(width: 20, height: 16), flipped: true) { bounds in
             func window(_ frame: NSRect, degrees: CGFloat, inset: CGFloat = 0) -> NSBezierPath {
                 let path = NSBezierPath(roundedRect: frame.insetBy(dx: inset, dy: inset), xRadius: 2 - inset, yRadius: 2 - inset)
                 var tilt = AffineTransform(translationByX: frame.midX, byY: frame.midY)
@@ -40,12 +40,15 @@ extension NSImage {
             }
             let earlier = window(NSRect(x: 1.75, y: 2.25, width: 11, height: 8.5), degrees: -10)
             let focused = NSRect(x: 6.75, y: 5.75, width: 11.5, height: 8.5)
+            let gap = NSBezierPath(rect: bounds)
+            gap.append(window(focused, degrees: 4, inset: -1.5))
+            gap.windingRule = .evenOdd
+            NSGraphicsContext.saveGraphicsState()
+            gap.addClip()
             NSColor.black.withAlphaComponent(0.5).setStroke()
             earlier.lineWidth = 1.5
             earlier.stroke()
-            NSGraphicsContext.current?.compositingOperation = .destinationOut
-            window(focused, degrees: 4, inset: -1.5).fill()
-            NSGraphicsContext.current?.compositingOperation = .sourceOver
+            NSGraphicsContext.restoreGraphicsState()
             NSColor.black.setFill()
             window(focused, degrees: 4).fill()
             return true
