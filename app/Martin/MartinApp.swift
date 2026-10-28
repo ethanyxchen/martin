@@ -53,6 +53,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let app = AppState()
     let updater = Updater()
 
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        app.reopen()
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
         app.reopen()
         return true
