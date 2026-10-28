@@ -66,15 +66,14 @@ struct MeetingsView: View {
     }
 
     private func select(_ id: Series.ID?, animated: Bool = true) {
-        let duration = animated ? Self.slide : 0
-        if selected == nil, id != nil {
-            grown = max(0, Self.wide - width)
-            app.widenHome(by: grown, over: duration)
-        } else if selected != nil, id == nil {
-            app.widenHome(by: -grown, over: duration)
-            grown = 0
+        let growth = switch (selected, id) {
+        case (nil, .some): max(0, Self.wide - width)
+        case (.some, nil): -grown
+        default: CGFloat(0)
         }
-        withAnimation(animated ? .drawer(duration) : nil) { selected = id }
+        grown += growth
+        app.widenHome(by: growth)
+        withAnimation(animated && growth == 0 ? .drawer(Self.slide) : nil) { selected = id }
     }
 }
 

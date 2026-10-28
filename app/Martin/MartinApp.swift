@@ -176,18 +176,14 @@ final class AppState {
         show(windows["archive"] ?? present(ArchiveView(app: self), id: "archive", title: "Archive", size: Self.windowSize))
     }
 
-    func widenHome(by width: CGFloat, over duration: TimeInterval) {
-        guard let window = windows["home"], !window.styleMask.contains(.fullScreen) else { return }
+    func widenHome(by width: CGFloat) {
+        guard width != 0, let window = windows["home"], !window.styleMask.contains(.fullScreen) else { return }
         var frame = window.frame
         frame.size.width += width
         if let visible = window.screen?.visibleFrame {
             frame.origin.x = max(visible.minX, min(frame.origin.x, visible.maxX - frame.width))
         }
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = duration
-            context.timingFunction = .drawer
-            window.animator().setFrame(frame, display: true)
-        }
+        window.setFrame(frame, display: true)
     }
 
     private func show(_ window: NSWindow) {
