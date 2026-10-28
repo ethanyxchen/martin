@@ -105,7 +105,7 @@ private struct NoteRow: View {
     let app: AppState
     let meeting: Meeting
     let row: ChatRow
-    @State private var hovering = false
+    @Environment(\.hovering) private var hovering
 
     var body: some View {
         Button { app.open(meeting) } label: { row }
@@ -121,7 +121,6 @@ private struct NoteRow: View {
                     .transition(.opacity)
                 }
             }
-            .onHover { hovering = $0 }
             .animation(.easeOut(duration: 0.12), value: hovering)
             .contextMenu { NoteMenu(app: app, meeting: meeting) }
     }
@@ -216,7 +215,7 @@ private struct Rows<Item: Identifiable, Row: View>: View {
     var body: some View {
         LazyVStack(spacing: 0) {
             ForEach(items) { item in
-                row(item)
+                Hoverable { row(item) }
                     .buttonStyle(Pressable(scale: 0.98))
                     .overlay(alignment: .top) {
                         if item.id != items.first?.id {
@@ -232,6 +231,21 @@ private struct Rows<Item: Identifiable, Row: View>: View {
     }
 }
 
+private struct Hoverable<Content: View>: View {
+    @ViewBuilder let content: Content
+    @State private var hovering = false
+
+    var body: some View {
+        content
+            .environment(\.hovering, hovering)
+            .onHover { hovering = $0 }
+    }
+}
+
+private extension EnvironmentValues {
+    @Entry var hovering = false
+}
+
 private struct ChatRow: View {
     static let inset: CGFloat = 10
     var avatar: Avatar?
@@ -240,7 +254,7 @@ private struct ChatRow: View {
     let preview: String?
     var count: Int?
     var selected = false
-    @State private var hovering = false
+    @Environment(\.hovering) private var hovering
 
     var body: some View {
         HStack(spacing: 12) {
@@ -275,7 +289,6 @@ private struct ChatRow: View {
         .padding(.vertical, 9)
         .background(selected ? AnyShapeStyle(Theme.cobalt) : AnyShapeStyle(Theme.well.opacity(hovering ? 1 : 0)), in: .rect(cornerRadius: 9))
         .contentShape(.rect)
-        .onHover { hovering = $0 }
         .animation(.easeOut(duration: 0.12), value: hovering)
         .pointerStyle(.link)
     }
