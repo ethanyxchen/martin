@@ -31,7 +31,6 @@ enum Theme {
     static let tertiary = Tone(light: 0xA3A7AF, dark: 0x6C685F)
     static let cobalt = Tone(light: 0x0055E0, dark: 0x5B8CFF)
 
-    static let controls: CGFloat = 78
     static let gutter: CGFloat = 26
     static let margin: CGFloat = 28
     static let column = margin + gutter
