@@ -4,6 +4,7 @@ public struct Project: Identifiable, Hashable, Codable, Sendable {
     public let id: String
     public var name: String
     public var series: [String]
+    public var archivedAt: Date?
 
     public init(id: String = UUID().uuidString, name: String, series: [String] = []) {
         self.id = id

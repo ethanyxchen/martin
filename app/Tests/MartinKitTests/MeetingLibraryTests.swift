@@ -161,3 +161,60 @@ struct ProjectFilingTests {
         #expect(try library.meetings().map(\.project) == [atlas.id, atlas.id])
     }
 }
+
+struct ProjectLifecycleTests {
+    let library = MeetingLibrary(root: FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory))
+
+    private func note(_ seconds: TimeInterval, in project: Project.ID?) throws -> Meeting {
+        try library.create(startedAt: Date(timeIntervalSince1970: seconds), project: project)
+    }
+
+    @Test func renamingAProjectKeepsItsPlace() throws {
+        var atlas = try library.createProject(named: "Atlas")
+        let hiring = try library.createProject(named: "Hiring")
+        atlas.name = "Atlas Redesign"
+        try library.save(atlas)
+        #expect(try library.projects().map(\.name) == ["Atlas Redesign", "Hiring"])
+        #expect(try library.projects().first == atlas)
+        #expect(try library.projects().last == hiring)
+    }
+
+    @Test func archivingAProjectArchivesItsNotesAndRestoringBringsBackOnlyThose() throws {
+        let atlas = try library.createProject(named: "Atlas")
+        var earlier = try note(1, in: atlas.id)
+        earlier.archivedAt = Date(timeIntervalSince1970: 100)
+        try library.save(earlier)
+        let open = try note(2, in: atlas.id)
+        let other = try note(3, in: nil)
+        try library.archive(atlas, at: Date(timeIntervalSince1970: 200.7))
+        let archived = try #require(try library.projects().first)
+        #expect(archived.archivedAt == Date(timeIntervalSince1970: 200))
+        #expect(try library.meetings().map(\.archivedAt) == [nil, Date(timeIntervalSince1970: 200), Date(timeIntervalSince1970: 100)])
+        try library.restore(archived)
+        #expect(try library.projects().first?.archivedAt == nil)
+        #expect(try library.meetings().map(\.id) == [other.id, open.id, earlier.id])
+        #expect(try library.meetings().map(\.archivedAt) == [nil, nil, Date(timeIntervalSince1970: 100)])
+    }
+
+    @Test func anArchivedProjectStopsFilingItsRecurringMeeting() throws {
+        let atlas = try library.createProject(named: "Atlas")
+        let start = Date(timeIntervalSince1970: 1_750_000_000)
+        try library.file(library.create(startedAt: start, occurrence: Occurrence(series: "sync@example.com", start: start)), in: atlas.id)
+        try library.archive(atlas)
+        let next = start.addingTimeInterval(86_400)
+        #expect(try library.meeting(for: CalendarEvent(occurrence: Occurrence(series: "sync@example.com", start: next), title: "Sync", start: next, end: next)).project == nil)
+    }
+
+    @Test func deletingAProjectDeletesEveryNoteInIt() throws {
+        let atlas = try library.createProject(named: "Atlas")
+        let hiring = try library.createProject(named: "Hiring")
+        var archived = try note(1, in: atlas.id)
+        archived.archivedAt = .now
+        try library.save(archived)
+        _ = try note(2, in: atlas.id)
+        let kept = try note(3, in: hiring.id)
+        try library.delete(atlas)
+        #expect(try library.projects() == [hiring])
+        #expect(try library.meetings() == [kept])
+    }
+}

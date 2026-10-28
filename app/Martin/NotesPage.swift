@@ -53,6 +53,9 @@ struct ProjectsView: View {
                     Button { select(shelf.id == selected ? nil : shelf.id) } label: {
                         ChatRow(avatar: Avatar(title: shelf.project?.name, square: true), title: shelf.title, stamp: latest?.date.stamp(at: context.date), preview: latest.flatMap { app.previews[$0.id] }, count: shelf.meetings.count, selected: shelf.id == selected)
                     }
+                    .contextMenu {
+                        if let project = shelf.project { ProjectActions(app: app, project: project) }
+                    }
                 }
                 .padding(.horizontal, Theme.column - ChatRow.inset)
             }
@@ -91,8 +94,16 @@ struct ArchiveView: View {
     var body: some View {
         TimelineView(.everyMinute) { context in
             Page(title: "Archive") {
-                PageHeading(title: "Archive", detail: app.archive.isEmpty ? "Notes you archive will appear here." : nil)
+                PageHeading(title: "Archive", detail: app.archive.isEmpty && app.archivedProjects.isEmpty ? "Notes and projects you archive will appear here." : nil)
             } content: {
+                if !app.archivedProjects.isEmpty {
+                    Rows(items: app.archivedProjects, indent: ChatRow.avatarIndent) { project in
+                        let count = app.notes(in: project).count
+                        ChatRow(avatar: Avatar(title: project.name, square: true), title: project.name, stamp: project.archivedAt?.stamp(at: context.date), preview: count == 1 ? "1 note" : "\(count) notes", actions: AnyView(ProjectActions(app: app, project: project, row: true)))
+                            .contextMenu { ProjectActions(app: app, project: project) }
+                    }
+                    .padding(.horizontal, Theme.column - ChatRow.inset)
+                }
                 NoteList(app: app, meetings: app.archive, now: context.date)
             }
         }
@@ -124,7 +135,7 @@ private struct NoteRow: View {
 
     private var actionable: ChatRow {
         var row = row
-        row.actions = NoteActions(app: app, meeting: meeting, placement: .row)
+        row.actions = AnyView(NoteActions(app: app, meeting: meeting, placement: .row))
         return row
     }
 }
@@ -204,6 +215,53 @@ struct NoteActions: View {
     }
 }
 
+struct ProjectActions: View {
+    let app: AppState
+    let project: Project
+    var row = false
+
+    var body: some View {
+        if project.archivedAt == nil {
+            Button("Archive Project", systemImage: "archivebox") { app.archive(project) }
+                .help(tooltip("Archive"))
+        } else {
+            Button("Restore Project", systemImage: "arrow.uturn.backward") { app.restore(project) }
+                .help(tooltip("Restore"))
+        }
+        Button("Delete Project…", systemImage: "trash", role: .destructive) { app.confirmDeletion(of: project) }
+            .help(tooltip("Delete"))
+    }
+
+    private func tooltip(_ text: String) -> String {
+        row ? text : ""
+    }
+}
+
+private struct ProjectName: View {
+    let app: AppState
+    let project: Project
+    @State private var name: String
+    @FocusState private var editing: Bool
+
+    init(app: AppState, project: Project) {
+        self.app = app
+        self.project = project
+        _name = State(initialValue: project.name)
+    }
+
+    var body: some View {
+        TextField("Project", text: $name)
+            .textFieldStyle(.plain)
+            .focused($editing)
+            .onSubmit { editing = false }
+            .onChange(of: editing) {
+                guard !editing else { return }
+                app.rename(project, to: name)
+                name = app.allProjects.first { $0.id == project.id }?.name ?? project.name
+            }
+    }
+}
+
 private struct ShelfView: View {
     let app: AppState
     let shelf: Shelf
@@ -214,8 +272,14 @@ private struct ShelfView: View {
                 HStack(spacing: 10) {
                     Avatar(title: shelf.project?.name, size: 34, square: true)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(shelf.title)
-                            .font(.system(size: 15, weight: .semibold))
+                        Group {
+                            if let project = shelf.project {
+                                ProjectName(app: app, project: project).id(project.id)
+                            } else {
+                                Text(shelf.title)
+                            }
+                        }
+                        .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(Theme.ink)
                             .lineLimit(1)
                         Text(shelf.meetings.count == 1 ? "1 note" : "\(shelf.meetings.count) notes")
@@ -227,6 +291,12 @@ private struct ShelfView: View {
                         .labelStyle(.iconOnly)
                         .buttonStyle(RowAction())
                         .help("New note in \(shelf.title)")
+                    if let project = shelf.project {
+                        Menu("Project", systemImage: "ellipsis") { ProjectActions(app: app, project: project) }
+                            .menuStyle(.button)
+                            .menuIndicator(.hidden)
+                            .buttonStyle(RowAction())
+                    }
                 }
                 .padding(.horizontal, 12)
                 Rows(items: shelf.meetings) { meeting in
@@ -287,7 +357,7 @@ private struct ChatRow: View {
     let preview: String?
     var count: Int?
     var selected = false
-    var actions: NoteActions?
+    var actions: AnyView?
     @Environment(\.hovering) private var hovering
 
     var body: some View {

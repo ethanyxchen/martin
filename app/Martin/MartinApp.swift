@@ -66,7 +66,7 @@ final class AppState {
     let library: MeetingLibrary
     private let defaults: UserDefaults
     private(set) var meetings: [Meeting] = []
-    private(set) var projects: [Project] = []
+    private(set) var allProjects: [Project] = []
     private(set) var previews: [Meeting.ID: String] = [:]
     var page: HomePage {
         didSet { defaults.set(page.rawValue, forKey: Self.pageKey) }
@@ -117,13 +117,25 @@ final class AppState {
         meetings.flatMap(\.attendees)
     }
 
+    var projects: [Project] {
+        allProjects.filter { $0.archivedAt == nil }
+    }
+
+    var archivedProjects: [Project] {
+        allProjects.filter { $0.archivedAt != nil }
+    }
+
+    func notes(in project: Project) -> [Meeting] {
+        meetings.filter { $0.project == project.id }
+    }
+
     func project(of meeting: Meeting) -> Project? {
         projects.first { $0.id == meeting.project }
     }
 
     func reload() {
         meetings = (try? library.meetings()) ?? []
-        projects = (try? library.projects()) ?? []
+        allProjects = (try? library.projects()) ?? []
         previews = meetings.reduce(into: [:]) { previews, meeting in
             previews[meeting.id] = library.note(of: meeting).flatMap(Markdown.preview(of:))
         }
@@ -194,13 +206,53 @@ final class AppState {
     }
 
     func confirmDeletion(of meeting: Meeting) {
+        guard confirm("Delete “\(meeting.displayTitle)”?", "This note will be deleted immediately. You can’t undo this action.") else { return }
+        delete(meeting)
+    }
+
+    func rename(_ project: Project, to name: String) {
+        var renamed = project
+        renamed.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !renamed.name.isEmpty, renamed != project else { return }
+        try? library.save(renamed)
+        reload()
+    }
+
+    func archive(_ project: Project) {
+        notes(in: project).forEach { windows[$0.id]?.close() }
+        try? library.archive(project)
+        reload()
+    }
+
+    func restore(_ project: Project) {
+        try? library.restore(project)
+        reload()
+    }
+
+    func delete(_ project: Project) {
+        notes(in: project).forEach { windows[$0.id]?.close() }
+        try? library.delete(project)
+        reload()
+    }
+
+    func confirmDeletion(of project: Project) {
+        let count = notes(in: project).count
+        let doomed = switch count {
+        case 0: "This project"
+        case 1: "This project and its note"
+        default: "This project and all \(count) of its notes"
+        }
+        guard confirm("Delete “\(project.name)”?", "\(doomed) will be deleted immediately, including any in the Archive. You can’t undo this action.") else { return }
+        delete(project)
+    }
+
+    private func confirm(_ message: String, _ detail: String) -> Bool {
         let alert = NSAlert()
-        alert.messageText = "Delete “\(meeting.displayTitle)”?"
-        alert.informativeText = "This note will be deleted immediately. You can’t undo this action."
+        alert.messageText = message
+        alert.informativeText = detail
         alert.addButton(withTitle: "Delete").hasDestructiveAction = true
         alert.addButton(withTitle: "Cancel")
-        guard alert.runModal() == .alertFirstButtonReturn else { return }
-        delete(meeting)
+        return alert.runModal() == .alertFirstButtonReturn
     }
 
     func open(_ meeting: Meeting) {

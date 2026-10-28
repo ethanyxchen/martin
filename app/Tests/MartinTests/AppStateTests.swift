@@ -27,7 +27,7 @@ final class AppStateTests {
         let app = AppState(library: library, defaults: defaults)
         app.hiddenPages = [.notes]
         app.page = .notes
-        #expect(HomePage.allCases.map(app.shortcut(of:)) == [1, nil, 2, 3])
+        #expect(HomePage.allCases.map(app.shortcut(of:)) == [nil, 1, 2, 3])
     }
 
     @Test func savingANoteUpdatesItsPreview() throws {
@@ -85,5 +85,41 @@ final class AppStateTests {
     @Test func aNoteWithoutAMeetingIsAQuickNote() throws {
         #expect(try library.create().displayTitle == "Quick note")
         #expect(try library.create(startedAt: .distantPast, occurrence: Occurrence(series: "review@example.com")).displayTitle == "Meeting")
+    }
+
+    @Test func theTabsRunFromAllNotesThroughProjectsAndUpcomingToSettings() {
+        #expect(HomePage.allCases == [.notes, .projects, .upcoming, .settings])
+    }
+
+    @Test func archivingAProjectMovesItAndItsNotesToTheArchive() throws {
+        let app = AppState(library: library, defaults: defaults)
+        let meeting = try library.create(title: "Kickoff")
+        app.file(meeting, inNewProjectNamed: "Atlas")
+        let atlas = try #require(app.projects.first)
+        app.archive(atlas)
+        #expect(app.projects.isEmpty)
+        #expect(app.archivedProjects.map(\.id) == [atlas.id])
+        #expect(app.notes.isEmpty)
+        app.restore(try #require(app.archivedProjects.first))
+        #expect(app.projects.map(\.id) == [atlas.id])
+        #expect(app.notes.map(\.id) == [meeting.id])
+    }
+
+    @Test func renamingAProjectIgnoresABlankName() throws {
+        let app = AppState(library: library, defaults: defaults)
+        app.file(try library.create(), inNewProjectNamed: "Atlas")
+        app.rename(try #require(app.projects.first), to: "  Atlas Redesign ")
+        #expect(app.projects.map(\.name) == ["Atlas Redesign"])
+        app.rename(try #require(app.projects.first), to: "   ")
+        #expect(app.projects.map(\.name) == ["Atlas Redesign"])
+    }
+
+    @Test func deletingAProjectDeletesItsNotes() throws {
+        let app = AppState(library: library, defaults: defaults)
+        let kept = try library.create(startedAt: .distantPast)
+        app.file(try library.create(), inNewProjectNamed: "Atlas")
+        app.delete(try #require(app.projects.first))
+        #expect(app.allProjects.isEmpty)
+        #expect(app.meetings.map(\.id) == [kept.id])
     }
 }

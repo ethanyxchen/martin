@@ -1,9 +1,9 @@
 import SwiftUI
 
 enum HomePage: String, CaseIterable {
-    case upcoming
     case notes
     case projects
+    case upcoming
     case settings
 
     var title: String {
