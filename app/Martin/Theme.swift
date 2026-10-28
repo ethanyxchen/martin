@@ -1,4 +1,5 @@
 import AppKit
+import QuartzCore
 import SwiftUI
 
 struct Tone: ShapeStyle {
@@ -46,6 +47,12 @@ enum Theme {
 extension Animation {
     static func drawer(_ duration: TimeInterval) -> Animation {
         .timingCurve(Theme.drawer.0, Theme.drawer.1, Theme.drawer.2, Theme.drawer.3, duration: duration)
+    }
+}
+
+extension CAMediaTimingFunction {
+    static var drawer: CAMediaTimingFunction {
+        CAMediaTimingFunction(controlPoints: Float(Theme.drawer.0), Float(Theme.drawer.1), Float(Theme.drawer.2), Float(Theme.drawer.3))
     }
 }
 
