@@ -41,6 +41,17 @@ final class NoteWindowTests {
         #expect(app.focusedNote == nil)
     }
 
+    @Test func closingTheKeyNoteWindowLeavesNoNoteFocused() throws {
+        let meeting = try library.create(title: "Standup")
+        let app = AppState(library: library, defaults: defaults)
+        let window = app.present(NoteView(app: app, meeting: meeting), id: meeting.id, title: meeting.displayTitle, size: NSSize(width: 520, height: 640))
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: window)
+        NotificationCenter.default.post(name: NSWindow.willCloseNotification, object: window)
+        #expect(app.focusedNote == nil)
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: window)
+        #expect(app.focusedNote == nil)
+    }
+
     @Test func theProjectMenuActsOnTheProjectOpenInTheKeyHomeWindow() throws {
         let app = AppState(library: library, defaults: defaults)
         app.file(try library.create(), inNewProjectNamed: "Atlas")

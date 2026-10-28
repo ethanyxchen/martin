@@ -91,6 +91,7 @@ final class AppState {
         hiddenPages = Set((defaults.stringArray(forKey: Self.hiddenPagesKey) ?? []).compactMap(HomePage.init))
         hiddenCalendars = Set(defaults.stringArray(forKey: Self.hiddenCalendarsKey) ?? [])
         reload()
+        observeWindows()
     }
 
     func meeting(_ id: Meeting.ID) -> Meeting? {
@@ -194,17 +195,14 @@ final class AppState {
 
     func archive(_ meeting: Meeting) {
         windows[meeting.id]?.close()
-        file(meeting, archivedAt: .now)
+        var archived = self.meeting(meeting.id) ?? meeting
+        archived.archivedAt = .now
+        try? library.save(archived)
+        reload()
     }
 
     func restore(_ meeting: Meeting) {
-        file(meeting, archivedAt: nil)
-    }
-
-    private func file(_ meeting: Meeting, archivedAt: Date?) {
-        var filed = self.meeting(meeting.id) ?? meeting
-        filed.archivedAt = archivedAt
-        try? library.save(filed)
+        try? library.restore(self.meeting(meeting.id) ?? meeting)
         reload()
     }
 
@@ -220,9 +218,9 @@ final class AppState {
     }
 
     func rename(_ project: Project, to name: String) {
-        var renamed = project
-        renamed.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !renamed.name.isEmpty, renamed != project else { return }
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard var renamed = allProjects.first(where: { $0.id == project.id }), !name.isEmpty, renamed.name != name else { return }
+        renamed.name = name
         try? library.save(renamed)
         reload()
     }
@@ -322,16 +320,30 @@ final class AppState {
             window.center()
         }
         windows[id] = window
-        NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.windows[id] = nil }
-        }
-        NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.keyWindow = id }
-        }
-        NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: window, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { if self?.keyWindow == id { self?.keyWindow = nil } }
-        }
         return window
+    }
+
+    private func observeWindows() {
+        observe(NSWindow.willCloseNotification) { app, id in
+            app.windows[id] = nil
+            app.resign(id)
+        }
+        observe(NSWindow.didBecomeKeyNotification) { app, id in app.keyWindow = id }
+        observe(NSWindow.didResignKeyNotification) { app, id in app.resign(id) }
+    }
+
+    private func observe(_ name: Notification.Name, _ handle: @escaping @MainActor (AppState, String) -> Void) {
+        NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] notification in
+            guard let window = (notification.object as? NSWindow).map(ObjectIdentifier.init) else { return }
+            MainActor.assumeIsolated {
+                guard let self, let id = self.windows.first(where: { ObjectIdentifier($0.value) == window })?.key else { return }
+                handle(self, id)
+            }
+        }
+    }
+
+    private func resign(_ id: String) {
+        if keyWindow == id { keyWindow = nil }
     }
 
     private func explain(_ error: Error) {

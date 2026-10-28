@@ -218,3 +218,34 @@ struct ProjectLifecycleTests {
         #expect(try library.meetings() == [kept])
     }
 }
+
+struct ArchivedProjectNoteTests {
+    let library = MeetingLibrary(root: FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory))
+
+    @Test func aNoteRestoredOnItsOwnLeavesItsArchivedProjectAndSurvivesItsDeletion() throws {
+        let atlas = try library.createProject(named: "Atlas")
+        let note = try library.create(startedAt: Date(timeIntervalSince1970: 1_700_000_000), project: atlas.id)
+        try library.archive(atlas)
+        try library.restore(try #require(try library.meetings().first))
+        #expect(try library.meetings().map(\.project) == [nil])
+        try library.delete(try #require(try library.projects().first))
+        #expect(try library.meetings().map(\.id) == [note.id])
+    }
+
+    @Test func aNoteReopenedFromTheCalendarLeavesItsArchivedProject() throws {
+        let atlas = try library.createProject(named: "Atlas")
+        let event = CalendarEvent(occurrence: Occurrence(series: "review@example.com"), title: "Review", start: Date(timeIntervalSince1970: 1_750_172_800), end: Date(timeIntervalSince1970: 1_750_176_400))
+        try library.file(library.meeting(for: event), in: atlas.id)
+        try library.archive(atlas)
+        #expect(try library.meeting(for: event).project == nil)
+    }
+
+    @Test func restoringANoteKeepsAnActiveProject() throws {
+        let atlas = try library.createProject(named: "Atlas")
+        var note = try library.create(project: atlas.id)
+        note.archivedAt = .now
+        try library.save(note)
+        try library.restore(note)
+        #expect(try library.meetings().map(\.project) == [atlas.id])
+    }
+}

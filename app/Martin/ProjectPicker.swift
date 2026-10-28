@@ -68,7 +68,7 @@ private struct ProjectPicker: View {
         let options = matches + others
         VStack(alignment: .leading, spacing: 4) {
             SearchField(text: $query, prompt: "Find or create a project") { step in
-                if let step {
+                if let step, !options.isEmpty {
                     selected = (selected + step + options.count) % options.count
                 } else if options.indices.contains(selected) {
                     pick(options[selected])

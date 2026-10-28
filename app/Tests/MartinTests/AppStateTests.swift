@@ -114,6 +114,16 @@ final class AppStateTests {
         #expect(app.projects.map(\.name) == ["Atlas Redesign"])
     }
 
+    @Test func renamingAProjectArchivedSinceKeepsItArchived() throws {
+        let app = AppState(library: library, defaults: defaults)
+        app.file(try library.create(), inNewProjectNamed: "Atlas")
+        let atlas = try #require(app.projects.first)
+        app.archive(atlas)
+        app.rename(atlas, to: "Atlas Redesign")
+        #expect(app.projects.isEmpty)
+        #expect(app.archivedProjects.map(\.name) == ["Atlas Redesign"])
+    }
+
     @Test func deletingAProjectDeletesItsNotes() throws {
         let app = AppState(library: library, defaults: defaults)
         let kept = try library.create(startedAt: .distantPast)

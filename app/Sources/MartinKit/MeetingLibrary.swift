@@ -26,9 +26,20 @@ public struct MeetingLibrary: Sendable {
         guard meeting.scheduledAt != event.start || meeting.attendees != event.attendees || meeting.archivedAt != nil else { return meeting }
         meeting.scheduledAt = event.start
         meeting.attendees = event.attendees
-        meeting.archivedAt = nil
+        meeting = try restored(meeting)
         try save(meeting)
         return meeting
+    }
+
+    public func restore(_ meeting: Meeting) throws {
+        try save(restored(meeting))
+    }
+
+    private func restored(_ meeting: Meeting) throws -> Meeting {
+        var restored = meeting
+        restored.archivedAt = nil
+        if try projects().contains(where: { $0.id == meeting.project && $0.archivedAt != nil }) { restored.project = nil }
+        return restored
     }
 
     func meeting(for occurrence: Occurrence) throws -> Meeting? {

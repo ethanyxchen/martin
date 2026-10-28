@@ -272,6 +272,7 @@ private struct ProjectName: View {
                 app.rename(project, to: name)
                 name = app.allProjects.first { $0.id == project.id }?.name ?? project.name
             }
+            .onDisappear { app.rename(project, to: name) }
     }
 }
 
