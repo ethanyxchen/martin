@@ -4,7 +4,6 @@ import SwiftUI
 
 struct MenuBar: View {
     let app: AppState
-    let updater: Updater
 
     var body: some View {
         QuickNoteButton(app: app)
@@ -13,7 +12,7 @@ struct MenuBar: View {
 
         if !app.notes.isEmpty {
             Section("Recent") {
-                ForEach(app.notes.prefix(8)) { meeting in
+                ForEach(app.notes.prefix(3)) { meeting in
                     Button { app.open(meeting) } label: {
                         Text(meeting.displayTitle)
                         Text(meeting.date.formatted(.relative(presentation: .named)))
@@ -23,7 +22,6 @@ struct MenuBar: View {
         }
 
         Divider()
-        CheckForUpdatesButton(updater: updater)
         SettingsButton(app: app)
         Button("Quit \(Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Martin")") { NSApp.terminate(nil) }
             .keyboardShortcut("q")

@@ -8,7 +8,7 @@ struct MartinApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            MenuBar(app: delegate.app, updater: delegate.updater)
+            MenuBar(app: delegate.app)
         } label: {
             Image(nsImage: .menuBarIcon)
         }
