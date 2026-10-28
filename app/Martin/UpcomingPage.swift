@@ -26,7 +26,6 @@ struct UpcomingView: View {
                     DayView(app: app, day: day, now: now)
                 }
             }
-            .padding(.horizontal, Theme.margin)
             .padding(.bottom, 28)
         }
     }
@@ -58,12 +57,12 @@ private struct DayView: View {
                     .font(Theme.meta)
                     .foregroundStyle(Theme.tertiary)
             }
-            .padding(.leading, Theme.gutter)
+            .padding(.leading, Theme.edge)
             if day.events.isEmpty {
                 Text("No meetings")
                     .font(.system(size: 13))
                     .foregroundStyle(Theme.tertiary)
-                    .padding(.leading, Theme.gutter)
+                    .padding(.leading, Theme.edge)
             }
             VStack(alignment: .leading, spacing: 2) {
                 ForEach(day.events, id: \.self) { event in
@@ -116,7 +115,7 @@ private struct EventRow: View {
         .padding(.vertical, 8)
         .background(Theme.well.opacity(hovering ? 1 : 0), in: .rect(cornerRadius: 8))
         .contentShape(.rect)
-        .padding(.horizontal, Theme.gutter - Self.inset)
+        .padding(.horizontal, Theme.edge - Self.inset)
         .onHover { hovering = $0 }
         .animation(.easeOut(duration: 0.12), value: hovering)
     }

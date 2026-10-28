@@ -34,7 +34,8 @@ private struct ArchiveButton: ToolbarContent {
 }
 
 struct ProjectsView: View {
-    private static let wide: CGFloat = 780
+    private static let wide: CGFloat = 860
+    private static let sidebar: CGFloat = 280
     private static let slide: TimeInterval = 0.3
     let app: AppState
     @State private var selected: Shelf.ID?
@@ -45,28 +46,31 @@ struct ProjectsView: View {
         let shelves = app.notes.shelved(in: app.projects)
         let open = shelves.first { $0.id == selected }
         TimelineView(.everyMinute) { context in
-            Page {
-                PageHeading(title: "Projects")
-            } content: {
-                Rows(items: shelves, indent: ChatRow.avatarIndent) { shelf in
-                    let latest = shelf.meetings.first
-                    Button { select(shelf.id == selected ? nil : shelf.id) } label: {
-                        ChatRow(avatar: Avatar(title: shelf.project?.name, square: true), title: shelf.title, stamp: latest?.date.stamp(at: context.date), preview: latest.flatMap { app.previews[$0.id] }, count: shelf.meetings.count, selected: shelf.id == selected)
+            HStack(spacing: 0) {
+                Page {
+                    PageHeading(title: "Projects")
+                } content: {
+                    Rows(items: shelves, indent: ChatRow.avatarIndent) { shelf in
+                        let latest = shelf.meetings.first
+                        Button { select(shelf.id == selected ? nil : shelf.id) } label: {
+                            ChatRow(avatar: Avatar(title: shelf.project?.name, square: true), title: shelf.title, stamp: latest?.date.stamp(at: context.date), preview: latest.flatMap { app.previews[$0.id] }, count: shelf.meetings.count, selected: shelf.id == selected)
+                        }
+                        .contextMenu {
+                            if let project = shelf.project { ProjectActions(app: app, project: project) }
+                        }
                     }
-                    .contextMenu {
-                        if let project = shelf.project { ProjectActions(app: app, project: project) }
-                    }
+                    .padding(.horizontal, Theme.edge - ChatRow.inset)
                 }
-                .padding(.horizontal, Theme.column - ChatRow.inset)
+                .frame(width: open == nil ? (width > 0 ? width : nil) : Self.sidebar)
+                if let open {
+                    Divider()
+                    ShelfView(app: app, shelf: open, now: context.date)
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .toolbar { ArchiveButton(app: app) }
-        .inspector(isPresented: Binding { open != nil } set: { if !$0 { select(nil, animated: false) } }) {
-            if let open {
-                ShelfView(app: app, shelf: open)
-                    .inspectorColumnWidth(min: 260, ideal: 300)
-            }
-        }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .onChange(of: open?.id) { _, id in
             if id == nil, selected != nil { select(nil, animated: false) }
@@ -102,7 +106,7 @@ struct ArchiveView: View {
                         ChatRow(avatar: Avatar(title: project.name, square: true), title: project.name, stamp: project.archivedAt?.stamp(at: context.date), preview: count == 1 ? "1 note" : "\(count) notes", actions: AnyView(ProjectActions(app: app, project: project, row: true)))
                             .contextMenu { ProjectActions(app: app, project: project) }
                     }
-                    .padding(.horizontal, Theme.column - ChatRow.inset)
+                    .padding(.horizontal, Theme.edge - ChatRow.inset)
                 }
                 NoteList(app: app, meetings: app.archive, now: context.date)
             }
@@ -119,7 +123,7 @@ private struct NoteList: View {
         Rows(items: meetings, indent: ChatRow.avatarIndent) { meeting in
             NoteRow(app: app, meeting: meeting, row: ChatRow(avatar: Avatar(title: meeting.title), title: meeting.displayTitle, stamp: meeting.date.stamp(at: now), preview: app.previews[meeting.id]))
         }
-        .padding(.horizontal, Theme.column - ChatRow.inset)
+        .padding(.horizontal, Theme.edge - ChatRow.inset)
     }
 }
 
@@ -265,47 +269,43 @@ private struct ProjectName: View {
 private struct ShelfView: View {
     let app: AppState
     let shelf: Shelf
+    let now: Date
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 10) {
-                    Avatar(title: shelf.project?.name, size: 34, square: true)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Group {
-                            if let project = shelf.project {
-                                ProjectName(app: app, project: project).id(project.id)
-                            } else {
-                                Text(shelf.title)
-                            }
+        Page {
+            HStack(spacing: 12) {
+                Avatar(title: shelf.project?.name, square: true)
+                VStack(alignment: .leading, spacing: 4) {
+                    Group {
+                        if let project = shelf.project {
+                            ProjectName(app: app, project: project).id(project.id)
+                        } else {
+                            Text(shelf.title)
                         }
-                        .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(Theme.ink)
-                            .lineLimit(1)
-                        Text(shelf.meetings.count == 1 ? "1 note" : "\(shelf.meetings.count) notes")
-                            .font(Theme.meta)
-                            .foregroundStyle(Theme.tertiary)
                     }
-                    Spacer(minLength: 0)
-                    Button("New Note", systemImage: "square.and.pencil") { app.quickNote(in: shelf.project?.id) }
-                        .labelStyle(.iconOnly)
-                        .buttonStyle(RowAction())
-                        .help("New note in \(shelf.title)")
-                    if let project = shelf.project {
-                        Menu("Project", systemImage: "ellipsis") { ProjectActions(app: app, project: project) }
-                            .menuStyle(.button)
-                            .menuIndicator(.hidden)
-                            .buttonStyle(RowAction())
-                    }
+                    .font(Theme.title)
+                    .foregroundStyle(Theme.ink)
+                    .lineLimit(1)
+                    Text(shelf.meetings.count == 1 ? "1 note" : "\(shelf.meetings.count) notes")
+                        .font(Theme.meta)
+                        .foregroundStyle(Theme.secondary)
                 }
-                .padding(.horizontal, 12)
-                Rows(items: shelf.meetings) { meeting in
-                    NoteRow(app: app, meeting: meeting, row: ChatRow(title: meeting.displayTitle, stamp: meeting.date.formatted(.dateTime.day().month(.abbreviated)), preview: app.previews[meeting.id]))
+                Spacer(minLength: 0)
+                Button("New Note", systemImage: "square.and.pencil") { app.quickNote(in: shelf.project?.id) }
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(RowAction())
+                    .help("New note in \(shelf.title)")
+                if let project = shelf.project {
+                    Menu("Project", systemImage: "ellipsis") { ProjectActions(app: app, project: project) }
+                        .menuStyle(.button)
+                        .menuIndicator(.hidden)
+                        .buttonStyle(RowAction())
                 }
             }
-            .padding(8)
+            .flush()
+        } content: {
+            NoteList(app: app, meetings: shelf.meetings, now: now)
         }
-        .scrollEdgeEffectStyle(.soft, for: .top)
     }
 }
 
