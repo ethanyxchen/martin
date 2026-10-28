@@ -27,7 +27,7 @@ struct NoteView: View {
                 .padding(.bottom, Theme.margin)
         }
         .toolbar {
-            Menu("Note", systemImage: "ellipsis") { NoteMenu(app: app, meeting: current, placement: .menu) }
+            Menu("Note", systemImage: "ellipsis") { NoteMenu(app: app, meeting: current) }
                 .menuIndicator(.hidden)
         }
         .onChange(of: editingTitle) {

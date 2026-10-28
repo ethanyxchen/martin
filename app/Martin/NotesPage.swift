@@ -140,44 +140,39 @@ private struct RowAction: ButtonStyle {
 
 struct NoteMenu: View {
     let app: AppState
-    let meeting: Meeting?
-    let placement: NoteActions.Placement
+    let meeting: Meeting
 
     var body: some View {
-        NoteActions(app: app, meeting: meeting, placement: placement)
+        NoteActions(app: app, meeting: meeting, placement: .menu)
         Divider()
         Button("Open Archive", systemImage: "archivebox.fill") { app.openArchive() }
-            .keyboardShortcut(placement == .menuBar ? KeyboardShortcut("a", modifiers: [.command, .shift]) : nil)
     }
 }
 
 struct NoteActions: View {
     enum Placement {
-        case menuBar
         case menu
         case row
     }
 
     let app: AppState
-    let meeting: Meeting?
+    let meeting: Meeting
     let placement: Placement
 
     var body: some View {
-        Group {
-            if meeting?.archivedAt == nil {
-                Button("Archive", systemImage: "archivebox") { if let meeting { app.archive(meeting) } }
-                    .help(placement == .row ? "Archive" : "")
-            } else {
-                Button("Restore", systemImage: "arrow.uturn.backward") { if let meeting { app.restore(meeting) } }
-                    .help(placement == .row ? "Restore" : "")
-            }
+        if meeting.archivedAt == nil {
+            Button("Archive", systemImage: "archivebox") { app.archive(meeting) }
+                .help(tooltip("Archive"))
+        } else {
+            Button("Restore", systemImage: "arrow.uturn.backward") { app.restore(meeting) }
+                .help(tooltip("Restore"))
         }
-        .keyboardShortcut(placement == .menuBar ? KeyboardShortcut("a", modifiers: [.command, .control]) : nil)
-        .disabled(meeting == nil)
-        Button("Delete…", systemImage: "trash", role: .destructive) { if let meeting { app.confirmDeletion(of: meeting) } }
-            .keyboardShortcut(placement == .menuBar ? KeyboardShortcut(.delete, modifiers: [.command, .option]) : nil)
-            .help(placement == .row ? "Delete" : "")
-            .disabled(meeting == nil)
+        Button("Delete…", systemImage: "trash", role: .destructive) { app.confirmDeletion(of: meeting) }
+            .help(tooltip("Delete"))
+    }
+
+    private func tooltip(_ text: String) -> String {
+        placement == .row ? text : ""
     }
 }
 

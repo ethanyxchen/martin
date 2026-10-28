@@ -17,8 +17,9 @@ struct MartinApp: App {
             CommandGroup(replacing: .appSettings) {
                 SettingsButton(app: delegate.app)
             }
-            CommandMenu("Note") {
-                NoteMenu(app: delegate.app, meeting: delegate.app.focusedNote, placement: .menuBar)
+            CommandGroup(before: .windowList) {
+                Button("Archive") { delegate.app.openArchive() }
+                    .keyboardShortcut("a", modifiers: [.command, .shift])
             }
             CommandMenu("Format") {
                 ForEach(NoteTextView.formats, id: \.title) { format in
@@ -60,7 +61,6 @@ final class AppState {
     var hiddenCalendars: Set<EventCalendar.ID> {
         didSet { defaults.set(hiddenCalendars.sorted(), forKey: Self.hiddenCalendarsKey) }
     }
-    private var keyWindow: String?
     @ObservationIgnored private var windows: [String: NSWindow] = [:]
 
     init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = .standard) {
@@ -74,10 +74,6 @@ final class AppState {
 
     func meeting(_ id: Meeting.ID) -> Meeting? {
         meetings.first { $0.id == id }
-    }
-
-    var focusedNote: Meeting? {
-        keyWindow.flatMap(meeting)
     }
 
     var notes: [Meeting] {
@@ -219,12 +215,6 @@ final class AppState {
         windows[id] = window
         NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.windows[id] = nil }
-        }
-        NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.keyWindow = id }
-        }
-        NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: window, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { if self?.keyWindow == id { self?.keyWindow = nil } }
         }
         return window
     }
