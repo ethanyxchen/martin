@@ -9,7 +9,7 @@ struct NotesView: View {
             Page {
                 PageHeading(title: "Notes")
             } content: {
-                NoteList(app: app, meetings: app.notes, now: context.date)
+                NoteList(app: app, meetings: app.pinned + app.unpinned, now: context.date, detail: app.projectName(of:))
             }
         }
         .toolbar {
@@ -107,7 +107,7 @@ struct ArchiveView: View {
                     }
                     .padding(.horizontal, Theme.edge - ChatRow.inset)
                 }
-                NoteList(app: app, meetings: app.archive, now: context.date)
+                NoteList(app: app, meetings: app.archive, now: context.date, detail: app.projectName(of:))
             }
         }
     }
@@ -117,10 +117,11 @@ private struct NoteList: View {
     let app: AppState
     let meetings: [Meeting]
     let now: Date
+    let detail: (Meeting) -> String?
 
     var body: some View {
         Rows(items: meetings, indent: ChatRow.avatarIndent) { meeting in
-            NoteRow(app: app, meeting: meeting, row: ChatRow(avatar: Avatar(title: meeting.title), title: meeting.displayTitle, stamp: meeting.date.stamp(at: now), preview: app.previews[meeting.id]))
+            NoteRow(app: app, meeting: meeting, row: ChatRow(avatar: Avatar(title: meeting.title), title: meeting.displayTitle, stamp: meeting.date.stamp(at: now), preview: detail(meeting), pinned: meeting.isPinned))
         }
         .padding(.horizontal, Theme.edge - ChatRow.inset)
     }
@@ -207,6 +208,12 @@ struct NoteActions: View {
                 Toggle("Unassigned", isOn: Binding { meeting?.project == nil } set: { _ in meeting.map { app.file($0, in: nil) } })
             }
             .disabled(meeting == nil)
+        }
+        if meeting?.archivedAt == nil {
+            let pinned = meeting?.isPinned == true
+            Button(pinned ? "Unpin" : "Pin", systemImage: pinned ? "pin.slash" : "pin") { meeting.map { app.pin($0, !pinned) } }
+                .help(placement.tooltip(pinned ? "Unpin" : "Pin"))
+                .disabled(meeting == nil)
         }
         Group {
             if meeting?.archivedAt == nil {
@@ -314,7 +321,7 @@ private struct ShelfView: View {
             }
             .flush()
         } content: {
-            NoteList(app: app, meetings: shelf.meetings, now: now)
+            NoteList(app: app, meetings: shelf.meetings, now: now) { app.previews[$0.id] }
         }
     }
 }
@@ -360,12 +367,12 @@ private struct ChatRow: View {
     static let inset: CGFloat = 10
     static let avatarIndent = Avatar.standard + spacing
     private static let spacing: CGFloat = 12
-    private static let actionsWidth = 2 * RowAction.size - (RowAction.size - RowAction.glyph) / 2
     var avatar: Avatar?
     let title: String
     var stamp: String?
     let preview: String?
     var count: Int?
+    var pinned = false
     var selected = false
     var actions: AnyView?
     @Environment(\.hovering) private var hovering
@@ -374,28 +381,28 @@ private struct ChatRow: View {
         HStack(spacing: Self.spacing) {
             avatar
             VStack(alignment: .leading, spacing: 3) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(title)
-                        .font(.system(size: 13.5, weight: .semibold))
-                        .foregroundStyle(ink)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    meta(stamp.map { Text($0).font(Theme.meta.monospacedDigit()) })
-                }
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(preview ?? "No notes")
-                        .font(.system(size: 12.5))
-                        .foregroundStyle(preview == nil ? faint : quiet)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    meta(count.map { Text($0, format: .number).font(.system(size: 11.5).monospacedDigit()) })
-                }
+                Text(title)
+                    .font(.system(size: 13.5, weight: .semibold))
+                    .foregroundStyle(ink)
+                Text(preview ?? "No notes")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(preview == nil ? faint : quiet)
             }
             .lineLimit(1)
-            .overlay(alignment: .trailing) {
-                if revealed {
+            .frame(maxWidth: .infinity, alignment: .leading)
+            ZStack(alignment: .trailing) {
+                VStack(alignment: .trailing, spacing: 3) {
+                    stamp.map { (pinned ? Text("\(Image(systemName: "pin.fill")) \($0)") : Text($0)).font(Theme.meta.monospacedDigit()) }
+                    count.map { Text($0, format: .number).font(.system(size: 11.5).monospacedDigit()) }
+                }
+                .foregroundStyle(faint)
+                .opacity(revealed ? 0 : 1)
+                if let actions {
                     HStack(spacing: 0) { actions }
                         .buttonStyle(RowAction())
                         .padding(.trailing, -(RowAction.size - RowAction.glyph) / 2)
-                        .transition(.opacity)
+                        .opacity(revealed ? 1 : 0)
+                        .allowsHitTesting(revealed)
                 }
             }
         }
@@ -408,15 +415,6 @@ private struct ChatRow: View {
     }
 
     private var revealed: Bool { hovering && actions != nil }
-
-    @ViewBuilder private func meta(_ text: Text?) -> some View {
-        if text != nil || actions != nil {
-            (text ?? Text(verbatim: ""))
-                .foregroundStyle(faint)
-                .frame(minWidth: actions == nil ? nil : Self.actionsWidth, alignment: .trailing)
-                .opacity(revealed ? 0 : 1)
-        }
-    }
 
     private var ink: AnyShapeStyle { selected ? AnyShapeStyle(.white) : AnyShapeStyle(Theme.ink) }
     private var quiet: AnyShapeStyle { selected ? AnyShapeStyle(.white.opacity(0.85)) : AnyShapeStyle(Theme.secondary) }
@@ -464,7 +462,8 @@ struct Avatar: View {
 }
 
 extension Shelf {
-    var title: String { project?.name ?? "Unassigned" }
+    static let unassigned = "Unassigned"
+    var title: String { project?.name ?? Self.unassigned }
 }
 
 extension Date {

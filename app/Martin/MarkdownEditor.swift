@@ -78,6 +78,7 @@ final class NoteTextView: NSTextView {
         Format(title: "Strikethrough", key: "x", shift: true, action: #selector(toggleStrikethrough(_:))),
         Format(title: "Code", key: "c", shift: true, action: #selector(toggleCode(_:))),
         Format(title: "Link", key: "k", shift: false, action: #selector(insertLink(_:))),
+        Format(title: "Checklist", key: "l", shift: true, action: #selector(toggleChecklist(_:))),
     ]
 
     private let style = MarkdownStyle()
@@ -171,12 +172,21 @@ final class NoteTextView: NSTextView {
         let point = convert(event.locationInWindow, from: nil)
         if event.modifierFlags.contains(.command) || !isEditable, let url = character(under: point).flatMap(link(at:)) {
             NSWorkspace.shared.open(url)
-        } else if isEditable, let mark = checkbox(at: characterIndexForInsertion(at: point), under: point) {
+        } else if isEditable, let mark = checkbox(under: point) {
             let tick = (string as NSString).substring(with: mark) == " " ? "x" : " "
             apply(Markdown.Edit(range: mark, replacement: tick, selection: selectedRange()))
         } else {
             super.mouseDown(with: event)
         }
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        guard let cursor = cursor(at: convert(event.locationInWindow, from: nil)) else { return super.mouseMoved(with: event) }
+        cursor.set()
+    }
+
+    func cursor(at point: NSPoint) -> NSCursor? {
+        isEditable && checkbox(under: point) != nil ? .pointingHand : nil
     }
 
     override func menu(for event: NSEvent) -> NSMenu? {
@@ -255,6 +265,10 @@ final class NoteTextView: NSTextView {
 
     @objc func insertLink(_ sender: Any?) {
         apply(Markdown.link(in: string, selection: selectedRange()))
+    }
+
+    @objc func toggleChecklist(_ sender: Any?) {
+        apply(Markdown.checklist(in: string, selection: selectedRange()))
     }
 
     func continueList() -> Bool {
@@ -350,8 +364,8 @@ final class NoteTextView: NSTextView {
         return nil
     }
 
-    private func checkbox(at index: Int, under point: NSPoint) -> NSRange? {
-        guard let (range, line) = line(at: index), let box = line.spans.first(where: { $0.role == .checkbox })?.range.offset(by: range.location) else { return nil }
+    private func checkbox(under point: NSPoint) -> NSRange? {
+        guard let (range, line) = line(at: characterIndexForInsertion(at: point)), let box = line.spans.first(where: { $0.role == .checkbox })?.range.offset(by: range.location) else { return nil }
         return rect(of: box).insetBy(dx: -3, dy: -3).contains(point) ? NSRange(location: box.location + 1, length: 1) : nil
     }
 

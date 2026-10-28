@@ -4,18 +4,31 @@ import SwiftUI
 
 struct MenuBar: View {
     let app: AppState
-    let updater: Updater
 
     var body: some View {
-        Button("Take Notes") { Task { app.start(await CalendarLookup.currentEvent(hiding: app.hiddenCalendars)) } }
-
         QuickNoteButton(app: app)
 
         Button("Upcoming Meetings…") { app.openHome(on: .upcoming) }
 
-        if !app.notes.isEmpty {
-            Section("Recent") {
-                ForEach(app.notes.prefix(8)) { meeting in
+        NoteSection(app: app, title: "Pinned", meetings: app.pinned)
+        NoteSection(app: app, title: "Recent", meetings: Array(app.unpinned.prefix(3)))
+
+        Divider()
+        SettingsButton(app: app)
+        Button("Quit \(Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Martin")") { NSApp.terminate(nil) }
+            .keyboardShortcut("q")
+    }
+}
+
+private struct NoteSection: View {
+    let app: AppState
+    let title: String
+    let meetings: [Meeting]
+
+    var body: some View {
+        if !meetings.isEmpty {
+            Section(title) {
+                ForEach(meetings) { meeting in
                     Button { app.open(meeting) } label: {
                         Text(meeting.displayTitle)
                         Text(meeting.date.formatted(.relative(presentation: .named)))
@@ -23,12 +36,6 @@ struct MenuBar: View {
                 }
             }
         }
-
-        Divider()
-        CheckForUpdatesButton(updater: updater)
-        SettingsButton(app: app)
-        Button("Quit \(Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Martin")") { NSApp.terminate(nil) }
-            .keyboardShortcut("q")
     }
 }
 

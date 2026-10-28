@@ -8,7 +8,7 @@ struct MartinApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            MenuBar(app: delegate.app, updater: delegate.updater)
+            MenuBar(app: delegate.app)
         } label: {
             Image(nsImage: .menuBarIcon)
         }
@@ -115,6 +115,14 @@ final class AppState {
         meetings.filter { $0.archivedAt == nil }
     }
 
+    var pinned: [Meeting] {
+        meetings.filter(\.isPinned).sorted { $0.pinnedAt! > $1.pinnedAt! }
+    }
+
+    var unpinned: [Meeting] {
+        notes.filter { !$0.isPinned }
+    }
+
     var archive: [Meeting] {
         meetings.filter { $0.archivedAt != nil }
     }
@@ -147,6 +155,10 @@ final class AppState {
         projects.first { $0.id == meeting.project }
     }
 
+    func projectName(of meeting: Meeting) -> String {
+        allProjects.first { $0.id == meeting.project }?.name ?? Shelf.unassigned
+    }
+
     func reload() {
         meetings = (try? library.meetings()) ?? []
         allProjects = (try? library.projects()) ?? []
@@ -155,8 +167,8 @@ final class AppState {
         }
     }
 
-    func start(_ event: CalendarEvent?) {
-        begin { try event.map(library.meeting(for:)) ?? library.create() }
+    func start(_ event: CalendarEvent) {
+        begin { try library.meeting(for: event) }
     }
 
     func quickNote(in project: Project.ID? = nil) {
@@ -195,6 +207,13 @@ final class AppState {
         try? library.save(renamed)
         reload()
         windows[meeting.id]?.title = renamed.displayTitle
+    }
+
+    func pin(_ meeting: Meeting, _ pinned: Bool) {
+        var changed = self.meeting(meeting.id) ?? meeting
+        changed.pinnedAt = pinned ? .now : nil
+        try? library.save(changed)
+        reload()
     }
 
     func archive(_ meeting: Meeting) {

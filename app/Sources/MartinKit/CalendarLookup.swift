@@ -63,12 +63,6 @@ extension CalendarAccount {
 }
 
 public enum CalendarLookup {
-    public static func currentEvent(at date: Date = .now, hiding hidden: Set<EventCalendar.ID>) async -> CalendarEvent? {
-        let store = EKEventStore()
-        guard (try? await store.requestFullAccessToEvents()) == true else { return nil }
-        return ongoing(at: date, hiding: hidden, in: store).map(CalendarEvent.init)
-    }
-
     public static func events(from start: Date, to end: Date, hiding hidden: Set<EventCalendar.ID>) -> AsyncStream<[CalendarEvent]> {
         watch { store in
             events(from: start, to: end, hiding: hidden, in: store)
@@ -125,13 +119,6 @@ public enum CalendarLookup {
                     .sorted { ($0.start, $0.title) < ($1.start, $1.title) }
             )
         }
-    }
-
-    static func ongoing(at date: Date, hiding hidden: Set<EventCalendar.ID>, in store: EKEventStore) -> EKEvent? {
-        let soon = date.addingTimeInterval(600)
-        return events(from: date, to: soon, hiding: hidden, in: store)
-            .filter { !$0.isAllDay && $0.startDate <= soon && $0.endDate > date }
-            .max { ($0.hasAttendees ? 1 : 0, $0.startDate) < ($1.hasAttendees ? 1 : 0, $1.startDate) }
     }
 
     static func person(of participant: EKParticipant) -> Person? {

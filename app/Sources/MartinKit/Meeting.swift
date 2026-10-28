@@ -8,6 +8,7 @@ public struct Meeting: Identifiable, Hashable, Codable, Sendable {
     public var title: String?
     public var attendees: [Person]
     public var archivedAt: Date?
+    public var pinnedAt: Date?
     public var project: Project.ID?
 
     public init(id: String, startedAt: Date, scheduledAt: Date? = nil, occurrence: Occurrence? = nil, title: String? = nil, attendees: [Person] = [], project: Project.ID? = nil) {
@@ -21,6 +22,8 @@ public struct Meeting: Identifiable, Hashable, Codable, Sendable {
     }
 
     public var date: Date { scheduledAt ?? startedAt }
+
+    public var isPinned: Bool { pinnedAt != nil && archivedAt == nil }
 }
 
 public struct Occurrence: Codable, Hashable, Sendable {
