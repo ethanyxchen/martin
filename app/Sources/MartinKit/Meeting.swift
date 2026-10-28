@@ -7,6 +7,7 @@ public struct Meeting: Identifiable, Hashable, Codable, Sendable {
     public let occurrence: Occurrence?
     public var title: String?
     public var attendees: [Person]
+    public var archivedAt: Date?
 
     public init(id: String, startedAt: Date, scheduledAt: Date? = nil, occurrence: Occurrence? = nil, title: String? = nil, attendees: [Person] = []) {
         self.id = id

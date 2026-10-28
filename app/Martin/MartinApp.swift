@@ -17,6 +17,10 @@ struct MartinApp: App {
             CommandGroup(replacing: .appSettings) {
                 SettingsButton(app: delegate.app)
             }
+            CommandGroup(before: .windowList) {
+                Button("Archive") { delegate.app.openArchive() }
+                    .keyboardShortcut("a", modifiers: [.command, .shift])
+            }
             CommandMenu("Format") {
                 ForEach(NoteTextView.formats, id: \.title) { format in
                     Button(format.title) { NSApp.sendAction(format.action, to: nil, from: nil) }
@@ -72,6 +76,14 @@ final class AppState {
         meetings.first { $0.id == id }
     }
 
+    var notes: [Meeting] {
+        meetings.filter { $0.archivedAt == nil }
+    }
+
+    var archive: [Meeting] {
+        meetings.filter { $0.archivedAt != nil }
+    }
+
     var pages: [HomePage] {
         HomePage.shown(hiding: hiddenPages, on: page)
     }
@@ -111,6 +123,38 @@ final class AppState {
         windows[meeting.id]?.title = renamed.displayTitle
     }
 
+    func archive(_ meeting: Meeting) {
+        windows[meeting.id]?.close()
+        file(meeting, archivedAt: .now)
+    }
+
+    func restore(_ meeting: Meeting) {
+        file(meeting, archivedAt: nil)
+    }
+
+    private func file(_ meeting: Meeting, archivedAt: Date?) {
+        var filed = self.meeting(meeting.id) ?? meeting
+        filed.archivedAt = archivedAt
+        try? library.save(filed)
+        reload()
+    }
+
+    func delete(_ meeting: Meeting) {
+        windows[meeting.id]?.close()
+        try? library.delete(meeting)
+        reload()
+    }
+
+    func confirmDeletion(of meeting: Meeting) {
+        let alert = NSAlert()
+        alert.messageText = "Delete “\(meeting.displayTitle)”?"
+        alert.informativeText = "This note will be deleted immediately. You can’t undo this action."
+        alert.addButton(withTitle: "Delete").hasDestructiveAction = true
+        alert.addButton(withTitle: "Cancel")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        delete(meeting)
+    }
+
     func open(_ meeting: Meeting) {
         show(windows[meeting.id] ?? present(NoteView(app: self, meeting: meeting), id: meeting.id, title: meeting.displayTitle, size: Self.windowSize))
     }
@@ -122,6 +166,10 @@ final class AppState {
     func openHome(on page: HomePage) {
         self.page = page
         show(windows["home"] ?? present(HomeView(app: self), id: "home", title: "Martin", size: Self.windowSize))
+    }
+
+    func openArchive() {
+        show(windows["archive"] ?? present(ArchiveView(app: self), id: "archive", title: "Archive", size: Self.windowSize))
     }
 
     func widenHome(by width: CGFloat, over duration: TimeInterval) {

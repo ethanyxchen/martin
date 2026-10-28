@@ -20,9 +20,10 @@ public struct MeetingLibrary: Sendable {
 
     public func meeting(for event: CalendarEvent) throws -> Meeting {
         var meeting = try meeting(for: event.occurrence) ?? create(occurrence: event.occurrence, title: event.title)
-        guard meeting.scheduledAt != event.start || meeting.attendees != event.attendees else { return meeting }
+        guard meeting.scheduledAt != event.start || meeting.attendees != event.attendees || meeting.archivedAt != nil else { return meeting }
         meeting.scheduledAt = event.start
         meeting.attendees = event.attendees
+        meeting.archivedAt = nil
         try save(meeting)
         return meeting
     }
@@ -42,6 +43,10 @@ public struct MeetingLibrary: Sendable {
 
     public func save(_ meeting: Meeting) throws {
         try Self.encoder.encode(meeting).write(to: folder(of: meeting).appending(path: "meeting.json"), options: .atomic)
+    }
+
+    public func delete(_ meeting: Meeting) throws {
+        try FileManager.default.removeItem(at: folder(of: meeting))
     }
 
     public func folder(of meeting: Meeting) -> URL {

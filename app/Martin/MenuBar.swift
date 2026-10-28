@@ -10,9 +10,9 @@ struct MenuBar: View {
 
         Button("Upcoming Meetings…") { app.openHome(on: .upcoming) }
 
-        if !app.meetings.isEmpty {
+        if !app.notes.isEmpty {
             Section("Recent") {
-                ForEach(app.meetings.prefix(8)) { meeting in
+                ForEach(app.notes.prefix(8)) { meeting in
                     Button { app.open(meeting) } label: {
                         Text(meeting.displayTitle)
                         Text(meeting.date.formatted(.relative(presentation: .named)))
