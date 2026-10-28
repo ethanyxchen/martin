@@ -15,7 +15,7 @@ public struct MeetingLibrary: Sendable {
         guard FileManager.default.fileExists(atPath: root.path) else { return [] }
         return try FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)
             .compactMap { try? Self.decoder.decode(Meeting.self, from: Data(contentsOf: $0.appending(path: "meeting.json"))) }
-            .sorted { $0.startedAt > $1.startedAt }
+            .sorted { $0.date > $1.date }
     }
 
     public func meeting(for event: CalendarEvent) throws -> Meeting {

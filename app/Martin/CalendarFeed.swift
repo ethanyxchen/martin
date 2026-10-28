@@ -50,7 +50,6 @@ private struct CalendarAccess: View {
             }
             .padding(.top, 8)
         }
-        .padding(.leading, Theme.column)
-        .padding(.trailing, Theme.margin)
+        .flush()
     }
 }

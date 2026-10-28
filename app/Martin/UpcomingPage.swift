@@ -9,13 +9,8 @@ struct UpcomingView: View {
     var body: some View {
         TimelineView(.everyMinute) { context in
             let today = Calendar.current.startOfDay(for: context.date)
-            Page(title: "Upcoming") {
-                Text("Upcoming")
-                    .font(Theme.title)
-                    .foregroundStyle(Theme.ink)
-                    .padding(.leading, Theme.column)
-                    .padding(.trailing, Theme.margin)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            Page {
+                PageHeading(title: "Upcoming")
             } content: {
                 content(from: today, at: context.date)
             }
@@ -75,7 +70,7 @@ private struct DayView: View {
                     Button { app.start(event) } label: {
                         EventRow(event: event, day: day, underway: event.isUnderway(at: now))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(Pressable(scale: 0.98))
                     .pointerStyle(.link)
                 }
             }

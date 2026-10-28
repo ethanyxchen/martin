@@ -1,4 +1,5 @@
 import AppKit
+import QuartzCore
 import SwiftUI
 
 struct Tone: ShapeStyle {
@@ -37,8 +38,33 @@ enum Theme {
     static let measure: CGFloat = 560
     static let page = column + measure + margin
 
+    static let drawer = (0.32, 0.72, 0.0, 1.0)
+
     static let title = Font.system(size: 22, weight: .semibold, design: .serif)
+    static let heading = Font.system(size: 15, weight: .semibold, design: .serif)
     static let meta = Font.system(size: 12)
+}
+
+extension Animation {
+    static func drawer(_ duration: TimeInterval) -> Animation {
+        .timingCurve(Theme.drawer.0, Theme.drawer.1, Theme.drawer.2, Theme.drawer.3, duration: duration)
+    }
+}
+
+extension CAMediaTimingFunction {
+    static var drawer: CAMediaTimingFunction {
+        CAMediaTimingFunction(controlPoints: Float(Theme.drawer.0), Float(Theme.drawer.1), Float(Theme.drawer.2), Float(Theme.drawer.3))
+    }
+}
+
+struct Pressable: ButtonStyle {
+    var scale: CGFloat = 0.96
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? scale : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
 }
 
 extension View {
@@ -46,10 +72,17 @@ extension View {
         contentShape(.rect).gesture(WindowDragGesture())
     }
 
+    func flush() -> some View {
+        inset().frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     func column() -> some View {
-        padding(.leading, Theme.column)
-            .padding(.trailing, Theme.margin)
+        inset()
             .frame(maxWidth: Theme.page, alignment: .leading)
             .frame(maxWidth: .infinity)
+    }
+
+    private func inset() -> some View {
+        padding(.leading, Theme.column).padding(.trailing, Theme.margin)
     }
 }
