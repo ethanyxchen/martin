@@ -9,7 +9,7 @@ struct NotesView: View {
             Page {
                 PageHeading(title: "Notes")
             } content: {
-                NoteList(app: app, meetings: app.notes, now: context.date)
+                NoteList(app: app, meetings: app.notes, now: context.date, detail: app.projectName(of:))
             }
         }
         .toolbar {
@@ -107,7 +107,7 @@ struct ArchiveView: View {
                     }
                     .padding(.horizontal, Theme.edge - ChatRow.inset)
                 }
-                NoteList(app: app, meetings: app.archive, now: context.date)
+                NoteList(app: app, meetings: app.archive, now: context.date, detail: app.projectName(of:))
             }
         }
     }
@@ -117,10 +117,11 @@ private struct NoteList: View {
     let app: AppState
     let meetings: [Meeting]
     let now: Date
+    let detail: (Meeting) -> String?
 
     var body: some View {
         Rows(items: meetings, indent: ChatRow.avatarIndent) { meeting in
-            NoteRow(app: app, meeting: meeting, row: ChatRow(avatar: Avatar(title: meeting.title), title: meeting.displayTitle, stamp: meeting.date.stamp(at: now), preview: app.previews[meeting.id]))
+            NoteRow(app: app, meeting: meeting, row: ChatRow(avatar: Avatar(title: meeting.title), title: meeting.displayTitle, stamp: meeting.date.stamp(at: now), preview: detail(meeting)))
         }
         .padding(.horizontal, Theme.edge - ChatRow.inset)
     }
@@ -314,7 +315,7 @@ private struct ShelfView: View {
             }
             .flush()
         } content: {
-            NoteList(app: app, meetings: shelf.meetings, now: now)
+            NoteList(app: app, meetings: shelf.meetings, now: now) { app.previews[$0.id] }
         }
     }
 }
@@ -464,7 +465,8 @@ struct Avatar: View {
 }
 
 extension Shelf {
-    var title: String { project?.name ?? "Unassigned" }
+    static let unassigned = "Unassigned"
+    var title: String { project?.name ?? Self.unassigned }
 }
 
 extension Date {

@@ -147,6 +147,10 @@ final class AppState {
         projects.first { $0.id == meeting.project }
     }
 
+    func projectName(of meeting: Meeting) -> String {
+        allProjects.first { $0.id == meeting.project }?.name ?? Shelf.unassigned
+    }
+
     func reload() {
         meetings = (try? library.meetings()) ?? []
         allProjects = (try? library.projects()) ?? []

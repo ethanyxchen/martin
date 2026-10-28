@@ -82,6 +82,18 @@ final class AppStateTests {
         #expect(app.notes.shelved(in: app.projects).map(\.id) == [.project(atlas.id), .unassigned])
     }
 
+    @Test func aNoteIsLabelledWithItsProjectEvenOnceTheProjectIsArchived() throws {
+        let app = AppState(library: library, defaults: defaults)
+        let meeting = try library.create(title: "Kickoff")
+        app.reload()
+        #expect(app.projectName(of: meeting) == "Unassigned")
+        app.file(meeting, inNewProjectNamed: "Atlas")
+        let filed = try #require(app.meeting(meeting.id))
+        #expect(app.projectName(of: filed) == "Atlas")
+        app.archive(try #require(app.projects.first))
+        #expect(app.projectName(of: filed) == "Atlas")
+    }
+
     @Test func aNoteWithoutAMeetingIsAQuickNote() throws {
         #expect(try library.create().displayTitle == "Quick note")
         #expect(try library.create(startedAt: .distantPast, occurrence: Occurrence(series: "review@example.com")).displayTitle == "Meeting")
