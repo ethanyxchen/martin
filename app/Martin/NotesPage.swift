@@ -21,7 +21,6 @@ struct NotesView: View {
 }
 
 struct MeetingsView: View {
-    private static let sidebar: CGFloat = 300
     private static let wide: CGFloat = 780
     private static let slide: TimeInterval = 0.3
     let app: AppState
@@ -34,48 +33,36 @@ struct MeetingsView: View {
         let series = app.meetings.series
         let open = series.first { $0.id == selected }
         TimelineView(.everyMinute) { context in
-            HStack(spacing: 0) {
-                Page {
-                    PageHeading(title: "Meetings")
-                } content: {
-                    Rows(items: series) { series in
-                        Button { select(series.id == selected ? nil : series.id) } label: {
-                            ChatRow(avatar: Avatar(title: series.avatar), title: series.title, stamp: series.meetings[0].date.stamp(at: context.date), preview: app.previews[series.meetings[0].id], count: series.meetings.count, selected: series.id == selected)
-                        }
+            Page {
+                PageHeading(title: "Meetings")
+            } content: {
+                Rows(items: series) { series in
+                    Button { withAnimation(reduceMotion ? nil : .drawer(Self.slide)) { selected = series.id == selected ? nil : series.id } } label: {
+                        ChatRow(avatar: Avatar(title: series.avatar), title: series.title, stamp: series.meetings[0].date.stamp(at: context.date), preview: app.previews[series.meetings[0].id], count: series.meetings.count, selected: series.id == selected)
                     }
-                    .padding(.horizontal, (open == nil ? Theme.margin : 18) - ChatRow.inset)
                 }
-                .frame(width: open == nil ? nil : Self.sidebar)
-                if let open {
-                    HStack(spacing: 0) {
-                        Rectangle()
-                            .fill(Theme.well)
-                            .frame(width: 1)
-                            .ignoresSafeArea()
-                        SeriesView(app: app, series: open)
-                    }
-                    .transition(reduceMotion ? .opacity : .move(edge: .trailing).combined(with: .opacity))
-                }
+                .padding(.horizontal, Theme.margin - ChatRow.inset)
+            }
+        }
+        .inspector(isPresented: Binding { open != nil } set: { if !$0 { selected = nil } }) {
+            if let open {
+                SeriesView(app: app, series: open)
+                    .inspectorColumnWidth(min: 260, ideal: 300)
             }
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
-        .onChange(of: open?.id) { _, id in
-            if id == nil, selected != nil { select(nil, animated: false) }
+        .onChange(of: open != nil) { fit(inspecting: $1) }
+        .onExitCommand { selected = nil }
+        .onDisappear {
+            selected = nil
+            fit(inspecting: false)
         }
-        .onExitCommand { select(nil, animated: false) }
-        .onDisappear { select(nil) }
     }
 
-    private func select(_ id: Series.ID?, animated: Bool = true) {
-        let duration = animated ? Self.slide : 0
-        if selected == nil, id != nil {
-            grown = max(0, Self.wide - width)
-            app.widenHome(by: grown, over: duration)
-        } else if selected != nil, id == nil {
-            app.widenHome(by: -grown, over: duration)
-            grown = 0
-        }
-        withAnimation(animated ? .drawer(duration) : nil) { selected = id }
+    private func fit(inspecting: Bool) {
+        let change = inspecting ? max(0, Self.wide - width) : -grown
+        grown += change
+        app.widenHome(by: change, over: Self.slide)
     }
 }
 
@@ -84,34 +71,30 @@ private struct SeriesView: View {
     let series: Series
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 10) {
-                Avatar(title: series.avatar, size: 34)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(series.title)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Theme.ink)
-                        .lineLimit(1)
-                    Text(series.meetings.count == 1 ? "1 note" : "\(series.meetings.count) notes")
-                        .font(Theme.meta)
-                        .foregroundStyle(Theme.tertiary)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 10) {
+                    Avatar(title: series.avatar, size: 34)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(series.title)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(Theme.ink)
+                            .lineLimit(1)
+                        Text(series.meetings.count == 1 ? "1 note" : "\(series.meetings.count) notes")
+                            .font(Theme.meta)
+                            .foregroundStyle(Theme.tertiary)
+                    }
                 }
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
-            Rectangle()
-                .fill(Theme.well)
-                .frame(height: 1)
-            ScrollView {
+                .padding(.horizontal, 12)
                 Rows(items: series.meetings) { meeting in
                     Button { app.open(meeting) } label: {
                         ChatRow(title: meeting.date.formatted(.dateTime.weekday(.wide).day().month(.wide)), preview: app.previews[meeting.id])
                     }
                 }
-                .padding(8)
             }
+            .padding(8)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .scrollEdgeEffectStyle(.soft, for: .top)
     }
 }
 

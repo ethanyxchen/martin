@@ -22,6 +22,7 @@ final class MentionPicker {
     static let row: CGFloat = 42
     static let header: CGFloat = 24
     static let inset: CGFloat = 5
+    static let corner: CGFloat = 7
     static let padding: CGFloat = 9
     static let avatar: CGFloat = 26
     static let spacing: CGFloat = 10
@@ -75,7 +76,7 @@ final class MentionPicker {
         let panel = NSPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
         panel.isOpaque = false
         panel.backgroundColor = .clear
-        panel.hasShadow = true
+        panel.hasShadow = false
         panel.contentView = NSHostingView(rootView: MentionList(choices: choices, pick: pick))
         self.panel = panel
         return panel
@@ -111,8 +112,7 @@ private struct MentionList: View {
             .scrollIndicators(.never)
             .onChange(of: choices.selected) { proxy.scrollTo(choices.selected) }
         }
-        .background(Theme.paper, in: .rect(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.ink.opacity(0.1), lineWidth: 0.5))
+        .glassEffect(.regular, in: .rect(cornerRadius: MentionPicker.corner + MentionPicker.inset))
     }
 }
 
@@ -142,7 +142,7 @@ private struct MentionRow: View {
         }
         .padding(.horizontal, MentionPicker.padding)
         .frame(height: MentionPicker.row)
-        .background(selected ? Theme.cobalt.opacity(0.1) : Theme.cobalt.opacity(0), in: .rect(cornerRadius: 7))
+        .background(selected ? Theme.cobalt.opacity(0.1) : Theme.cobalt.opacity(0), in: .rect(cornerRadius: MentionPicker.corner))
         .contentShape(.rect)
     }
 

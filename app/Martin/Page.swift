@@ -4,45 +4,38 @@ struct Page<Header: View, Content: View>: View {
     var title: String?
     @ViewBuilder let header: Header
     @ViewBuilder let content: Content
-    @State private var titlebar: CGFloat = 0
     @State private var viewport: CGFloat = 0
     @State private var collapsed = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            Color.clear
-                .overlay(alignment: .leading) {
-                    if let title {
-                        Text(title)
-                            .font(Theme.heading)
-                            .foregroundStyle(Theme.ink)
-                            .lineLimit(1)
-                            .opacity(collapsed ? 1 : 0)
-                            .offset(y: collapsed ? 0 : 6)
-                            .animation(.easeOut(duration: 0.12), value: collapsed)
-                            .padding(.leading, Theme.controls)
-                            .padding(.trailing, Theme.margin)
-                    }
-                }
-                .frame(height: titlebar)
-                .movesWindow()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    header
-                        .onGeometryChange(for: Bool.self) { $0.frame(in: .scrollView).maxY <= 0 } action: { collapsed = $0 }
-                        .padding(.top, 18)
-                        .padding(.bottom, 22)
-                        .movesWindow()
-                    content
-                }
-                .frame(minHeight: viewport, alignment: .top)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                header
+                    .onGeometryChange(for: Bool.self) { $0.frame(in: .scrollView).maxY <= 0 } action: { collapsed = $0 }
+                    .padding(.top, 18)
+                    .padding(.bottom, 22)
+                    .movesWindow()
+                content
             }
-            .clipped()
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { viewport = $0 }
+            .frame(minHeight: viewport, alignment: .top)
         }
+        .scrollEdgeEffectStyle(.soft, for: .top)
+        .onScrollGeometryChange(for: CGFloat.self) { $0.containerSize.height - $0.contentInsets.top - $0.contentInsets.bottom } action: { viewport = $1 }
         .background(Theme.paper)
-        .ignoresSafeArea(edges: .top)
-        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { titlebar = $0 }
+        .toolbar {
+            if let title {
+                ToolbarItem(placement: .navigation) {
+                    Text(title)
+                        .font(Theme.heading)
+                        .foregroundStyle(Theme.ink)
+                        .lineLimit(1)
+                        .opacity(collapsed ? 1 : 0)
+                        .offset(y: collapsed ? 0 : 6)
+                        .animation(.easeOut(duration: 0.12), value: collapsed)
+                }
+                .sharedBackgroundVisibility(.hidden)
+            }
+        }
     }
 }
 
