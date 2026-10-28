@@ -57,8 +57,6 @@ struct PageHeading: View {
                     .foregroundStyle(Theme.secondary)
             }
         }
-        .padding(.leading, Theme.column)
-        .padding(.trailing, Theme.margin)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .flush()
     }
 }

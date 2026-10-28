@@ -6,38 +6,57 @@ struct SettingsView: View {
 
     var body: some View {
         Page(title: "Settings") {
-            PageHeading(title: "Settings", detail: "Choose the pages in the navigation bar and the calendars Martin follows.")
+            PageHeading(title: "Settings")
         } content: {
-            VStack(alignment: .leading, spacing: 26) {
-                NavigationSection(hidden: $app.hiddenPages)
-                    .padding(.leading, Theme.column)
-                    .padding(.trailing, Theme.margin)
-                CalendarFeed(query: true, promise: "you can choose which of them Martin follows") { _ in
-                    CalendarLookup.accounts()
-                } content: { accounts in
-                    VStack(alignment: .leading, spacing: 26) {
-                        ForEach(accounts) { account in
-                            AccountView(account: account, hidden: $app.hiddenCalendars)
+            VStack(alignment: .leading, spacing: 36) {
+                SettingsSection(title: "Navigation bar", detail: "The pages you can switch between at the top of this window.") {
+                    NavigationToggles(hidden: $app.hiddenPages)
+                        .flush()
+                }
+                SettingsSection(title: "Calendars", detail: "Martin shows events and takes notes for the calendars you tick.") {
+                    CalendarFeed(query: true, promise: "you can choose which of them Martin follows") { _ in
+                        CalendarLookup.accounts()
+                    } content: { accounts in
+                        VStack(alignment: .leading, spacing: 22) {
+                            ForEach(accounts) { account in
+                                AccountView(account: account, hidden: $app.hiddenCalendars)
+                            }
                         }
+                        .flush()
                     }
-                    .padding(.leading, Theme.column)
-                    .padding(.trailing, Theme.margin)
                 }
             }
             .padding(.bottom, 28)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
 
-private struct NavigationSection: View {
+private struct SettingsSection<Content: View>: View {
+    let title: String
+    let detail: String
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(Theme.heading)
+                    .foregroundStyle(Theme.ink)
+                Text(detail)
+                    .font(Theme.meta)
+                    .foregroundStyle(Theme.secondary)
+            }
+            .flush()
+            content
+        }
+    }
+}
+
+private struct NavigationToggles: View {
     @Binding var hidden: Set<HomePage>
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Navigation bar")
-                .font(Theme.heading)
-                .foregroundStyle(Theme.ink)
             ForEach(HomePage.allCases, id: \.self) { page in
                 Toggle(isOn: $hidden.excludes(page)) {
                     HStack(spacing: 8) {
@@ -66,9 +85,10 @@ private struct AccountView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(account.title)
-                .font(Theme.heading)
-                .foregroundStyle(Theme.ink)
+            Text(account.title.uppercased())
+                .font(.system(size: 11, weight: .semibold))
+                .tracking(0.4)
+                .foregroundStyle(Theme.tertiary)
             ForEach(account.calendars) { calendar in
                 Toggle(isOn: $hidden.excludes(calendar.id)) {
                     HStack(spacing: 8) {

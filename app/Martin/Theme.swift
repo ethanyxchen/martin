@@ -47,6 +47,12 @@ extension View {
         contentShape(.rect).gesture(WindowDragGesture())
     }
 
+    func flush() -> some View {
+        padding(.leading, Theme.column)
+            .padding(.trailing, Theme.margin)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     func column() -> some View {
         padding(.leading, Theme.column)
             .padding(.trailing, Theme.margin)
