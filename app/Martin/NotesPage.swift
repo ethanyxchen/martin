@@ -15,7 +15,7 @@ struct NotesView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("New Quick Note", systemImage: "square.and.pencil") { app.quickNote() }
-                    .help("New Quick Note (⌥⌘N)")
+                    .help("New Quick Note (⌘N)")
             }
             ArchiveButton(app: app)
         }

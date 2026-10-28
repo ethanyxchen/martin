@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 @testable import Martin
 
@@ -20,5 +21,12 @@ struct NotesPageTests {
 
     @Test func aHiddenPageStaysInTheBarWhileItIsOpen() {
         #expect(HomePage.shown(hiding: [.upcoming], on: .upcoming) == HomePage.allCases)
+    }
+}
+
+@MainActor
+struct QuickNoteTests {
+    @Test func commandNStartsAQuickNote() {
+        #expect(QuickNoteButton.shortcut == KeyboardShortcut("n", modifiers: .command))
     }
 }

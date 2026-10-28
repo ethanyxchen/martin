@@ -33,11 +33,12 @@ struct MenuBar: View {
 }
 
 struct QuickNoteButton: View {
+    static let shortcut = KeyboardShortcut("n")
     let app: AppState
 
     var body: some View {
         Button("New Quick Note") { app.quickNote() }
-            .keyboardShortcut("n", modifiers: [.command, .option])
+            .keyboardShortcut(Self.shortcut)
     }
 }
 
