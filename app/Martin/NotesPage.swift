@@ -33,12 +33,12 @@ struct MeetingsView: View {
                 Page {
                     PageHeading(title: "Meetings")
                 } content: {
-                    Rows(items: series) { series in
+                    Rows(items: series, indent: ChatRow.avatarIndent) { series in
                         Button { select(series.id == selected ? nil : series.id) } label: {
                             ChatRow(avatar: Avatar(title: series.avatar), title: series.title, stamp: series.meetings[0].date.stamp(at: context.date), preview: app.previews[series.meetings[0].id], count: series.meetings.count, selected: series.id == selected)
                         }
                     }
-                    .padding(.horizontal, (open == nil ? Theme.margin : 18) - ChatRow.inset)
+                    .padding(.horizontal, (open == nil ? Theme.column : 18) - ChatRow.inset)
                 }
                 .frame(width: open == nil ? nil : Self.sidebar)
                 if let open {
@@ -94,10 +94,10 @@ private struct NoteList: View {
     let now: Date
 
     var body: some View {
-        Rows(items: meetings) { meeting in
+        Rows(items: meetings, indent: ChatRow.avatarIndent) { meeting in
             NoteRow(app: app, meeting: meeting, row: ChatRow(avatar: Avatar(title: meeting.title), title: meeting.displayTitle, stamp: meeting.date.stamp(at: now), preview: app.previews[meeting.id]))
         }
-        .padding(.horizontal, Theme.margin - ChatRow.inset)
+        .padding(.horizontal, Theme.column - ChatRow.inset)
     }
 }
 
@@ -105,34 +105,29 @@ private struct NoteRow: View {
     let app: AppState
     let meeting: Meeting
     let row: ChatRow
-    @Environment(\.hovering) private var hovering
 
     var body: some View {
-        Button { app.open(meeting) } label: { row }
-            .overlay(alignment: .trailing) {
-                if hovering {
-                    HStack(spacing: 0) {
-                        NoteActions(app: app, meeting: meeting, shortcuts: false)
-                    }
-                    .buttonStyle(RowAction())
-                    .padding(.horizontal, 6)
-                    .frame(maxHeight: .infinity)
-                    .background(Theme.well, in: .rect(cornerRadius: 9))
-                    .transition(.opacity)
-                }
-            }
-            .animation(.easeOut(duration: 0.12), value: hovering)
+        Button { app.open(meeting) } label: { actionable }
             .contextMenu { NoteMenu(app: app, meeting: meeting) }
+    }
+
+    private var actionable: ChatRow {
+        var row = row
+        row.actions = NoteActions(app: app, meeting: meeting, shortcuts: false)
+        return row
     }
 }
 
 private struct RowAction: ButtonStyle {
+    static let size: CGFloat = 26
+    static let glyph: CGFloat = 14
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .labelStyle(.iconOnly)
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(configuration.isPressed ? Theme.ink : Theme.secondary)
-            .frame(width: 28, height: 28)
+            .frame(width: Self.size, height: Self.size)
             .contentShape(.rect)
             .scaleEffect(configuration.isPressed ? 0.9 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
@@ -152,7 +147,7 @@ struct NoteMenu: View {
     }
 }
 
-private struct NoteActions: View {
+struct NoteActions: View {
     let app: AppState
     let meeting: Meeting?
     let shortcuts: Bool
@@ -210,35 +205,34 @@ private struct SeriesView: View {
 
 private struct Rows<Item: Identifiable, Row: View>: View {
     let items: [Item]
+    var indent: CGFloat = 0
     @ViewBuilder let row: (Item) -> Row
+    @State private var hovered: Item.ID?
 
     var body: some View {
+        let above = Dictionary(uniqueKeysWithValues: zip(items.dropFirst().map(\.id), items.map(\.id)))
         LazyVStack(spacing: 0) {
             ForEach(items) { item in
-                Hoverable { row(item) }
+                row(item)
                     .buttonStyle(Pressable(scale: 0.98))
+                    .environment(\.hovering, hovered == item.id)
+                    .onHover { inside in
+                        if inside { hovered = item.id } else if hovered == item.id { hovered = nil }
+                    }
                     .overlay(alignment: .top) {
-                        if item.id != items.first?.id {
+                        if let previous = above[item.id] {
                             Rectangle()
                                 .fill(Theme.well)
                                 .frame(height: 1)
-                                .padding(.horizontal, ChatRow.inset)
+                                .padding(.leading, ChatRow.inset + indent)
+                                .padding(.trailing, ChatRow.inset)
+                                .opacity(hovered == item.id || hovered == previous ? 0 : 1)
                         }
                     }
             }
         }
+        .animation(.easeOut(duration: 0.12), value: hovered)
         .padding(.bottom, 20)
-    }
-}
-
-private struct Hoverable<Content: View>: View {
-    @ViewBuilder let content: Content
-    @State private var hovering = false
-
-    var body: some View {
-        content
-            .environment(\.hovering, hovering)
-            .onHover { hovering = $0 }
     }
 }
 
@@ -248,16 +242,20 @@ private extension EnvironmentValues {
 
 private struct ChatRow: View {
     static let inset: CGFloat = 10
+    static let avatarIndent = Avatar.standard + spacing
+    private static let spacing: CGFloat = 12
+    private static let actionsWidth = 2 * RowAction.size - (RowAction.size - RowAction.glyph) / 2
     var avatar: Avatar?
     let title: String
     var stamp: String?
     let preview: String?
     var count: Int?
     var selected = false
+    var actions: NoteActions?
     @Environment(\.hovering) private var hovering
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Self.spacing) {
             avatar
             VStack(alignment: .leading, spacing: 3) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -265,25 +263,25 @@ private struct ChatRow: View {
                         .font(.system(size: 13.5, weight: .semibold))
                         .foregroundStyle(ink)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    if let stamp {
-                        Text(stamp)
-                            .font(Theme.meta.monospacedDigit())
-                            .foregroundStyle(faint)
-                    }
+                    meta(stamp.map { Text($0).font(Theme.meta.monospacedDigit()) })
                 }
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(preview ?? "No notes")
                         .font(.system(size: 12.5))
                         .foregroundStyle(preview == nil ? faint : quiet)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    if let count {
-                        Text(count, format: .number)
-                            .font(.system(size: 11.5).monospacedDigit())
-                            .foregroundStyle(faint)
-                    }
+                    meta(count.map { Text($0, format: .number).font(.system(size: 11.5).monospacedDigit()) })
                 }
             }
             .lineLimit(1)
+            .overlay(alignment: .trailing) {
+                if revealed {
+                    HStack(spacing: 0) { actions }
+                        .buttonStyle(RowAction())
+                        .padding(.trailing, -(RowAction.size - RowAction.glyph) / 2)
+                        .transition(.opacity)
+                }
+            }
         }
         .padding(.horizontal, Self.inset)
         .padding(.vertical, 9)
@@ -291,6 +289,17 @@ private struct ChatRow: View {
         .contentShape(.rect)
         .animation(.easeOut(duration: 0.12), value: hovering)
         .pointerStyle(.link)
+    }
+
+    private var revealed: Bool { hovering && actions != nil }
+
+    @ViewBuilder private func meta(_ text: Text?) -> some View {
+        if text != nil || actions != nil {
+            (text ?? Text(verbatim: ""))
+                .foregroundStyle(faint)
+                .frame(minWidth: actions == nil ? nil : Self.actionsWidth, alignment: .trailing)
+                .opacity(revealed ? 0 : 1)
+        }
     }
 
     private var ink: AnyShapeStyle { selected ? AnyShapeStyle(.white) : AnyShapeStyle(Theme.ink) }
@@ -307,8 +316,10 @@ struct Avatar: View {
         Color(red: 0.83, green: 0.35, blue: 0.60),
         Color(red: 0.20, green: 0.62, blue: 0.70),
     ]
+    static let standard: CGFloat = 40
     let title: String?
-    var size: CGFloat = 40
+    var size = standard
+    @Environment(\.hovering) private var hovering
 
     var body: some View {
         if let title, let initial = title.first(where: { $0.isLetter || $0.isNumber }) {
@@ -322,7 +333,7 @@ struct Avatar: View {
                 .font(.system(size: size * 0.4))
                 .foregroundStyle(Theme.secondary)
                 .frame(width: size, height: size)
-                .background(Theme.well, in: .circle)
+                .background(hovering ? Theme.paper : Theme.well, in: .circle)
         }
     }
 
