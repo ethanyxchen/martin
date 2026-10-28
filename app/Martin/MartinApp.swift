@@ -42,9 +42,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 final class AppState {
     private static let windowSize = NSSize(width: 520, height: 640)
     private static let hiddenCalendarsKey = "hiddenCalendars"
+    private static let pageKey = "page"
+    private static let hiddenPagesKey = "hiddenPages"
     let library = MeetingLibrary()
     private(set) var meetings: [Meeting] = []
-    var page = HomePage.upcoming
+    var page = UserDefaults.standard.string(forKey: pageKey).flatMap(HomePage.init) ?? .upcoming {
+        didSet { UserDefaults.standard.set(page.rawValue, forKey: Self.pageKey) }
+    }
+    var hiddenPages = Set((UserDefaults.standard.stringArray(forKey: hiddenPagesKey) ?? []).compactMap(HomePage.init)) {
+        didSet { UserDefaults.standard.set(hiddenPages.map(\.rawValue).sorted(), forKey: Self.hiddenPagesKey) }
+    }
     var hiddenCalendars = Set(UserDefaults.standard.stringArray(forKey: hiddenCalendarsKey) ?? []) {
         didSet { UserDefaults.standard.set(hiddenCalendars.sorted(), forKey: Self.hiddenCalendarsKey) }
     }
@@ -56,6 +63,10 @@ final class AppState {
 
     func meeting(_ id: Meeting.ID) -> Meeting? {
         meetings.first { $0.id == id }
+    }
+
+    var pages: [HomePage] {
+        HomePage.shown(hiding: hiddenPages)
     }
 
     var people: [Person] {
@@ -76,6 +87,11 @@ final class AppState {
         }
     }
 
+    func save(_ note: String, for meeting: Meeting) {
+        try? library.saveNote(note, for: meeting)
+        reload()
+    }
+
     func rename(_ meeting: Meeting, to title: String) {
         var renamed = meeting
         renamed.title = title.isEmpty ? nil : title
@@ -90,12 +106,19 @@ final class AppState {
     }
 
     func reopen() {
-        if windows.isEmpty { openHome(on: .upcoming) }
+        if windows.isEmpty { openHome(on: page) }
     }
 
     func openHome(on page: HomePage) {
         self.page = page
         show(windows["home"] ?? present(HomeView(app: self), id: "home", title: "Martin", size: Self.windowSize))
+    }
+
+    func widenHome(by width: CGFloat) {
+        guard let window = windows["home"] else { return }
+        var frame = window.frame
+        frame.size.width += width
+        window.setFrame(frame, display: true, animate: true)
     }
 
     private func show(_ window: NSWindow) {

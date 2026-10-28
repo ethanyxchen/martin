@@ -11,7 +11,7 @@ struct Page<Header: View, Content: View>: View {
     var body: some View {
         VStack(spacing: 0) {
             Text(title)
-                .font(.system(size: 15, weight: .semibold, design: .serif))
+                .font(Theme.heading)
                 .foregroundStyle(Theme.ink)
                 .lineLimit(1)
                 .opacity(collapsed ? 1 : 0)
@@ -39,5 +39,26 @@ struct Page<Header: View, Content: View>: View {
         .background(Theme.paper)
         .ignoresSafeArea(edges: .top)
         .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { titlebar = $0 }
+    }
+}
+
+struct PageHeading: View {
+    let title: String
+    var detail: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(Theme.title)
+                .foregroundStyle(Theme.ink)
+            if let detail {
+                Text(detail)
+                    .font(Theme.meta)
+                    .foregroundStyle(Theme.secondary)
+            }
+        }
+        .padding(.leading, Theme.column)
+        .padding(.trailing, Theme.margin)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

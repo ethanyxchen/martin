@@ -10,12 +10,7 @@ struct UpcomingView: View {
         TimelineView(.everyMinute) { context in
             let today = Calendar.current.startOfDay(for: context.date)
             Page(title: "Upcoming") {
-                Text("Upcoming")
-                    .font(Theme.title)
-                    .foregroundStyle(Theme.ink)
-                    .padding(.leading, Theme.column)
-                    .padding(.trailing, Theme.margin)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                PageHeading(title: "Upcoming")
             } content: {
                 content(from: today, at: context.date)
             }

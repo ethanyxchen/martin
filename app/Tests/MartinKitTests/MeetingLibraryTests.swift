@@ -77,4 +77,10 @@ struct MeetingLibraryTests {
         let newer = try library.create(startedAt: Date(timeIntervalSince1970: 1_800_000_000))
         #expect(try library.meetings().map(\.id) == [newer.id, older.id])
     }
+
+    @Test func meetingsAreOrderedByTheirMeetingDateNotWhenTheNoteWasStarted() throws {
+        let earlyNote = try library.meeting(for: CalendarEvent(occurrence: Occurrence(series: "review@example.com"), title: "Review", start: Date(timeIntervalSince1970: 1_900_000_000), end: Date(timeIntervalSince1970: 1_900_003_600)))
+        let adHoc = try library.create(startedAt: Date(timeIntervalSince1970: 1_800_000_000))
+        #expect(try library.meetings().map(\.id) == [earlyNote.id, adHoc.id])
+    }
 }

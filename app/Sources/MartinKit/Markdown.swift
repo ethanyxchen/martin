@@ -55,6 +55,21 @@ public enum Markdown {
             }
         }
 
+        func plain(_ text: String) -> String {
+            let line = NSMutableString(string: text)
+            let edits = spans.compactMap { span -> (NSRange, String)? in
+                switch span.role {
+                case .marker, .bullet, .checkbox, .url: (span.range, "")
+                case .mention(let label): (span.range, "@" + line.substring(with: label))
+                default: nil
+                }
+            }
+            for (range, replacement) in edits.sorted(by: { $0.0.location > $1.0.location }) where range.location >= prefix {
+                line.replaceCharacters(in: range, with: replacement)
+            }
+            return line.substring(from: prefix).split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        }
+
         public func marker(before caret: Int) -> NSRange? {
             guard continues, caret == prefix, let start = spans.first?.range.location else { return nil }
             return NSRange(location: start, length: prefix - start)
@@ -217,6 +232,26 @@ public enum Markdown {
             location = end
         }
         return references
+    }
+
+    public static func preview(of text: String) -> String? {
+        let source = text as NSString
+        let blocks = codeBlocks(in: text)
+        let references = references(in: text)
+        var preview: String?
+        source.enumerateSubstrings(in: NSRange(location: 0, length: source.length), options: .byLines) { line, range, _, stop in
+            guard let line, !blocks.contains(where: { NSLocationInRange(range.location, $0) }) else { return }
+            let parsed = Line(line, references: references)
+            switch parsed.block {
+            case .blank, .fence, .code, .rule, .definition: return
+            case .text, .heading, .list, .task, .quote:
+                let plain = parsed.plain(line)
+                guard !plain.isEmpty else { return }
+                preview = plain
+                stop.pointee = true
+            }
+        }
+        return preview
     }
 
     public static func mayBeHeading(_ line: NSRange, in text: NSString) -> Bool {

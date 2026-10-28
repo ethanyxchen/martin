@@ -231,4 +231,16 @@ struct MarkdownTests {
         }
         #expect(elapsed < .milliseconds(500), "\(elapsed)")
     }
+
+    @Test(arguments: [
+        ("", nil),
+        ("\n  \n", nil),
+        ("\n## Standup notes\n- shipped", "Standup notes"),
+        ("- [x] Ship **icons** with @{Kim Kam <kim.k@example.com>} and @{inamiy@example.com}", "Ship icons with @Kim Kam and @inamiy"),
+        ("```\nlet answer = 42\n```\n> Read the [spec](https://example.com) `now`", "Read the spec now"),
+        ("---\n[spec]: https://example.com\nSee   the [spec]", "See the spec"),
+    ] as [(String, String?)])
+    func previewIsTheFirstLineOfTextWithoutMarkup(note: String, preview: String?) {
+        #expect(Markdown.preview(of: note) == preview)
+    }
 }

@@ -38,6 +38,7 @@ enum Theme {
     static let page = column + measure + margin
 
     static let title = Font.system(size: 22, weight: .semibold, design: .serif)
+    static let heading = Font.system(size: 15, weight: .semibold, design: .serif)
     static let meta = Font.system(size: 12)
 }
 

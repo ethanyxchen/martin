@@ -16,6 +16,10 @@ open build/Martin.app
 
 **Take Notes** opens the note for the calendar event in progress, or a fresh note when nothing is on. **Upcoming Meetings…** in the menu shows today and the next three days; click a meeting to open its note. For Google Calendar, add the account in System Settings → Internet Accounts with Calendars turned on.
 
+## Notes
+
+**Notes** lists every note, newest first, with the first line of each. **Meetings** lists each recurring meeting with its latest note and how many notes it has; one-off meetings and notes without an event share **Other notes**. Click a meeting to open its notes in a second column. Choose the pages in the navigation bar in Settings.
+
 ## Data
 
 Each meeting is a folder in `~/Library/Application Support/Martin/meetings/` with `meeting.json` and `note.md`, which is the note you edit in Martin. A meeting taken from the calendar records `scheduledAt`, the event's start, which dates the note and follows the calendar each time you open the note from the event, and its `occurrence`: the event's series identifier, shared by every occurrence of a recurring meeting, and for recurring meetings that occurrence's original start, so a rescheduled meeting keeps its note. Its `attendees` are the event's guests, kept in step with the calendar the same way, each keyed by their lowercased `email` with the calendar's display `name` when there is one.
