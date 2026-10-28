@@ -4,10 +4,31 @@
   "scripts": [
     {
       "name": "Setup Worktree",
-      "command": "bash scripts/bootstrap-worktree.sh",
+      "command": "git config core.hooksPath .githooks",
       "icon": "configure",
       "runOnWorktreeCreate": true,
       "async": false
+    },
+    {
+      "name": "Run Martin",
+      "command": "./scripts/build-app.sh && open -g -j build/Martin.app",
+      "icon": "play"
+    },
+    {
+      "name": "Test",
+      "command": "swift test --package-path app",
+      "icon": "test"
+    },
+    {
+      "name": "Lint",
+      "command": ".githooks/pre-commit",
+      "icon": "lint"
+    },
+    {
+      "name": "Clean Up",
+      "command": "! pgrep -qf \"$PWD/build/Martin.app/\" || osascript -e \"quit app \\\"$PWD/build/Martin.app\\\"\"; rm -rf .build build",
+      "icon": "build",
+      "runOnDone": true
     }
   ]
 }
