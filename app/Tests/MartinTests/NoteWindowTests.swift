@@ -29,6 +29,17 @@ final class NoteWindowTests {
         let trailing = try #require(items.map { $0.convert($0.bounds, to: nil).maxX }.max())
         #expect(trailing > window.frame.width - 10)
     }
+
+    @Test func theNoteMenuActsOnTheKeyNoteWindow() throws {
+        let meeting = try library.create(title: "Standup")
+        let app = AppState(library: library, defaults: defaults)
+        let window = app.present(NoteView(app: app, meeting: meeting), id: meeting.id, title: meeting.displayTitle, size: NSSize(width: 520, height: 640))
+        #expect(app.focusedNote == nil)
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: window)
+        #expect(app.focusedNote == meeting)
+        NotificationCenter.default.post(name: NSWindow.didResignKeyNotification, object: window)
+        #expect(app.focusedNote == nil)
+    }
 }
 
 private extension NSView {

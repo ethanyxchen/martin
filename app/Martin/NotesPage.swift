@@ -112,7 +112,7 @@ private struct NoteRow: View {
 
     var body: some View {
         Button { app.open(meeting) } label: { actionable }
-            .contextMenu { NoteActions(app: app, meeting: meeting, placement: .menu) }
+            .contextMenu { NoteActions(app: app, meeting: meeting, placement: .contextMenu) }
     }
 
     private var actionable: ChatRow {
@@ -152,27 +152,38 @@ struct NoteMenu: View {
 struct NoteActions: View {
     enum Placement {
         case menu
+        case contextMenu
         case row
     }
 
     let app: AppState
-    let meeting: Meeting
+    let meeting: Meeting?
     let placement: Placement
 
     var body: some View {
-        if meeting.archivedAt == nil {
-            Button("Archive", systemImage: "archivebox") { app.archive(meeting) }
-                .help(tooltip("Archive"))
-        } else {
-            Button("Restore", systemImage: "arrow.uturn.backward") { app.restore(meeting) }
-                .help(tooltip("Restore"))
+        Group {
+            if meeting?.archivedAt == nil {
+                Button("Archive", systemImage: "archivebox") { meeting.map(app.archive) }
+                    .help(tooltip("Archive"))
+            } else {
+                Button("Restore", systemImage: "arrow.uturn.backward") { meeting.map(app.restore) }
+                    .help(tooltip("Restore"))
+            }
         }
-        Button("Delete…", systemImage: "trash", role: .destructive) { app.confirmDeletion(of: meeting) }
+        .keyboardShortcut(shortcut("a", modifiers: [.command, .control]))
+        .disabled(meeting == nil)
+        Button("Delete…", systemImage: "trash", role: .destructive) { meeting.map(app.confirmDeletion) }
             .help(tooltip("Delete"))
+            .keyboardShortcut(shortcut(.delete, modifiers: [.command, .option]))
+            .disabled(meeting == nil)
     }
 
     private func tooltip(_ text: String) -> String {
         placement == .row ? text : ""
+    }
+
+    private func shortcut(_ key: KeyEquivalent, modifiers: EventModifiers) -> KeyboardShortcut? {
+        placement == .menu ? KeyboardShortcut(key, modifiers: modifiers) : nil
     }
 }
 

@@ -20,6 +20,9 @@ struct MartinApp: App {
             CommandGroup(replacing: .appSettings) {
                 SettingsButton(app: delegate.app)
             }
+            CommandMenu("Note") {
+                NoteActions(app: delegate.app, meeting: delegate.app.focusedNote, placement: .menu)
+            }
             CommandGroup(before: .windowList) {
                 Button("Archive") { delegate.app.openArchive() }
                     .keyboardShortcut("a", modifiers: [.command, .shift])
@@ -65,6 +68,7 @@ final class AppState {
     var hiddenCalendars: Set<EventCalendar.ID> {
         didSet { defaults.set(hiddenCalendars.sorted(), forKey: Self.hiddenCalendarsKey) }
     }
+    private var keyWindow: String?
     @ObservationIgnored private var windows: [String: NSWindow] = [:]
 
     init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = .standard) {
@@ -78,6 +82,10 @@ final class AppState {
 
     func meeting(_ id: Meeting.ID) -> Meeting? {
         meetings.first { $0.id == id }
+    }
+
+    var focusedNote: Meeting? {
+        keyWindow.flatMap(meeting)
     }
 
     var notes: [Meeting] {
@@ -196,7 +204,7 @@ final class AppState {
         NSApp.activate()
     }
 
-    private func present(_ view: some View, id: String, title: String, size: NSSize) -> NSWindow {
+    func present(_ view: some View, id: String, title: String, size: NSSize) -> NSWindow {
         let window = NSWindow(
             contentRect: NSRect(origin: .zero, size: size),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
@@ -219,6 +227,12 @@ final class AppState {
         windows[id] = window
         NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.windows[id] = nil }
+        }
+        NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.keyWindow = id }
+        }
+        NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: window, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { if self?.keyWindow == id { self?.keyWindow = nil } }
         }
         return window
     }
