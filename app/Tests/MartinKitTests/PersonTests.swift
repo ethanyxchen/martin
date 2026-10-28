@@ -22,7 +22,7 @@ struct PersonTests {
 
     @Test func matchesAreTheQueryAtTheStartOfEachWord() {
         func matched(_ query: String, in text: String) -> [String] {
-            Person.matches(of: query, in: text).map { String(text[$0]) }
+            text.wordMatches(of: query).map { String(text[$0]) }
         }
         #expect(matched("k", in: "Kim Kam") == ["K", "K"])
         #expect(matched("ka", in: "Kim Kam") == ["Ka"])

@@ -18,16 +18,18 @@ public struct Person: Codable, Hashable, Sendable {
         return "@{\(name) <\(email)>}"
     }
 
-    public static func matches(of query: String, in text: String) -> [Range<String.Index>] {
-        let starts = text.indices.filter { $0 == text.startIndex || text[text.index(before: $0)] == " " }
+    func matches(_ query: String) -> Bool {
+        !displayName.wordMatches(of: query).isEmpty || !email.wordMatches(of: query).isEmpty
+    }
+}
+
+public extension String {
+    func wordMatches(of query: String) -> [Range<String.Index>] {
+        let starts = indices.filter { $0 == startIndex || self[index(before: $0)] == " " }
         return starts.compactMap { start in
-            guard let end = text.index(start, offsetBy: query.count, limitedBy: text.endIndex), text[start..<end].lowercased() == query.lowercased() else { return nil }
+            guard let end = index(start, offsetBy: query.count, limitedBy: endIndex), self[start..<end].lowercased() == query.lowercased() else { return nil }
             return start..<end
         }
-    }
-
-    func matches(_ query: String) -> Bool {
-        !Self.matches(of: query, in: displayName).isEmpty || !Self.matches(of: query, in: email).isEmpty
     }
 }
 

@@ -16,10 +16,10 @@ final class AppStateTests {
 
     @Test func pageAndHiddenPagesAreRememberedAcrossLaunches() {
         let app = AppState(library: library, defaults: defaults)
-        app.page = .meetings
+        app.page = .projects
         app.hiddenPages = [.upcoming]
         let relaunched = AppState(library: library, defaults: defaults)
-        #expect(relaunched.page == .meetings)
+        #expect(relaunched.page == .projects)
         #expect(relaunched.hiddenPages == [.upcoming])
     }
 
@@ -68,5 +68,22 @@ final class AppStateTests {
         app.rename(meeting, to: "Retro")
         app.archive(meeting)
         #expect(app.archive.map(\.title) == ["Retro"])
+    }
+
+    @Test func filingANoteIntoANewProjectShelvesItThere() throws {
+        let meeting = try library.create(title: "Kickoff")
+        let app = AppState(library: library, defaults: defaults)
+        app.file(meeting, inNewProjectNamed: "Atlas")
+        let atlas = try #require(app.projects.first)
+        #expect(atlas.name == "Atlas")
+        #expect(app.project(of: try #require(app.meeting(meeting.id))) == atlas)
+        #expect(app.notes.shelved(in: app.projects).map(\.id) == [.project(atlas.id)])
+        app.file(meeting, in: nil)
+        #expect(app.notes.shelved(in: app.projects).map(\.id) == [.project(atlas.id), .unassigned])
+    }
+
+    @Test func aNoteWithoutAMeetingIsAQuickNote() throws {
+        #expect(try library.create().displayTitle == "Quick note")
+        #expect(try library.create(startedAt: .distantPast, occurrence: Occurrence(series: "review@example.com")).displayTitle == "Meeting")
     }
 }

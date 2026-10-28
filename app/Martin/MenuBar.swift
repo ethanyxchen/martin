@@ -9,6 +9,8 @@ struct MenuBar: View {
     var body: some View {
         Button("Take Notes") { Task { app.start(await CalendarLookup.currentEvent(hiding: app.hiddenCalendars)) } }
 
+        QuickNoteButton(app: app)
+
         Button("Upcoming Meetings…") { app.openHome(on: .upcoming) }
 
         if !app.notes.isEmpty {
@@ -27,6 +29,15 @@ struct MenuBar: View {
         SettingsButton(app: app)
         Button("Quit \(Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Martin")") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
+    }
+}
+
+struct QuickNoteButton: View {
+    let app: AppState
+
+    var body: some View {
+        Button("New Quick Note") { app.quickNote() }
+            .keyboardShortcut("n", modifiers: [.command, .option])
     }
 }
 

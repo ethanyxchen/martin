@@ -20,6 +20,9 @@ struct MartinApp: App {
             CommandGroup(replacing: .appSettings) {
                 SettingsButton(app: delegate.app)
             }
+            CommandGroup(replacing: .newItem) {
+                QuickNoteButton(app: delegate.app)
+            }
             CommandMenu("Note") {
                 NoteActions(app: delegate.app, meeting: delegate.app.focusedNote, placement: .menu)
             }
@@ -63,6 +66,7 @@ final class AppState {
     let library: MeetingLibrary
     private let defaults: UserDefaults
     private(set) var meetings: [Meeting] = []
+    private(set) var projects: [Project] = []
     private(set) var previews: [Meeting.ID: String] = [:]
     var page: HomePage {
         didSet { defaults.set(page.rawValue, forKey: Self.pageKey) }
@@ -113,21 +117,44 @@ final class AppState {
         meetings.flatMap(\.attendees)
     }
 
+    func project(of meeting: Meeting) -> Project? {
+        projects.first { $0.id == meeting.project }
+    }
+
     func reload() {
         meetings = (try? library.meetings()) ?? []
+        projects = (try? library.projects()) ?? []
         previews = meetings.reduce(into: [:]) { previews, meeting in
             previews[meeting.id] = library.note(of: meeting).flatMap(Markdown.preview(of:))
         }
     }
 
     func start(_ event: CalendarEvent?) {
+        begin { try event.map(library.meeting(for:)) ?? library.create() }
+    }
+
+    func quickNote(in project: Project.ID? = nil) {
+        begin { try library.create(project: project) }
+    }
+
+    private func begin(_ make: () throws -> Meeting) {
         do {
-            let meeting = try event.map(library.meeting(for:)) ?? library.create()
+            let meeting = try make()
             reload()
             open(meeting)
         } catch {
             explain(error)
         }
+    }
+
+    func file(_ meeting: Meeting, in project: Project.ID?) {
+        try? library.file(self.meeting(meeting.id) ?? meeting, in: project)
+        reload()
+    }
+
+    func file(_ meeting: Meeting, inNewProjectNamed name: String) {
+        guard let project = try? library.createProject(named: name) else { return }
+        file(meeting, in: project.id)
     }
 
     func save(_ note: String, for meeting: Meeting) {
@@ -249,12 +276,13 @@ final class AppState {
     private func explain(_ error: Error) {
         NSApp.activate()
         let alert = NSAlert()
-        alert.messageText = "Martin can't start the meeting"
+        alert.messageText = "Martin can't start the note"
         alert.informativeText = error.localizedDescription
         alert.runModal()
     }
 }
 
 extension Meeting {
-    var displayTitle: String { title ?? "Meeting" }
+    var displayTitle: String { title ?? untitled }
+    var untitled: String { occurrence == nil ? "Quick note" : "Meeting" }
 }

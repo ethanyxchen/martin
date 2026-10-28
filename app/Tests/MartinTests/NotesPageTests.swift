@@ -15,7 +15,7 @@ struct NotesPageTests {
 
     @Test func settingsStaysInTheNavigationBarWhenEveryPageIsHidden() {
         #expect(HomePage.shown(hiding: Set(HomePage.allCases), on: .settings) == [.settings])
-        #expect(HomePage.shown(hiding: [.upcoming], on: .notes) == [.notes, .meetings, .settings])
+        #expect(HomePage.shown(hiding: [.upcoming], on: .notes) == [.notes, .projects, .settings])
     }
 
     @Test func aHiddenPageStaysInTheBarWhileItIsOpen() {

@@ -109,3 +109,55 @@ struct MeetingLibraryTests {
         #expect(try library.meetings().map(\.archivedAt) == [nil])
     }
 }
+
+struct ProjectFilingTests {
+    let library = MeetingLibrary(root: FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory))
+    let sync = "sync@example.com"
+
+    private func start(on day: Int) -> Date {
+        Date(timeIntervalSince1970: 1_750_000_000 + Double(day) * 86_400)
+    }
+
+    private func syncNote(on day: Int) throws -> Meeting {
+        try library.create(startedAt: start(on: day), occurrence: Occurrence(series: sync, start: start(on: day)), title: "Design Sync")
+    }
+
+    private func occurrence(on day: Int) -> CalendarEvent {
+        CalendarEvent(occurrence: Occurrence(series: sync, start: start(on: day)), title: "Design Sync", start: start(on: day), end: start(on: day).addingTimeInterval(3_600))
+    }
+
+    @Test func createdProjectsAreKeptInOrder() throws {
+        let atlas = try library.createProject(named: "Atlas")
+        let hiring = try library.createProject(named: "Hiring")
+        #expect(try library.projects() == [atlas, hiring])
+    }
+
+    @Test func filingARecurringNoteFilesItsLaterNotesButLeavesEarlierOnesAlone() throws {
+        let atlas = try library.createProject(named: "Atlas")
+        let earlier = try syncNote(on: 0)
+        try library.file(syncNote(on: 1), in: atlas.id)
+        #expect(try library.meeting(for: occurrence(on: 2)).project == atlas.id)
+        #expect(try library.meetings().map(\.project) == [atlas.id, atlas.id, nil])
+        #expect(try library.meetings().last?.id == earlier.id)
+    }
+
+    @Test func refilingARecurringNoteMovesItsSeriesAndUnassigningStopsIt() throws {
+        let atlas = try library.createProject(named: "Atlas")
+        let hiring = try library.createProject(named: "Hiring")
+        let first = try syncNote(on: 0)
+        try library.file(first, in: atlas.id)
+        try library.file(first, in: hiring.id)
+        #expect(try library.projects().map(\.series) == [[], [sync]])
+        try library.file(first, in: nil)
+        #expect(try library.projects().map(\.series) == [[], []])
+        #expect(try library.meeting(for: occurrence(on: 1)).project == nil)
+    }
+
+    @Test func filingAOneOffNoteFollowsNothing() throws {
+        let atlas = try library.createProject(named: "Atlas")
+        try library.file(library.create(startedAt: start(on: 0), occurrence: Occurrence(series: "review@example.com"), title: "Review"), in: atlas.id)
+        try library.file(library.create(startedAt: Date(timeIntervalSince1970: 1_700_000_000)), in: atlas.id)
+        #expect(try library.projects().map(\.series) == [[]])
+        #expect(try library.meetings().map(\.project) == [atlas.id, atlas.id])
+    }
+}

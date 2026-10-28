@@ -3,14 +3,14 @@ import SwiftUI
 enum HomePage: String, CaseIterable {
     case upcoming
     case notes
-    case meetings
+    case projects
     case settings
 
     var title: String {
         switch self {
         case .upcoming: "Upcoming"
         case .notes: "Notes"
-        case .meetings: "Meetings"
+        case .projects: "Projects"
         case .settings: "Settings"
         }
     }
@@ -19,7 +19,7 @@ enum HomePage: String, CaseIterable {
         switch self {
         case .upcoming: "calendar"
         case .notes: "note.text"
-        case .meetings: "repeat"
+        case .projects: "folder"
         case .settings: "gearshape"
         }
     }
@@ -53,7 +53,7 @@ struct HomeView: View {
         switch page {
         case .upcoming: UpcomingView(app: app)
         case .notes: NotesView(app: app)
-        case .meetings: MeetingsView(app: app)
+        case .projects: ProjectsView(app: app)
         case .settings: SettingsView(app: app)
         }
     }
