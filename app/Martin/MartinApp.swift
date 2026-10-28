@@ -21,6 +21,11 @@ struct MartinApp: App {
                 SettingsButton(app: delegate.app)
             }
             CommandGroup(before: .windowList) {
+                ForEach(Array(delegate.app.pages.enumerated()), id: \.element) { position, page in
+                    Button(page.title) { delegate.app.openHome(on: page) }
+                        .keyboardShortcut(KeyEquivalent(Character(String(position + 1))))
+                }
+                Divider()
                 Button("Archive") { delegate.app.openArchive() }
                     .keyboardShortcut("a", modifiers: [.command, .shift])
             }
