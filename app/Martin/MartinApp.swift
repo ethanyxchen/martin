@@ -21,9 +21,9 @@ struct MartinApp: App {
                 SettingsButton(app: delegate.app)
             }
             CommandGroup(before: .windowList) {
-                ForEach(Array(delegate.app.pages.enumerated()), id: \.element) { position, page in
+                ForEach(HomePage.shown(hiding: delegate.app.hiddenPages), id: \.self) { page in
                     Button(page.title) { delegate.app.openHome(on: page) }
-                        .keyboardShortcut(KeyEquivalent(Character(String(position + 1))))
+                        .keyboardShortcut(delegate.app.shortcut(of: page).map { KeyboardShortcut(KeyEquivalent(Character(String($0)))) })
                 }
                 Divider()
                 Button("Archive") { delegate.app.openArchive() }
@@ -95,6 +95,10 @@ final class AppState {
 
     var pages: [HomePage] {
         HomePage.shown(hiding: hiddenPages, on: page)
+    }
+
+    func shortcut(of page: HomePage) -> Int? {
+        HomePage.shown(hiding: hiddenPages).firstIndex(of: page).map { $0 + 1 }
     }
 
     var people: [Person] {

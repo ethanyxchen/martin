@@ -26,7 +26,7 @@ enum HomePage: String, CaseIterable {
 
     var hideable: Bool { self != .settings }
 
-    static func shown(hiding hidden: Set<HomePage>, on current: HomePage) -> [HomePage] {
+    static func shown(hiding hidden: Set<HomePage>, on current: HomePage? = nil) -> [HomePage] {
         allCases.filter { !$0.hideable || $0 == current || !hidden.contains($0) }
     }
 }
@@ -44,7 +44,7 @@ struct HomeView: View {
         .animation(.default, value: app.page)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                PageTabs(pages: app.pages, page: $app.page, animation: reduceMotion ? nil : .spring(duration: 0.3, bounce: 0))
+                PageTabs(pages: app.pages, page: $app.page, shortcut: app.shortcut(of:), animation: reduceMotion ? nil : .spring(duration: 0.3, bounce: 0))
             }
         }
     }
@@ -71,13 +71,14 @@ struct HomeView: View {
 private struct PageTabs: View {
     let pages: [HomePage]
     @Binding var page: HomePage
+    let shortcut: (HomePage) -> Int?
     let animation: Animation?
     @Namespace private var selection
 
     var body: some View {
         HStack(spacing: 2) {
             ForEach(pages, id: \.self) { tab in
-                PageTab(tab: tab, selected: tab == page, selection: selection) { page = tab }
+                PageTab(tab: tab, shortcut: shortcut(tab), selected: tab == page, selection: selection) { page = tab }
             }
         }
         .padding(4)
@@ -88,6 +89,7 @@ private struct PageTabs: View {
 
 private struct PageTab: View {
     let tab: HomePage
+    let shortcut: Int?
     let selected: Bool
     let selection: Namespace.ID
     let select: () -> Void
@@ -119,6 +121,6 @@ private struct PageTab: View {
         .buttonStyle(Pressable())
         .onHover { hovering = $0 }
         .animation(.easeOut(duration: 0.12), value: hovering)
-        .help(tab.title)
+        .help(shortcut.map { "\(tab.title) (⌘\($0))" } ?? tab.title)
     }
 }
