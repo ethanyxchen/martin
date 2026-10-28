@@ -99,4 +99,13 @@ struct MeetingLibraryTests {
         #expect(try library.meetings() == [kept])
         #expect(!FileManager.default.fileExists(atPath: library.folder(of: deleted).path))
     }
+
+    @Test func meetingForEventBringsItsArchivedNoteBack() throws {
+        let event = CalendarEvent(occurrence: Occurrence(series: "review@example.com"), title: "Review", start: Date(timeIntervalSince1970: 1_750_172_800), end: Date(timeIntervalSince1970: 1_750_176_400))
+        var meeting = try library.meeting(for: event)
+        meeting.archivedAt = Date(timeIntervalSince1970: 1_750_180_000)
+        try library.save(meeting)
+        #expect(try library.meeting(for: event).archivedAt == nil)
+        #expect(try library.meetings().map(\.archivedAt) == [nil])
+    }
 }

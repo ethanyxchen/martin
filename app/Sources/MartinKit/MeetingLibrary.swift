@@ -20,9 +20,10 @@ public struct MeetingLibrary: Sendable {
 
     public func meeting(for event: CalendarEvent) throws -> Meeting {
         var meeting = try meeting(for: event.occurrence) ?? create(occurrence: event.occurrence, title: event.title)
-        guard meeting.scheduledAt != event.start || meeting.attendees != event.attendees else { return meeting }
+        guard meeting.scheduledAt != event.start || meeting.attendees != event.attendees || meeting.archivedAt != nil else { return meeting }
         meeting.scheduledAt = event.start
         meeting.attendees = event.attendees
+        meeting.archivedAt = nil
         try save(meeting)
         return meeting
     }

@@ -137,7 +137,7 @@ final class AppState {
     }
 
     private func file(_ meeting: Meeting, archivedAt: Date?) {
-        var filed = meeting
+        var filed = self.meeting(meeting.id) ?? meeting
         filed.archivedAt = archivedAt
         try? library.save(filed)
         reload()

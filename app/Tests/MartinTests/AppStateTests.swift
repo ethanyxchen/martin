@@ -54,4 +54,12 @@ final class AppStateTests {
         #expect(app.previews[meeting.id] == nil)
         #expect(try library.meetings().isEmpty)
     }
+
+    @Test func archivingKeepsARenameMadeAfterTheNoteWasPickedUp() throws {
+        let meeting = try library.create(title: "Standup")
+        let app = AppState(library: library, defaults: defaults)
+        app.rename(meeting, to: "Retro")
+        app.archive(meeting)
+        #expect(app.archive.map(\.title) == ["Retro"])
+    }
 }

@@ -112,7 +112,7 @@ private struct NoteRow: View {
 
     var body: some View {
         Button { app.open(meeting) } label: { actionable }
-            .contextMenu { NoteMenu(app: app, meeting: meeting) }
+            .contextMenu { NoteMenu(app: app, meeting: meeting, shortcuts: false) }
     }
 
     private var actionable: ChatRow {
@@ -166,6 +166,7 @@ struct NoteActions: View {
         }
         .keyboardShortcut(shortcuts ? KeyboardShortcut("a", modifiers: [.command, .control]) : nil)
         .help(meeting?.archivedAt == nil ? "Archive" : "Restore")
+        .disabled(meeting == nil)
         Button("Delete…", systemImage: "trash", role: .destructive) { if let meeting { app.confirmDeletion(of: meeting) } }
             .keyboardShortcut(shortcuts ? KeyboardShortcut(.delete, modifiers: [.command, .option]) : nil)
             .help("Delete")
