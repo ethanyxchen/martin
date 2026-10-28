@@ -27,8 +27,11 @@ struct NoteView: View {
                 .padding(.bottom, Theme.margin)
         }
         .toolbar {
-            Menu("Note", systemImage: "ellipsis") { NoteMenu(app: app, meeting: current) }
-                .menuIndicator(.hidden)
+            ToolbarSpacer(.flexible)
+            ToolbarItem {
+                Menu("Note", systemImage: "ellipsis") { NoteMenu(app: app, meeting: current) }
+                    .menuIndicator(.hidden)
+            }
         }
         .onChange(of: editingTitle) {
             if !editingTitle { app.rename(current, to: title) }
