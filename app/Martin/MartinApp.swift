@@ -155,8 +155,8 @@ final class AppState {
         }
     }
 
-    func start(_ event: CalendarEvent?) {
-        begin { try event.map(library.meeting(for:)) ?? library.create() }
+    func start(_ event: CalendarEvent) {
+        begin { try library.meeting(for: event) }
     }
 
     func quickNote(in project: Project.ID? = nil) {

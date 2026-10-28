@@ -7,8 +7,6 @@ struct MenuBar: View {
     let updater: Updater
 
     var body: some View {
-        Button("Take Notes") { Task { app.start(await CalendarLookup.currentEvent(hiding: app.hiddenCalendars)) } }
-
         QuickNoteButton(app: app)
 
         Button("Upcoming Meetings…") { app.openHome(on: .upcoming) }
