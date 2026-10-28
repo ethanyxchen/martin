@@ -73,7 +73,9 @@ struct MeetingsView: View {
         }
         grown += growth
         app.widenHome(by: growth)
-        withAnimation(animated && growth == 0 ? .drawer(Self.slide) : nil) { selected = id }
+        var transaction = Transaction(animation: animated && growth == 0 ? .drawer(Self.slide) : nil)
+        transaction.disablesAnimations = growth != 0
+        withTransaction(transaction) { selected = id }
     }
 }
 
