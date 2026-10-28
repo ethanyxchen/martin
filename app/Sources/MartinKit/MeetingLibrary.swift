@@ -44,6 +44,10 @@ public struct MeetingLibrary: Sendable {
         try Self.encoder.encode(meeting).write(to: folder(of: meeting).appending(path: "meeting.json"), options: .atomic)
     }
 
+    public func delete(_ meeting: Meeting) throws {
+        try FileManager.default.removeItem(at: folder(of: meeting))
+    }
+
     public func folder(of meeting: Meeting) -> URL {
         root.appending(path: meeting.id, directoryHint: .isDirectory)
     }

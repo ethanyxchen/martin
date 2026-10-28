@@ -83,4 +83,20 @@ struct MeetingLibraryTests {
         let adHoc = try library.create(startedAt: Date(timeIntervalSince1970: 1_800_000_000))
         #expect(try library.meetings().map(\.id) == [earlyNote.id, adHoc.id])
     }
+
+    @Test func archivedMeetingStaysArchivedAfterReload() throws {
+        var meeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_750_000_000))
+        meeting.archivedAt = Date(timeIntervalSince1970: 1_750_000_600)
+        try library.save(meeting)
+        #expect(try library.meetings().map(\.archivedAt) == [meeting.archivedAt])
+    }
+
+    @Test func deletedMeetingLeavesNothingBehind() throws {
+        let kept = try library.create(startedAt: Date(timeIntervalSince1970: 1_700_000_000))
+        let deleted = try library.create(startedAt: Date(timeIntervalSince1970: 1_800_000_000))
+        try library.saveNote("# Gone", for: deleted)
+        try library.delete(deleted)
+        #expect(try library.meetings() == [kept])
+        #expect(!FileManager.default.fileExists(atPath: library.folder(of: deleted).path))
+    }
 }

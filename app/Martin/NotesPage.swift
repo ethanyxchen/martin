@@ -9,12 +9,7 @@ struct NotesView: View {
             Page {
                 PageHeading(title: "Notes")
             } content: {
-                Rows(items: app.meetings) { meeting in
-                    Button { app.open(meeting) } label: {
-                        ChatRow(avatar: Avatar(title: meeting.title), title: meeting.displayTitle, stamp: meeting.date.stamp(at: context.date), preview: app.previews[meeting.id])
-                    }
-                }
-                .padding(.horizontal, Theme.margin - ChatRow.inset)
+                NoteList(app: app, meetings: app.notes, now: context.date)
             }
         }
     }
@@ -31,7 +26,7 @@ struct MeetingsView: View {
     @State private var grown: CGFloat = 0
 
     var body: some View {
-        let series = app.meetings.series
+        let series = app.notes.series
         let open = series.first { $0.id == selected }
         TimelineView(.everyMinute) { context in
             HStack(spacing: 0) {
@@ -79,6 +74,52 @@ struct MeetingsView: View {
     }
 }
 
+struct ArchiveView: View {
+    let app: AppState
+
+    var body: some View {
+        TimelineView(.everyMinute) { context in
+            Page(title: "Archive") {
+                PageHeading(title: "Archive", detail: app.archive.isEmpty ? "Notes you archive will appear here." : nil)
+            } content: {
+                NoteList(app: app, meetings: app.archive, now: context.date)
+            }
+        }
+    }
+}
+
+private struct NoteList: View {
+    let app: AppState
+    let meetings: [Meeting]
+    let now: Date
+
+    var body: some View {
+        Rows(items: meetings) { meeting in
+            Button { app.open(meeting) } label: {
+                ChatRow(avatar: Avatar(title: meeting.title), title: meeting.displayTitle, stamp: meeting.date.stamp(at: now), preview: app.previews[meeting.id])
+            }
+            .contextMenu { NoteMenu(app: app, meeting: meeting) }
+        }
+        .padding(.horizontal, Theme.margin - ChatRow.inset)
+    }
+}
+
+struct NoteMenu: View {
+    let app: AppState
+    let meeting: Meeting
+
+    var body: some View {
+        if meeting.archivedAt == nil {
+            Button("Archive", systemImage: "archivebox") { app.archive(meeting) }
+        } else {
+            Button("Restore", systemImage: "arrow.uturn.backward") { app.restore(meeting) }
+        }
+        Button("Delete…", systemImage: "trash", role: .destructive) { app.confirmDeletion(of: meeting) }
+        Divider()
+        Button("Open Archive", systemImage: "archivebox.fill") { app.openArchive() }
+    }
+}
+
 private struct SeriesView: View {
     let app: AppState
     let series: Series
@@ -107,6 +148,7 @@ private struct SeriesView: View {
                     Button { app.open(meeting) } label: {
                         ChatRow(title: meeting.date.formatted(.dateTime.weekday(.wide).day().month(.wide)), preview: app.previews[meeting.id])
                     }
+                    .contextMenu { NoteMenu(app: app, meeting: meeting) }
                 }
                 .padding(8)
             }
