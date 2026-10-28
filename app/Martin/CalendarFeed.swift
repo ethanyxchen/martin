@@ -48,6 +48,7 @@ private struct CalendarAccess: View {
             Button("Open System Settings") {
                 NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars")!)
             }
+            .buttonStyle(.glassProminent)
             .padding(.top, 8)
         }
         .flush()

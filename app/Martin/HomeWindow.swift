@@ -75,34 +75,50 @@ private struct PageTabs: View {
     @Namespace private var selection
 
     var body: some View {
-        GlassEffectContainer {
-            HStack(spacing: 2) {
-                ForEach(pages, id: \.self) { tab in
-                    let selected = tab == page
-                    Button { page = tab } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: tab.symbol)
-                            if selected {
-                                Text(tab.title)
-                                    .fixedSize()
-                                    .transition(.blurReplace)
-                            }
-                        }
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(selected ? AnyShapeStyle(Theme.ink) : AnyShapeStyle(Theme.secondary))
-                        .padding(.horizontal, selected ? 14 : 0)
-                        .frame(minWidth: 36, minHeight: 28)
-                        .glassEffect(selected ? .regular.interactive() : .identity, in: .capsule)
-                        .glassEffectID(selected ? "selection" : nil, in: selection)
-                        .contentShape(.capsule)
-                    }
-                    .buttonStyle(Pressable())
-                    .help(tab.title)
-                }
+        HStack(spacing: 2) {
+            ForEach(pages, id: \.self) { tab in
+                PageTab(tab: tab, selected: tab == page, selection: selection) { page = tab }
             }
-            .padding(4)
         }
+        .padding(4)
         .animation(animation, value: page)
         .animation(animation, value: pages)
+    }
+}
+
+private struct PageTab: View {
+    let tab: HomePage
+    let selected: Bool
+    let selection: Namespace.ID
+    let select: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: select) {
+            HStack(spacing: 6) {
+                Image(systemName: tab.symbol)
+                if selected {
+                    Text(tab.title)
+                        .fixedSize()
+                        .transition(.blurReplace)
+                }
+            }
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(selected ? AnyShapeStyle(Theme.ink) : AnyShapeStyle(Theme.secondary))
+            .padding(.horizontal, selected ? 14 : 0)
+            .frame(minWidth: 36, minHeight: 28)
+            .background {
+                if selected {
+                    Capsule().fill(.fill.secondary).matchedGeometryEffect(id: "selection", in: selection)
+                } else {
+                    Capsule().fill(.fill.quaternary).opacity(hovering ? 1 : 0)
+                }
+            }
+            .contentShape(.capsule)
+        }
+        .buttonStyle(Pressable())
+        .onHover { hovering = $0 }
+        .animation(.easeOut(duration: 0.12), value: hovering)
+        .help(tab.title)
     }
 }
