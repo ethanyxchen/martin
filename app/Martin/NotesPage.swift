@@ -46,7 +46,7 @@ struct ProjectsView: View {
         let open = shelves.first { $0.id == selected }
         TimelineView(.everyMinute) { context in
             Page {
-                PageHeading(title: "Projects", detail: shelves.isEmpty ? "Give a note a project from its window and it will appear here." : nil)
+                PageHeading(title: "Projects")
             } content: {
                 Rows(items: shelves, indent: ChatRow.avatarIndent) { shelf in
                     let latest = shelf.meetings.first
