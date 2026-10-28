@@ -18,7 +18,7 @@ enum ProjectOption: Hashable {
     var choice: Dropdown.Choice {
         switch self {
         case .project(let project): Dropdown.Choice(badge: project.name.initials, title: project.name)
-        case .new(let name): Dropdown.Choice(badge: "+", title: "New project “\(name)”")
+        case .new(let name): Dropdown.Choice(badge: "+", title: name, detail: "New project")
         case .unassigned: Dropdown.Choice(badge: "–", title: "Unassigned")
         }
     }
@@ -31,30 +31,42 @@ struct ProjectChip: View {
 
     var body: some View {
         if editing {
-            ProjectField(projects: app.projects, current: meeting.project) { option in
-                editing = false
-                switch option {
-                case .project(let project): app.file(meeting, in: project.id)
-                case .new(let name): app.file(meeting, inNewProjectNamed: name)
-                case .unassigned: app.file(meeting, in: nil)
-                case nil: break
+            Label {
+                ProjectField(projects: app.projects, current: meeting.project) { option in
+                    editing = false
+                    switch option {
+                    case .project(let project): app.file(meeting, in: project.id)
+                    case .new(let name): app.file(meeting, inNewProjectNamed: name)
+                    case .unassigned: app.file(meeting, in: nil)
+                    case nil: break
+                    }
                 }
+                .fixedSize()
+            } icon: {
+                Image(systemName: "folder")
             }
-            .frame(width: 180)
+            .chip(ink: Theme.ink, fill: Theme.paper)
+            .overlay(Capsule().strokeBorder(Theme.cobalt, lineWidth: 1.5))
         } else {
             let project = app.project(of: meeting)
             Button { editing = true } label: {
                 Label(project?.name ?? "Unassigned", systemImage: "folder")
-                    .font(.system(size: 11.5, weight: .medium))
-                    .foregroundStyle(project == nil ? AnyShapeStyle(Theme.secondary) : AnyShapeStyle(Theme.cobalt))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(project == nil ? AnyShapeStyle(Theme.well) : AnyShapeStyle(Theme.cobalt.opacity(0.1)), in: .capsule)
+                    .chip(ink: project == nil ? AnyShapeStyle(Theme.secondary) : AnyShapeStyle(Theme.cobalt), fill: project == nil ? AnyShapeStyle(Theme.well) : AnyShapeStyle(Theme.cobalt.opacity(0.1)))
             }
             .buttonStyle(Pressable())
             .pointerStyle(.link)
             .help("Move to Project")
         }
+    }
+}
+
+private extension View {
+    func chip(ink: some ShapeStyle, fill: some ShapeStyle) -> some View {
+        font(.system(size: 11.5, weight: .medium))
+            .foregroundStyle(ink)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(fill, in: .capsule)
     }
 }
 
@@ -73,11 +85,15 @@ struct ProjectField: NSViewRepresentable {
         field.drawsBackground = false
         field.focusRingType = .none
         field.font = .systemFont(ofSize: 11.5, weight: .medium)
-        field.placeholderString = "Find or create a project"
+        field.placeholderString = ProjectField.prompt(for: projects)
         field.delegate = context.coordinator
         field.focused = { [weak coordinator = context.coordinator] in coordinator?.refresh() }
         context.coordinator.text = field
         return field
+    }
+
+    static func prompt(for projects: [Project]) -> String {
+        projects.isEmpty ? "Name a new project" : "Find or create a project"
     }
 
     func updateNSView(_ field: FocusedField, context: Context) {
@@ -132,7 +148,19 @@ struct ProjectField: NSViewRepresentable {
 }
 
 final class FocusedField: NSTextField {
+    static let widest: CGFloat = 240
     var focused: () -> Void = {}
+
+    override var intrinsicContentSize: NSSize {
+        let shown = stringValue.isEmpty ? placeholderString ?? "" : stringValue
+        let width = (shown as NSString).size(withAttributes: [.font: font ?? .systemFont(ofSize: NSFont.systemFontSize)]).width
+        return NSSize(width: min(ceil(width) + 6, Self.widest), height: super.intrinsicContentSize.height)
+    }
+
+    override func textDidChange(_ notification: Notification) {
+        super.textDidChange(notification)
+        invalidateIntrinsicContentSize()
+    }
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()

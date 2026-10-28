@@ -23,3 +23,26 @@ struct ProjectPickerTests {
         #expect(ProjectOption.options(for: "hiring", in: [atlas, hiring], current: nil) == ([.project(hiring)], []))
     }
 }
+
+@MainActor
+struct ProjectFieldTests {
+    @Test func aNewProjectIsOfferedUnderTheTypedName() {
+        #expect(ProjectOption.new("Brand").choice == Dropdown.Choice(badge: "+", title: "Brand", detail: "New project"))
+    }
+
+    @Test func theFieldInvitesANewProjectWhenThereAreNone() {
+        #expect(ProjectField.prompt(for: []) == "Name a new project")
+        #expect(ProjectField.prompt(for: [Project(name: "Atlas")]) == "Find or create a project")
+    }
+
+    @Test func theFieldGrowsWithTheNameUpToAWidestWidth() {
+        let field = FocusedField()
+        field.font = .systemFont(ofSize: 11.5, weight: .medium)
+        field.stringValue = "Atlas"
+        let short = field.intrinsicContentSize.width
+        field.stringValue = "Atlas Redesign"
+        #expect(field.intrinsicContentSize.width > short)
+        field.stringValue = String(repeating: "Atlas Redesign ", count: 20)
+        #expect(field.intrinsicContentSize.width == FocusedField.widest)
+    }
+}
