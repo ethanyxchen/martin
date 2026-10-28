@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 @testable import Martin
 
@@ -15,10 +16,32 @@ struct NotesPageTests {
 
     @Test func settingsStaysInTheNavigationBarWhenEveryPageIsHidden() {
         #expect(HomePage.shown(hiding: Set(HomePage.allCases), on: .settings) == [.settings])
-        #expect(HomePage.shown(hiding: [.upcoming], on: .notes) == [.notes, .meetings, .settings])
+        #expect(HomePage.shown(hiding: [.upcoming], on: .notes) == [.notes, .projects, .settings])
     }
 
     @Test func aHiddenPageStaysInTheBarWhileItIsOpen() {
         #expect(HomePage.shown(hiding: [.upcoming], on: .upcoming) == HomePage.allCases)
+    }
+}
+
+@MainActor
+struct QuickNoteTests {
+    @Test func commandNStartsAQuickNote() {
+        #expect(QuickNoteButton.shortcut == KeyboardShortcut("n", modifiers: .command))
+    }
+}
+
+@MainActor
+struct ActionShortcutTests {
+    @Test func onlyTheMenuBarCarriesTheArchiveAndDeleteShortcuts() {
+        #expect(ActionPlacement.menu.archive(enabled: true) == KeyboardShortcut("a", modifiers: [.command, .control]))
+        #expect(ActionPlacement.menu.delete(enabled: true) == KeyboardShortcut(.delete, modifiers: [.command, .option]))
+        #expect(ActionPlacement.contextMenu.archive(enabled: true) == nil)
+        #expect(ActionPlacement.row.delete(enabled: true) == nil)
+    }
+
+    @Test func aMenuWithNothingToActOnLeavesTheShortcutsToTheOther() {
+        #expect(ActionPlacement.menu.archive(enabled: false) == nil)
+        #expect(ActionPlacement.menu.delete(enabled: false) == nil)
     }
 }

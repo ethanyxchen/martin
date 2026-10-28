@@ -47,16 +47,19 @@ struct NoteView: View {
     private var header: some View {
         HStack(spacing: 18) {
             VStack(alignment: .leading, spacing: 6) {
-                TextField("Meeting", text: $title)
+                TextField(current.untitled, text: $title)
                     .textFieldStyle(.plain)
                     .font(Theme.title)
                     .foregroundStyle(Theme.ink)
                     .focused($editingTitle)
                     .onSubmit { editingTitle = false }
-                if let year {
-                    Text(year)
-                        .font(Theme.meta)
-                        .foregroundStyle(Theme.secondary)
+                HStack(spacing: 8) {
+                    ProjectChip(app: app, meeting: current)
+                    if let year {
+                        Text(year)
+                            .font(Theme.meta)
+                            .foregroundStyle(Theme.secondary)
+                    }
                 }
             }
             DateLeaf(date: current.date)

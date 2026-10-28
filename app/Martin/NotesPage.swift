@@ -12,7 +12,13 @@ struct NotesView: View {
                 NoteList(app: app, meetings: app.notes, now: context.date)
             }
         }
-        .toolbar { ArchiveButton(app: app) }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("New Quick Note", systemImage: "square.and.pencil") { app.quickNote() }
+                    .help("New Quick Note (⌘N)")
+            }
+            ArchiveButton(app: app)
+        }
     }
 }
 
@@ -27,54 +33,61 @@ private struct ArchiveButton: ToolbarContent {
     }
 }
 
-struct MeetingsView: View {
-    private static let wide: CGFloat = 780
+struct ProjectsView: View {
+    private static let wide: CGFloat = 860
+    private static let sidebar: CGFloat = 280
     private static let slide: TimeInterval = 0.3
     let app: AppState
-    @State private var selected: Series.ID?
     @State private var width: CGFloat = 0
     @State private var grown: CGFloat = 0
 
     var body: some View {
-        let series = app.notes.series
-        let open = series.first { $0.id == selected }
+        let shelves = app.notes.shelved(in: app.projects)
+        let open = shelves.first { $0.id == app.selectedShelf }
         TimelineView(.everyMinute) { context in
-            Page {
-                PageHeading(title: "Meetings")
-            } content: {
-                Rows(items: series, indent: ChatRow.avatarIndent) { series in
-                    Button { select(series.id == selected ? nil : series.id) } label: {
-                        ChatRow(avatar: Avatar(title: series.avatar), title: series.title, stamp: series.meetings[0].date.stamp(at: context.date), preview: app.previews[series.meetings[0].id], count: series.meetings.count, selected: series.id == selected)
+            HStack(spacing: 0) {
+                Page {
+                    PageHeading(title: "Projects")
+                } content: {
+                    Rows(items: shelves, indent: ChatRow.avatarIndent) { shelf in
+                        let latest = shelf.meetings.first
+                        Button { select(shelf.id == app.selectedShelf ? nil : shelf.id) } label: {
+                            ChatRow(avatar: Avatar(title: shelf.project?.name, square: true), title: shelf.title, stamp: latest?.date.stamp(at: context.date), preview: latest.flatMap { app.previews[$0.id] }, count: shelf.meetings.count, selected: shelf.id == app.selectedShelf)
+                        }
+                        .contextMenu {
+                            if let project = shelf.project { ProjectActions(app: app, project: project, placement: .contextMenu) }
+                        }
                     }
+                    .padding(.horizontal, Theme.edge - ChatRow.inset)
                 }
-                .padding(.horizontal, Theme.column - ChatRow.inset)
+                .frame(width: open == nil ? (width > 0 ? width : nil) : Self.sidebar)
+                if let open {
+                    Divider()
+                    ShelfView(app: app, shelf: open, now: context.date)
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .toolbar { ArchiveButton(app: app) }
-        .inspector(isPresented: Binding { open != nil } set: { if !$0 { select(nil, animated: false) } }) {
-            if let open {
-                SeriesView(app: app, series: open)
-                    .inspectorColumnWidth(min: 260, ideal: 300)
-            }
-        }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .onChange(of: open?.id) { _, id in
-            if id == nil, selected != nil { select(nil, animated: false) }
+            if id == nil, app.selectedShelf != nil { select(nil, animated: false) }
         }
         .onExitCommand { select(nil, animated: false) }
         .onDisappear { select(nil) }
     }
 
-    private func select(_ id: Series.ID?, animated: Bool = true) {
+    private func select(_ id: Shelf.ID?, animated: Bool = true) {
         let duration = animated ? Self.slide : 0
-        if selected == nil, id != nil {
+        if app.selectedShelf == nil, id != nil {
             grown = max(0, Self.wide - width)
             app.widenHome(by: grown, over: duration)
-        } else if selected != nil, id == nil {
+        } else if app.selectedShelf != nil, id == nil {
             app.widenHome(by: -grown, over: duration)
             grown = 0
         }
-        withAnimation(animated ? .drawer(duration) : nil) { selected = id }
+        withAnimation(animated ? .drawer(duration) : nil) { app.selectedShelf = id }
     }
 }
 
@@ -84,8 +97,16 @@ struct ArchiveView: View {
     var body: some View {
         TimelineView(.everyMinute) { context in
             Page(title: "Archive") {
-                PageHeading(title: "Archive", detail: app.archive.isEmpty ? "Notes you archive will appear here." : nil)
+                PageHeading(title: "Archive", detail: app.archive.isEmpty && app.archivedProjects.isEmpty ? "Notes and projects you archive will appear here." : nil)
             } content: {
+                if !app.archivedProjects.isEmpty {
+                    Rows(items: app.archivedProjects, indent: ChatRow.avatarIndent) { project in
+                        let count = app.notes(in: project).count
+                        ChatRow(avatar: Avatar(title: project.name, square: true), title: project.name, stamp: project.archivedAt?.stamp(at: context.date), preview: count == 1 ? "1 note" : "\(count) notes", actions: AnyView(ProjectActions(app: app, project: project, placement: .row)))
+                            .contextMenu { ProjectActions(app: app, project: project, placement: .contextMenu) }
+                    }
+                    .padding(.horizontal, Theme.edge - ChatRow.inset)
+                }
                 NoteList(app: app, meetings: app.archive, now: context.date)
             }
         }
@@ -101,7 +122,7 @@ private struct NoteList: View {
         Rows(items: meetings, indent: ChatRow.avatarIndent) { meeting in
             NoteRow(app: app, meeting: meeting, row: ChatRow(avatar: Avatar(title: meeting.title), title: meeting.displayTitle, stamp: meeting.date.stamp(at: now), preview: app.previews[meeting.id]))
         }
-        .padding(.horizontal, Theme.column - ChatRow.inset)
+        .padding(.horizontal, Theme.edge - ChatRow.inset)
     }
 }
 
@@ -117,7 +138,7 @@ private struct NoteRow: View {
 
     private var actionable: ChatRow {
         var row = row
-        row.actions = NoteActions(app: app, meeting: meeting, placement: .row)
+        row.actions = AnyView(NoteActions(app: app, meeting: meeting, placement: .row))
         return row
     }
 }
@@ -149,71 +170,152 @@ struct NoteMenu: View {
     }
 }
 
-struct NoteActions: View {
-    enum Placement {
-        case menu
-        case contextMenu
-        case row
+enum ActionPlacement {
+    case menu
+    case contextMenu
+    case row
+
+    func tooltip(_ text: String) -> String {
+        self == .row ? text : ""
     }
 
-    let app: AppState
-    let meeting: Meeting?
-    let placement: Placement
-
-    var body: some View {
-        Group {
-            if meeting?.archivedAt == nil {
-                Button("Archive", systemImage: "archivebox") { meeting.map(app.archive) }
-                    .help(tooltip("Archive"))
-            } else {
-                Button("Restore", systemImage: "arrow.uturn.backward") { meeting.map(app.restore) }
-                    .help(tooltip("Restore"))
-            }
-        }
-        .keyboardShortcut(shortcut("a", modifiers: [.command, .control]))
-        .disabled(meeting == nil)
-        Button("Delete…", systemImage: "trash", role: .destructive) { meeting.map(app.confirmDeletion) }
-            .help(tooltip("Delete"))
-            .keyboardShortcut(shortcut(.delete, modifiers: [.command, .option]))
-            .disabled(meeting == nil)
+    func archive(enabled: Bool) -> KeyboardShortcut? {
+        shortcut("a", modifiers: [.command, .control], enabled: enabled)
     }
 
-    private func tooltip(_ text: String) -> String {
-        placement == .row ? text : ""
+    func delete(enabled: Bool) -> KeyboardShortcut? {
+        shortcut(.delete, modifiers: [.command, .option], enabled: enabled)
     }
 
-    private func shortcut(_ key: KeyEquivalent, modifiers: EventModifiers) -> KeyboardShortcut? {
-        placement == .menu ? KeyboardShortcut(key, modifiers: modifiers) : nil
+    private func shortcut(_ key: KeyEquivalent, modifiers: EventModifiers, enabled: Bool) -> KeyboardShortcut? {
+        self == .menu && enabled ? KeyboardShortcut(key, modifiers: modifiers) : nil
     }
 }
 
-private struct SeriesView: View {
+struct NoteActions: View {
     let app: AppState
-    let series: Series
+    let meeting: Meeting?
+    let placement: ActionPlacement
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 10) {
-                    Avatar(title: series.avatar, size: 34)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(series.title)
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(Theme.ink)
-                            .lineLimit(1)
-                        Text(series.meetings.count == 1 ? "1 note" : "\(series.meetings.count) notes")
-                            .font(Theme.meta)
-                            .foregroundStyle(Theme.tertiary)
-                    }
+        if placement != .row {
+            Menu("Move to Project", systemImage: "folder") {
+                ForEach(app.projects) { project in
+                    Toggle(project.name, isOn: Binding { meeting?.project == project.id } set: { _ in meeting.map { app.file($0, in: project.id) } })
                 }
-                .padding(.horizontal, 12)
-                Rows(items: series.meetings) { meeting in
-                    NoteRow(app: app, meeting: meeting, row: ChatRow(title: meeting.date.formatted(.dateTime.weekday(.wide).day().month(.wide)), preview: app.previews[meeting.id]))
+                if !app.projects.isEmpty { Divider() }
+                Toggle("Unassigned", isOn: Binding { meeting?.project == nil } set: { _ in meeting.map { app.file($0, in: nil) } })
+            }
+            .disabled(meeting == nil)
+        }
+        Group {
+            if meeting?.archivedAt == nil {
+                Button("Archive", systemImage: "archivebox") { meeting.map(app.archive) }
+                    .help(placement.tooltip("Archive"))
+            } else {
+                Button("Restore", systemImage: "arrow.uturn.backward") { meeting.map(app.restore) }
+                    .help(placement.tooltip("Restore"))
+            }
+        }
+        .keyboardShortcut(placement.archive(enabled: meeting != nil))
+        .disabled(meeting == nil)
+        Button("Delete…", systemImage: "trash", role: .destructive) { meeting.map(app.confirmDeletion) }
+            .help(placement.tooltip("Delete"))
+            .keyboardShortcut(placement.delete(enabled: meeting != nil))
+            .disabled(meeting == nil)
+    }
+}
+
+struct ProjectActions: View {
+    let app: AppState
+    let project: Project?
+    let placement: ActionPlacement
+
+    var body: some View {
+        Group {
+            if project?.archivedAt == nil {
+                Button("Archive Project", systemImage: "archivebox") { project.map(app.archive) }
+                    .help(placement.tooltip("Archive"))
+            } else {
+                Button("Restore Project", systemImage: "arrow.uturn.backward") { project.map(app.restore) }
+                    .help(placement.tooltip("Restore"))
+            }
+        }
+        .keyboardShortcut(placement.archive(enabled: project != nil))
+        .disabled(project == nil)
+        Button("Delete Project…", systemImage: "trash", role: .destructive) { project.map(app.confirmDeletion) }
+            .help(placement.tooltip("Delete"))
+            .keyboardShortcut(placement.delete(enabled: project != nil))
+            .disabled(project == nil)
+    }
+}
+
+private struct ProjectName: View {
+    let app: AppState
+    let project: Project
+    @State private var name: String
+    @FocusState private var editing: Bool
+
+    init(app: AppState, project: Project) {
+        self.app = app
+        self.project = project
+        _name = State(initialValue: project.name)
+    }
+
+    var body: some View {
+        TextField("Project", text: $name)
+            .textFieldStyle(.plain)
+            .focused($editing)
+            .onSubmit { editing = false }
+            .onChange(of: editing) {
+                guard !editing else { return }
+                app.rename(project, to: name)
+                name = app.allProjects.first { $0.id == project.id }?.name ?? project.name
+            }
+            .onDisappear { app.rename(project, to: name) }
+    }
+}
+
+private struct ShelfView: View {
+    let app: AppState
+    let shelf: Shelf
+    let now: Date
+
+    var body: some View {
+        Page {
+            HStack(spacing: 12) {
+                Avatar(title: shelf.project?.name, square: true)
+                VStack(alignment: .leading, spacing: 4) {
+                    Group {
+                        if let project = shelf.project {
+                            ProjectName(app: app, project: project).id(project.id)
+                        } else {
+                            Text(shelf.title)
+                        }
+                    }
+                    .font(Theme.title)
+                    .foregroundStyle(Theme.ink)
+                    .lineLimit(1)
+                    Text(shelf.meetings.count == 1 ? "1 note" : "\(shelf.meetings.count) notes")
+                        .font(Theme.meta)
+                        .foregroundStyle(Theme.secondary)
+                }
+                Spacer(minLength: 0)
+                Button("New Note", systemImage: "square.and.pencil") { app.quickNote(in: shelf.project?.id) }
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(RowAction())
+                    .help("New note in \(shelf.title)")
+                if let project = shelf.project {
+                    Menu("Project", systemImage: "ellipsis") { ProjectActions(app: app, project: project, placement: .menu) }
+                        .menuStyle(.button)
+                        .menuIndicator(.hidden)
+                        .buttonStyle(RowAction())
                 }
             }
-            .padding(8)
+            .flush()
+        } content: {
+            NoteList(app: app, meetings: shelf.meetings, now: now)
         }
-        .scrollEdgeEffectStyle(.soft, for: .top)
     }
 }
 
@@ -265,7 +367,7 @@ private struct ChatRow: View {
     let preview: String?
     var count: Int?
     var selected = false
-    var actions: NoteActions?
+    var actions: AnyView?
     @Environment(\.hovering) private var hovering
 
     var body: some View {
@@ -333,6 +435,7 @@ struct Avatar: View {
     static let standard: CGFloat = 40
     let title: String?
     var size = standard
+    var square = false
     @Environment(\.hovering) private var hovering
 
     var body: some View {
@@ -341,24 +444,27 @@ struct Avatar: View {
                 .font(.system(size: size * 0.4, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: size, height: size)
-                .background(Self.hue(of: title), in: .circle)
+                .background(Self.hue(of: title), in: shape)
         } else {
             Image(systemName: "note.text")
                 .font(.system(size: size * 0.4))
                 .foregroundStyle(Theme.secondary)
                 .frame(width: size, height: size)
-                .background(hovering ? Theme.paper : Theme.well, in: .circle)
+                .background(hovering ? Theme.paper : Theme.well, in: shape)
         }
     }
 
-    private static func hue(of title: String) -> Color {
+    private var shape: AnyShape {
+        square ? AnyShape(.rect(cornerRadius: size * 0.26, style: .continuous)) : AnyShape(.circle)
+    }
+
+    static func hue(of title: String) -> Color {
         hues[title.unicodeScalars.reduce(0) { $0 &+ Int($1.value) } % hues.count]
     }
 }
 
-extension Series {
-    var title: String { id == .other ? "Other notes" : meetings[0].displayTitle }
-    var avatar: String? { id == .other ? nil : meetings[0].title }
+extension Shelf {
+    var title: String { project?.name ?? "Unassigned" }
 }
 
 extension Date {

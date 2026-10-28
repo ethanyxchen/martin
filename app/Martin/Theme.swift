@@ -31,6 +31,7 @@ enum Theme {
     static let tertiary = Tone(light: 0xA3A7AF, dark: 0x6C685F)
     static let cobalt = Tone(light: 0x0055E0, dark: 0x5B8CFF)
 
+    static let edge: CGFloat = 24
     static let gutter: CGFloat = 26
     static let margin: CGFloat = 28
     static let column = margin + gutter
@@ -72,16 +73,13 @@ extension View {
     }
 
     func flush() -> some View {
-        inset().frame(maxWidth: .infinity, alignment: .leading)
+        padding(.horizontal, Theme.edge).frame(maxWidth: .infinity, alignment: .leading)
     }
 
     func column() -> some View {
-        inset()
+        padding(.leading, Theme.column)
+            .padding(.trailing, Theme.margin)
             .frame(maxWidth: Theme.page, alignment: .leading)
             .frame(maxWidth: .infinity)
-    }
-
-    private func inset() -> some View {
-        padding(.leading, Theme.column).padding(.trailing, Theme.margin)
     }
 }

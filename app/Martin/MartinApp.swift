@@ -20,8 +20,14 @@ struct MartinApp: App {
             CommandGroup(replacing: .appSettings) {
                 SettingsButton(app: delegate.app)
             }
+            CommandGroup(replacing: .newItem) {
+                QuickNoteButton(app: delegate.app)
+            }
             CommandMenu("Note") {
                 NoteActions(app: delegate.app, meeting: delegate.app.focusedNote, placement: .menu)
+            }
+            CommandMenu("Project") {
+                ProjectActions(app: delegate.app, project: delegate.app.focusedProject, placement: .menu)
             }
             CommandGroup(before: .windowList) {
                 ForEach(HomePage.shown(hiding: delegate.app.hiddenPages), id: \.self) { page in
@@ -63,6 +69,7 @@ final class AppState {
     let library: MeetingLibrary
     private let defaults: UserDefaults
     private(set) var meetings: [Meeting] = []
+    private(set) var allProjects: [Project] = []
     private(set) var previews: [Meeting.ID: String] = [:]
     var page: HomePage {
         didSet { defaults.set(page.rawValue, forKey: Self.pageKey) }
@@ -70,6 +77,7 @@ final class AppState {
     var hiddenPages: Set<HomePage> {
         didSet { defaults.set(hiddenPages.map(\.rawValue).sorted(), forKey: Self.hiddenPagesKey) }
     }
+    var selectedShelf: Shelf.ID?
     var hiddenCalendars: Set<EventCalendar.ID> {
         didSet { defaults.set(hiddenCalendars.sorted(), forKey: Self.hiddenCalendarsKey) }
     }
@@ -83,6 +91,7 @@ final class AppState {
         hiddenPages = Set((defaults.stringArray(forKey: Self.hiddenPagesKey) ?? []).compactMap(HomePage.init))
         hiddenCalendars = Set(defaults.stringArray(forKey: Self.hiddenCalendarsKey) ?? [])
         reload()
+        observeWindows()
     }
 
     func meeting(_ id: Meeting.ID) -> Meeting? {
@@ -91,6 +100,11 @@ final class AppState {
 
     var focusedNote: Meeting? {
         keyWindow.flatMap(meeting)
+    }
+
+    var focusedProject: Project? {
+        guard keyWindow == "home", page == .projects, case .project(let id) = selectedShelf else { return nil }
+        return projects.first { $0.id == id }
     }
 
     var notes: [Meeting] {
@@ -113,21 +127,56 @@ final class AppState {
         meetings.flatMap(\.attendees)
     }
 
+    var projects: [Project] {
+        allProjects.filter { $0.archivedAt == nil }
+    }
+
+    var archivedProjects: [Project] {
+        allProjects.filter { $0.archivedAt != nil }
+    }
+
+    func notes(in project: Project) -> [Meeting] {
+        meetings.filter { $0.project == project.id }
+    }
+
+    func project(of meeting: Meeting) -> Project? {
+        projects.first { $0.id == meeting.project }
+    }
+
     func reload() {
         meetings = (try? library.meetings()) ?? []
+        allProjects = (try? library.projects()) ?? []
         previews = meetings.reduce(into: [:]) { previews, meeting in
             previews[meeting.id] = library.note(of: meeting).flatMap(Markdown.preview(of:))
         }
     }
 
     func start(_ event: CalendarEvent?) {
+        begin { try event.map(library.meeting(for:)) ?? library.create() }
+    }
+
+    func quickNote(in project: Project.ID? = nil) {
+        begin { try library.create(project: project) }
+    }
+
+    private func begin(_ make: () throws -> Meeting) {
         do {
-            let meeting = try event.map(library.meeting(for:)) ?? library.create()
+            let meeting = try make()
             reload()
             open(meeting)
         } catch {
             explain(error)
         }
+    }
+
+    func file(_ meeting: Meeting, in project: Project.ID?) {
+        try? library.file(self.meeting(meeting.id) ?? meeting, in: project)
+        reload()
+    }
+
+    func file(_ meeting: Meeting, inNewProjectNamed name: String) {
+        guard let project = try? library.createProject(named: name) else { return }
+        file(meeting, in: project.id)
     }
 
     func save(_ note: String, for meeting: Meeting) {
@@ -146,17 +195,14 @@ final class AppState {
 
     func archive(_ meeting: Meeting) {
         windows[meeting.id]?.close()
-        file(meeting, archivedAt: .now)
+        var archived = self.meeting(meeting.id) ?? meeting
+        archived.archivedAt = .now
+        try? library.save(archived)
+        reload()
     }
 
     func restore(_ meeting: Meeting) {
-        file(meeting, archivedAt: nil)
-    }
-
-    private func file(_ meeting: Meeting, archivedAt: Date?) {
-        var filed = self.meeting(meeting.id) ?? meeting
-        filed.archivedAt = archivedAt
-        try? library.save(filed)
+        try? library.restore(self.meeting(meeting.id) ?? meeting)
         reload()
     }
 
@@ -167,13 +213,53 @@ final class AppState {
     }
 
     func confirmDeletion(of meeting: Meeting) {
+        guard confirm("Delete “\(meeting.displayTitle)”?", "This note will be deleted immediately. You can’t undo this action.") else { return }
+        delete(meeting)
+    }
+
+    func rename(_ project: Project, to name: String) {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard var renamed = allProjects.first(where: { $0.id == project.id }), !name.isEmpty, renamed.name != name else { return }
+        renamed.name = name
+        try? library.save(renamed)
+        reload()
+    }
+
+    func archive(_ project: Project) {
+        notes(in: project).forEach { windows[$0.id]?.close() }
+        try? library.archive(project)
+        reload()
+    }
+
+    func restore(_ project: Project) {
+        try? library.restore(project)
+        reload()
+    }
+
+    func delete(_ project: Project) {
+        notes(in: project).forEach { windows[$0.id]?.close() }
+        try? library.delete(project)
+        reload()
+    }
+
+    func confirmDeletion(of project: Project) {
+        let count = notes(in: project).count
+        let doomed = switch count {
+        case 0: "This project"
+        case 1: "This project and its note"
+        default: "This project and all \(count) of its notes"
+        }
+        guard confirm("Delete “\(project.name)”?", "\(doomed) will be deleted immediately, including any in the Archive. You can’t undo this action.") else { return }
+        delete(project)
+    }
+
+    private func confirm(_ message: String, _ detail: String) -> Bool {
         let alert = NSAlert()
-        alert.messageText = "Delete “\(meeting.displayTitle)”?"
-        alert.informativeText = "This note will be deleted immediately. You can’t undo this action."
+        alert.messageText = message
+        alert.informativeText = detail
         alert.addButton(withTitle: "Delete").hasDestructiveAction = true
         alert.addButton(withTitle: "Cancel")
-        guard alert.runModal() == .alertFirstButtonReturn else { return }
-        delete(meeting)
+        return alert.runModal() == .alertFirstButtonReturn
     }
 
     func open(_ meeting: Meeting) {
@@ -234,27 +320,42 @@ final class AppState {
             window.center()
         }
         windows[id] = window
-        NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.windows[id] = nil }
-        }
-        NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.keyWindow = id }
-        }
-        NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: window, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { if self?.keyWindow == id { self?.keyWindow = nil } }
-        }
         return window
+    }
+
+    private func observeWindows() {
+        observe(NSWindow.willCloseNotification) { app, id in
+            app.windows[id] = nil
+            app.resign(id)
+        }
+        observe(NSWindow.didBecomeKeyNotification) { app, id in app.keyWindow = id }
+        observe(NSWindow.didResignKeyNotification) { app, id in app.resign(id) }
+    }
+
+    private func observe(_ name: Notification.Name, _ handle: @escaping @MainActor (AppState, String) -> Void) {
+        NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] notification in
+            guard let window = (notification.object as? NSWindow).map(ObjectIdentifier.init) else { return }
+            MainActor.assumeIsolated {
+                guard let self, let id = self.windows.first(where: { ObjectIdentifier($0.value) == window })?.key else { return }
+                handle(self, id)
+            }
+        }
+    }
+
+    private func resign(_ id: String) {
+        if keyWindow == id { keyWindow = nil }
     }
 
     private func explain(_ error: Error) {
         NSApp.activate()
         let alert = NSAlert()
-        alert.messageText = "Martin can't start the meeting"
+        alert.messageText = "Martin can't start the note"
         alert.informativeText = error.localizedDescription
         alert.runModal()
     }
 }
 
 extension Meeting {
-    var displayTitle: String { title ?? "Meeting" }
+    var displayTitle: String { title ?? untitled }
+    var untitled: String { occurrence == nil ? "Quick note" : "Meeting" }
 }

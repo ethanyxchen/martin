@@ -83,7 +83,8 @@ final class NoteTextView: NSTextView {
     private let style = MarkdownStyle()
     var attendees: [Person] = []
     var acquaintances: [Person] = []
-    private lazy var picker = MentionPicker { [weak self] in self?.insertMention($0) }
+    private lazy var picker = Dropdown { [weak self] in self?.insertMention($0) }
+    private var suggested: [Person] = []
     private var dismissedMention: Int?
 
     static func make() -> NoteTextView {
@@ -282,9 +283,9 @@ final class NoteTextView: NSTextView {
         return true
     }
 
-    private func insertMention(_ person: Person) {
+    private func insertMention(_ index: Int) {
         guard let query = mentionQuery() else { return }
-        let mention = person.mention + " "
+        let mention = suggested[index].mention + " "
         apply(Markdown.Edit(range: query, replacement: mention, selection: NSRange(location: query.location + (mention as NSString).length, length: 0)))
     }
 
@@ -293,9 +294,13 @@ final class NoteTextView: NSTextView {
         if query?.location != dismissedMention { dismissedMention = nil }
         guard let window, let query, dismissedMention == nil else { return picker.hide() }
         let typed = (string as NSString).substring(with: NSRange(location: query.location + 1, length: query.length - 1))
+        let attending = Set(attendees.map(\.email))
         let people = (attendees + acquaintances).suggestions(for: typed)
-        guard !people.isEmpty else { return picker.hide() }
-        picker.show(people, attending: Set(attendees.map(\.email)), matching: typed, under: firstRect(forCharacterRange: query, actualRange: nil), in: window)
+        let present = people.filter { attending.contains($0.email) }, absent = people.filter { !attending.contains($0.email) }
+        suggested = present + absent
+        guard !suggested.isEmpty else { return picker.hide() }
+        let sections = [Dropdown.Section(title: "In this meeting", choices: present.map(\.choice)), Dropdown.Section(title: "Earlier meetings", choices: absent.map(\.choice))]
+        picker.show(sections.filter { !$0.choices.isEmpty }, matching: typed, under: firstRect(forCharacterRange: query, actualRange: nil), in: window)
     }
 
     @objc private func hideMentions() {
@@ -395,6 +400,12 @@ final class NoteTextView: NSTextView {
         textStorage?.replaceCharacters(in: edit.range, with: NSAttributedString(string: edit.replacement, attributes: MarkdownStyle.typing))
         setSelectedRange(edit.selection)
         didChangeText()
+    }
+}
+
+private extension Person {
+    var choice: Dropdown.Choice {
+        Dropdown.Choice(badge: displayName.initials, title: displayName, detail: email)
     }
 }
 
