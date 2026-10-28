@@ -168,7 +168,7 @@ private struct SearchField: NSViewRepresentable {
 
     func updateNSView(_ field: FocusedSearchField, context: Context) {
         context.coordinator.field = self
-        if field.stringValue != text { field.stringValue = text }
+        if field.currentEditor() == nil, field.stringValue != text { field.stringValue = text }
     }
 
     @MainActor
@@ -199,6 +199,6 @@ private struct SearchField: NSViewRepresentable {
 final class FocusedSearchField: NSSearchField {
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        window?.makeFirstResponder(self)
+        DispatchQueue.main.async { [weak self] in self?.window?.makeFirstResponder(self) }
     }
 }
