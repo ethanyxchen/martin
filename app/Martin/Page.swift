@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct Page<Header: View, Content: View>: View {
-    let title: String
+    var title: String?
     @ViewBuilder let header: Header
     @ViewBuilder let content: Content
     @State private var titlebar: CGFloat = 0
@@ -10,16 +10,20 @@ struct Page<Header: View, Content: View>: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Text(title)
-                .font(Theme.heading)
-                .foregroundStyle(Theme.ink)
-                .lineLimit(1)
-                .opacity(collapsed ? 1 : 0)
-                .offset(y: collapsed ? 0 : 6)
-                .animation(.easeOut(duration: 0.12), value: collapsed)
-                .padding(.leading, Theme.controls)
-                .padding(.trailing, Theme.margin)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            Color.clear
+                .overlay(alignment: .leading) {
+                    if let title {
+                        Text(title)
+                            .font(Theme.heading)
+                            .foregroundStyle(Theme.ink)
+                            .lineLimit(1)
+                            .opacity(collapsed ? 1 : 0)
+                            .offset(y: collapsed ? 0 : 6)
+                            .animation(.easeOut(duration: 0.12), value: collapsed)
+                            .padding(.leading, Theme.controls)
+                            .padding(.trailing, Theme.margin)
+                    }
+                }
                 .frame(height: titlebar)
                 .movesWindow()
             ScrollView {

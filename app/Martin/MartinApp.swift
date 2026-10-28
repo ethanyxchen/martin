@@ -114,11 +114,15 @@ final class AppState {
         show(windows["home"] ?? present(HomeView(app: self), id: "home", title: "Martin", size: Self.windowSize))
     }
 
-    func widenHome(by width: CGFloat) {
+    func widenHome(by width: CGFloat, over duration: TimeInterval) {
         guard let window = windows["home"] else { return }
         var frame = window.frame
         frame.size.width += width
-        window.setFrame(frame, display: true, animate: true)
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = duration
+            context.timingFunction = .drawer
+            window.animator().setFrame(frame, display: true)
+        }
     }
 
     private func show(_ window: NSWindow) {

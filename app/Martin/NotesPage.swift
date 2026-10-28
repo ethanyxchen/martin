@@ -6,7 +6,7 @@ struct NotesView: View {
 
     var body: some View {
         TimelineView(.everyMinute) { context in
-            Page(title: "Notes") {
+            Page {
                 PageHeading(title: "Notes")
             } content: {
                 Rows(items: app.meetings) { meeting in
@@ -23,7 +23,9 @@ struct NotesView: View {
 struct MeetingsView: View {
     private static let sidebar: CGFloat = 300
     private static let wide: CGFloat = 780
+    private static let slide: TimeInterval = 0.3
     let app: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selected: Series.ID?
     @State private var width: CGFloat = 0
     @State private var grown: CGFloat = 0
@@ -33,7 +35,7 @@ struct MeetingsView: View {
         let open = series.first { $0.id == selected }
         TimelineView(.everyMinute) { context in
             HStack(spacing: 0) {
-                Page(title: "Meetings") {
+                Page {
                     PageHeading(title: "Meetings")
                 } content: {
                     Rows(items: series) { series in
@@ -45,28 +47,32 @@ struct MeetingsView: View {
                 }
                 .frame(width: open == nil ? nil : Self.sidebar)
                 if let open {
-                    Rectangle()
-                        .fill(Theme.well)
-                        .frame(width: 1)
-                        .ignoresSafeArea()
-                    SeriesView(app: app, series: open)
+                    HStack(spacing: 0) {
+                        Rectangle()
+                            .fill(Theme.well)
+                            .frame(width: 1)
+                            .ignoresSafeArea()
+                        SeriesView(app: app, series: open)
+                    }
+                    .transition(reduceMotion ? .opacity : .move(edge: .trailing).combined(with: .opacity))
                 }
             }
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
-        .onExitCommand { select(nil) }
+        .onExitCommand { select(nil, animated: false) }
         .onDisappear { select(nil) }
     }
 
-    private func select(_ id: Series.ID?) {
+    private func select(_ id: Series.ID?, animated: Bool = true) {
+        let duration = animated ? Self.slide : 0
         if selected == nil, id != nil {
             grown = max(0, Self.wide - width)
-            app.widenHome(by: grown)
+            app.widenHome(by: grown, over: duration)
         } else if selected != nil, id == nil {
-            app.widenHome(by: -grown)
+            app.widenHome(by: -grown, over: duration)
             grown = 0
         }
-        selected = id
+        withAnimation(animated ? .drawer(duration) : nil) { selected = id }
     }
 }
 
@@ -114,7 +120,7 @@ private struct Rows<Item: Identifiable, Row: View>: View {
         LazyVStack(spacing: 0) {
             ForEach(items) { item in
                 row(item)
-                    .buttonStyle(.plain)
+                    .buttonStyle(Pressable(scale: 0.98))
                     .overlay(alignment: .top) {
                         if item.id != items.first?.id {
                             Rectangle()

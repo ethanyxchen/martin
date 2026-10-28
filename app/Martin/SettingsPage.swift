@@ -5,7 +5,7 @@ struct SettingsView: View {
     @Bindable var app: AppState
 
     var body: some View {
-        Page(title: "Settings") {
+        Page {
             PageHeading(title: "Settings")
         } content: {
             VStack(alignment: .leading, spacing: 36) {

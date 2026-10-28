@@ -1,4 +1,5 @@
 import AppKit
+import QuartzCore
 import SwiftUI
 
 struct Tone: ShapeStyle {
@@ -40,6 +41,26 @@ enum Theme {
     static let title = Font.system(size: 22, weight: .semibold, design: .serif)
     static let heading = Font.system(size: 15, weight: .semibold, design: .serif)
     static let meta = Font.system(size: 12)
+}
+
+extension Animation {
+    static func drawer(_ duration: TimeInterval) -> Animation {
+        .timingCurve(0.32, 0.72, 0, 1, duration: duration)
+    }
+}
+
+extension CAMediaTimingFunction {
+    static var drawer: CAMediaTimingFunction { CAMediaTimingFunction(controlPoints: 0.32, 0.72, 0, 1) }
+}
+
+struct Pressable: ButtonStyle {
+    var scale: CGFloat = 0.96
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? scale : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
 }
 
 extension View {
