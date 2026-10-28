@@ -95,28 +95,83 @@ private struct NoteList: View {
 
     var body: some View {
         Rows(items: meetings) { meeting in
-            Button { app.open(meeting) } label: {
-                ChatRow(avatar: Avatar(title: meeting.title), title: meeting.displayTitle, stamp: meeting.date.stamp(at: now), preview: app.previews[meeting.id])
-            }
-            .contextMenu { NoteMenu(app: app, meeting: meeting) }
+            NoteRow(app: app, meeting: meeting, row: ChatRow(avatar: Avatar(title: meeting.title), title: meeting.displayTitle, stamp: meeting.date.stamp(at: now), preview: app.previews[meeting.id]))
         }
         .padding(.horizontal, Theme.margin - ChatRow.inset)
     }
 }
 
-struct NoteMenu: View {
+private struct NoteRow: View {
     let app: AppState
     let meeting: Meeting
+    let row: ChatRow
+    @State private var hovering = false
 
     var body: some View {
-        if meeting.archivedAt == nil {
-            Button("Archive", systemImage: "archivebox") { app.archive(meeting) }
-        } else {
-            Button("Restore", systemImage: "arrow.uturn.backward") { app.restore(meeting) }
-        }
-        Button("Delete…", systemImage: "trash", role: .destructive) { app.confirmDeletion(of: meeting) }
+        Button { app.open(meeting) } label: { row }
+            .overlay(alignment: .trailing) {
+                if hovering {
+                    HStack(spacing: 0) {
+                        NoteActions(app: app, meeting: meeting, shortcuts: false)
+                    }
+                    .buttonStyle(RowAction())
+                    .padding(.horizontal, 6)
+                    .frame(maxHeight: .infinity)
+                    .background(Theme.well, in: .rect(cornerRadius: 9))
+                    .transition(.opacity)
+                }
+            }
+            .onHover { hovering = $0 }
+            .animation(.easeOut(duration: 0.12), value: hovering)
+            .contextMenu { NoteMenu(app: app, meeting: meeting) }
+    }
+}
+
+private struct RowAction: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .labelStyle(.iconOnly)
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(configuration.isPressed ? Theme.ink : Theme.secondary)
+            .frame(width: 28, height: 28)
+            .contentShape(.rect)
+            .scaleEffect(configuration.isPressed ? 0.9 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
+struct NoteMenu: View {
+    let app: AppState
+    let meeting: Meeting?
+    var shortcuts = true
+
+    var body: some View {
+        NoteActions(app: app, meeting: meeting, shortcuts: shortcuts)
         Divider()
         Button("Open Archive", systemImage: "archivebox.fill") { app.openArchive() }
+            .keyboardShortcut(shortcuts ? KeyboardShortcut("a", modifiers: [.command, .shift]) : nil)
+    }
+}
+
+private struct NoteActions: View {
+    let app: AppState
+    let meeting: Meeting?
+    let shortcuts: Bool
+
+    var body: some View {
+        Group {
+            if meeting?.archivedAt == nil {
+                Button("Archive", systemImage: "archivebox") { if let meeting { app.archive(meeting) } }
+            } else {
+                Button("Restore", systemImage: "arrow.uturn.backward") { if let meeting { app.restore(meeting) } }
+            }
+        }
+        .keyboardShortcut(shortcuts ? KeyboardShortcut("a", modifiers: [.command, .control]) : nil)
+        .help(meeting?.archivedAt == nil ? "Archive" : "Restore")
+        Button("Delete…", systemImage: "trash", role: .destructive) { if let meeting { app.confirmDeletion(of: meeting) } }
+            .keyboardShortcut(shortcuts ? KeyboardShortcut(.delete, modifiers: [.command, .option]) : nil)
+            .help("Delete")
+            .disabled(meeting == nil)
     }
 }
 
@@ -145,10 +200,7 @@ private struct SeriesView: View {
                 .frame(height: 1)
             ScrollView {
                 Rows(items: series.meetings) { meeting in
-                    Button { app.open(meeting) } label: {
-                        ChatRow(title: meeting.date.formatted(.dateTime.weekday(.wide).day().month(.wide)), preview: app.previews[meeting.id])
-                    }
-                    .contextMenu { NoteMenu(app: app, meeting: meeting) }
+                    NoteRow(app: app, meeting: meeting, row: ChatRow(title: meeting.date.formatted(.dateTime.weekday(.wide).day().month(.wide)), preview: app.previews[meeting.id]))
                 }
                 .padding(8)
             }
