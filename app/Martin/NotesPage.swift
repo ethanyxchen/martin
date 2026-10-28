@@ -168,6 +168,16 @@ struct NoteActions: View {
     let placement: Placement
 
     var body: some View {
+        if placement != .row {
+            Menu("Move to Project", systemImage: "folder") {
+                ForEach(app.projects) { project in
+                    Toggle(project.name, isOn: Binding { meeting?.project == project.id } set: { _ in meeting.map { app.file($0, in: project.id) } })
+                }
+                if !app.projects.isEmpty { Divider() }
+                Toggle("Unassigned", isOn: Binding { meeting?.project == nil } set: { _ in meeting.map { app.file($0, in: nil) } })
+            }
+            .disabled(meeting == nil)
+        }
         Group {
             if meeting?.archivedAt == nil {
                 Button("Archive", systemImage: "archivebox") { meeting.map(app.archive) }
@@ -179,16 +189,6 @@ struct NoteActions: View {
         }
         .keyboardShortcut(shortcut("a", modifiers: [.command, .control]))
         .disabled(meeting == nil)
-        if placement != .row {
-            Menu("Move to Project", systemImage: "folder") {
-                ForEach(app.projects) { project in
-                    Toggle(project.name, isOn: Binding { meeting?.project == project.id } set: { _ in meeting.map { app.file($0, in: project.id) } })
-                }
-                if !app.projects.isEmpty { Divider() }
-                Toggle("Unassigned", isOn: Binding { meeting?.project == nil } set: { _ in meeting.map { app.file($0, in: nil) } })
-            }
-            .disabled(meeting == nil)
-        }
         Button("Delete…", systemImage: "trash", role: .destructive) { meeting.map(app.confirmDeletion) }
             .help(tooltip("Delete"))
             .keyboardShortcut(shortcut(.delete, modifiers: [.command, .option]))
