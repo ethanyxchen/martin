@@ -112,12 +112,12 @@ private struct NoteRow: View {
 
     var body: some View {
         Button { app.open(meeting) } label: { actionable }
-            .contextMenu { NoteActions(app: app, meeting: meeting, shortcuts: true) }
+            .contextMenu { NoteActions(app: app, meeting: meeting, placement: .menu) }
     }
 
     private var actionable: ChatRow {
         var row = row
-        row.actions = NoteActions(app: app, meeting: meeting, shortcuts: false)
+        row.actions = NoteActions(app: app, meeting: meeting, placement: .row)
         return row
     }
 }
@@ -141,35 +141,42 @@ private struct RowAction: ButtonStyle {
 struct NoteMenu: View {
     let app: AppState
     let meeting: Meeting?
-    var shortcuts = true
+    let placement: NoteActions.Placement
 
     var body: some View {
-        NoteActions(app: app, meeting: meeting, shortcuts: shortcuts)
+        NoteActions(app: app, meeting: meeting, placement: placement)
         Divider()
         Button("Open Archive", systemImage: "archivebox.fill") { app.openArchive() }
-            .keyboardShortcut(shortcuts ? KeyboardShortcut("a", modifiers: [.command, .shift]) : nil)
+            .keyboardShortcut(placement == .menuBar ? KeyboardShortcut("a", modifiers: [.command, .shift]) : nil)
     }
 }
 
 struct NoteActions: View {
+    enum Placement {
+        case menuBar
+        case menu
+        case row
+    }
+
     let app: AppState
     let meeting: Meeting?
-    let shortcuts: Bool
+    let placement: Placement
 
     var body: some View {
         Group {
             if meeting?.archivedAt == nil {
                 Button("Archive", systemImage: "archivebox") { if let meeting { app.archive(meeting) } }
+                    .help(placement == .row ? "Archive" : "")
             } else {
                 Button("Restore", systemImage: "arrow.uturn.backward") { if let meeting { app.restore(meeting) } }
+                    .help(placement == .row ? "Restore" : "")
             }
         }
-        .keyboardShortcut(shortcuts ? KeyboardShortcut("a", modifiers: [.command, .control]) : nil)
-        .help(meeting?.archivedAt == nil ? "Archive" : "Restore")
+        .keyboardShortcut(placement == .menuBar ? KeyboardShortcut("a", modifiers: [.command, .control]) : nil)
         .disabled(meeting == nil)
         Button("Delete…", systemImage: "trash", role: .destructive) { if let meeting { app.confirmDeletion(of: meeting) } }
-            .keyboardShortcut(shortcuts ? KeyboardShortcut(.delete, modifiers: [.command, .option]) : nil)
-            .help("Delete")
+            .keyboardShortcut(placement == .menuBar ? KeyboardShortcut(.delete, modifiers: [.command, .option]) : nil)
+            .help(placement == .row ? "Delete" : "")
             .disabled(meeting == nil)
     }
 }

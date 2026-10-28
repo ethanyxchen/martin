@@ -18,7 +18,7 @@ struct MartinApp: App {
                 SettingsButton(app: delegate.app)
             }
             CommandMenu("Note") {
-                NoteMenu(app: delegate.app, meeting: delegate.app.focusedNote)
+                NoteMenu(app: delegate.app, meeting: delegate.app.focusedNote, placement: .menuBar)
             }
             CommandMenu("Format") {
                 ForEach(NoteTextView.formats, id: \.title) { format in
