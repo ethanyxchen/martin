@@ -115,6 +115,14 @@ final class AppState {
         meetings.filter { $0.archivedAt == nil }
     }
 
+    var pinned: [Meeting] {
+        meetings.filter(\.isPinned).sorted { $0.pinnedAt! > $1.pinnedAt! }
+    }
+
+    var unpinned: [Meeting] {
+        notes.filter { !$0.isPinned }
+    }
+
     var archive: [Meeting] {
         meetings.filter { $0.archivedAt != nil }
     }
@@ -199,6 +207,13 @@ final class AppState {
         try? library.save(renamed)
         reload()
         windows[meeting.id]?.title = renamed.displayTitle
+    }
+
+    func pin(_ meeting: Meeting, _ pinned: Bool) {
+        var changed = self.meeting(meeting.id) ?? meeting
+        changed.pinnedAt = pinned ? .now : nil
+        try? library.save(changed)
+        reload()
     }
 
     func archive(_ meeting: Meeting) {

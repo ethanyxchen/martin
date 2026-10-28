@@ -9,7 +9,7 @@ struct NotesView: View {
             Page {
                 PageHeading(title: "Notes")
             } content: {
-                NoteList(app: app, meetings: app.notes, now: context.date, detail: app.projectName(of:))
+                NoteList(app: app, meetings: app.pinned + app.unpinned, now: context.date, detail: app.projectName(of:))
             }
         }
         .toolbar {
@@ -121,7 +121,7 @@ private struct NoteList: View {
 
     var body: some View {
         Rows(items: meetings, indent: ChatRow.avatarIndent) { meeting in
-            NoteRow(app: app, meeting: meeting, row: ChatRow(avatar: Avatar(title: meeting.title), title: meeting.displayTitle, stamp: meeting.date.stamp(at: now), preview: detail(meeting)))
+            NoteRow(app: app, meeting: meeting, row: ChatRow(avatar: Avatar(title: meeting.title), title: meeting.displayTitle, stamp: meeting.date.stamp(at: now), preview: detail(meeting), pinned: meeting.isPinned))
         }
         .padding(.horizontal, Theme.edge - ChatRow.inset)
     }
@@ -208,6 +208,11 @@ struct NoteActions: View {
                 Toggle("Unassigned", isOn: Binding { meeting?.project == nil } set: { _ in meeting.map { app.file($0, in: nil) } })
             }
             .disabled(meeting == nil)
+        }
+        if placement != .row, meeting?.archivedAt == nil {
+            let pinned = meeting?.isPinned == true
+            Button(pinned ? "Unpin" : "Pin", systemImage: pinned ? "pin.slash" : "pin") { meeting.map { app.pin($0, !pinned) } }
+                .disabled(meeting == nil)
         }
         Group {
             if meeting?.archivedAt == nil {
@@ -367,6 +372,7 @@ private struct ChatRow: View {
     var stamp: String?
     let preview: String?
     var count: Int?
+    var pinned = false
     var selected = false
     var actions: AnyView?
     @Environment(\.hovering) private var hovering
@@ -380,7 +386,7 @@ private struct ChatRow: View {
                         .font(.system(size: 13.5, weight: .semibold))
                         .foregroundStyle(ink)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    meta(stamp.map { Text($0).font(Theme.meta.monospacedDigit()) })
+                    meta(stamp.map { (pinned ? Text("\(Image(systemName: "pin.fill")) \($0)") : Text($0)).font(Theme.meta.monospacedDigit()) })
                 }
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(preview ?? "No notes")
