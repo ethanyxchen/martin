@@ -12,6 +12,18 @@ struct NotesView: View {
                 NoteList(app: app, meetings: app.notes, now: context.date)
             }
         }
+        .toolbar { ArchiveButton(app: app) }
+    }
+}
+
+private struct ArchiveButton: ToolbarContent {
+    let app: AppState
+
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .primaryAction) {
+            Button("Archive", systemImage: "archivebox") { app.openArchive() }
+                .help("Open Archive")
+        }
     }
 }
 
@@ -38,6 +50,7 @@ struct MeetingsView: View {
                 .padding(.horizontal, Theme.column - ChatRow.inset)
             }
         }
+        .toolbar { ArchiveButton(app: app) }
         .inspector(isPresented: Binding { open != nil } set: { if !$0 { select(nil, animated: false) } }) {
             if let open {
                 SeriesView(app: app, series: open)
