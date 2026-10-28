@@ -20,6 +20,9 @@ trap 'rm -rf "$staging_directory"' EXIT
 app_bundle="$staging_directory/Martin.app"
 mkdir -p "$app_bundle/Contents/MacOS"
 cp "$binary_directory/Martin" "$app_bundle/Contents/MacOS/Martin"
+sparkle="$app_bundle/Contents/Frameworks/Sparkle.framework"
+ditto "$binary_directory/Sparkle.framework" "$sparkle"
+rm -rf "$sparkle/XPCServices" "$sparkle/Versions/B/XPCServices"
 cp app/Resources/Info.plist "$app_bundle/Contents/Info.plist"
 mkdir -p "$app_bundle/Contents/Resources"
 cp app/Resources/Martin.icns "$app_bundle/Contents/Resources/Martin.icns"
@@ -30,6 +33,7 @@ if [[ "$(git rev-parse --absolute-git-dir)" != "$(git rev-parse --path-format=ab
   worktree="$(basename "$PWD" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-*//; s/-*$//')"
   plutil -replace CFBundleIdentifier -string "dev.ethanchen.martin.$worktree" "$app_bundle/Contents/Info.plist"
   plutil -replace CFBundleName -string "Martin ($worktree)" "$app_bundle/Contents/Info.plist"
+  plutil -remove SUFeedURL "$app_bundle/Contents/Info.plist"
   data_directory="$PWD/.local-app-data"
   main_data_directory="$HOME/Library/Application Support/Martin"
   [[ -e "$data_directory" || ! -e "$main_data_directory" ]] || cp -Rp "$main_data_directory" "$data_directory"
@@ -40,6 +44,9 @@ if [[ "$(git rev-parse --absolute-git-dir)" != "$(git rev-parse --path-format=ab
   iconutil --convert icns "$staging_directory/Martin.iconset" --output "$app_bundle/Contents/Resources/Martin.icns"
 fi
 plutil -lint "$app_bundle/Contents/Info.plist"
+for code in "$sparkle/Versions/B/Autoupdate" "$sparkle/Versions/B/Updater.app" "$sparkle"; do
+  codesign --force --options runtime --timestamp --sign "$identity" "$code"
+done
 codesign --force --options runtime --timestamp --entitlements app/Resources/Martin.entitlements --sign "$identity" "$app_bundle"
 codesign --verify --deep --strict "$app_bundle"
 require_app_stopped

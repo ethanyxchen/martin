@@ -1,0 +1,15 @@
+{
+  "originHash" : "b404e2fe5a507c9d0912c5f5a38a08bd9b97c23ddfb1917b376ac89c84c7a696",
+  "pins" : [
+    {
+      "identity" : "sparkle",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/sparkle-project/Sparkle",
+      "state" : {
+        "revision" : "ab7d71291238df6e0492143b120c9b696a35f603",
+        "version" : "2.10.1"
+      }
+    }
+  ],
+  "version" : 3
+}

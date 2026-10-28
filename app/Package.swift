@@ -7,9 +7,17 @@ let package = Package(
     products: [
         .executable(name: "Martin", targets: ["Martin"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.10.1"),
+    ],
     targets: [
         .target(name: "MartinKit"),
-        .executableTarget(name: "Martin", dependencies: ["MartinKit"], path: "Martin"),
+        .executableTarget(
+            name: "Martin",
+            dependencies: ["MartinKit", .product(name: "Sparkle", package: "Sparkle")],
+            path: "Martin",
+            linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]
+        ),
         .testTarget(name: "MartinKitTests", dependencies: ["MartinKit"]),
         .testTarget(name: "MartinTests", dependencies: ["Martin"]),
     ]

@@ -1,10 +1,48 @@
 # Martin
 
-A native macOS menu bar notepad for standups and team meetings. Take notes from the menu bar or from the calendar, and Martin opens the Markdown note for that meeting, named after the event. Each calendar occurrence has one note, so coming back to a meeting reopens what you wrote.
+A menu bar notepad for macOS, made for standups and team meetings. Click **Take Notes** and Martin opens a Markdown note for the meeting on your calendar, named after the event. Every occurrence of a meeting has its own note, so coming back to a meeting brings back what you wrote.
 
-## Build
+## Install
 
-Requires macOS 26 or newer, Xcode and an Apple Development signing certificate.
+Martin needs macOS 26 or newer.
+
+1. Download the latest `.dmg` from [Releases](https://github.com/ethanyxchen/martin/releases/latest).
+2. Open it and drag **Martin** into **Applications**.
+3. Open Martin from Applications. It lives in the menu bar.
+
+When a new version is out, Martin lets you know.
+
+## Taking notes
+
+- **Take Notes** opens the note for the meeting happening now, or a blank note when nothing is on.
+- **Upcoming Meetings…** shows today and the next three days. Click a meeting to open its note.
+- **Recent** in the menu reopens your latest notes.
+
+Notes are Markdown. Use the Format menu or the usual shortcuts for bold (⌘B), italic (⌘I), strikethrough (⇧⌘X), code (⇧⌘C) and links (⌘K).
+
+## Mentions
+
+Type `@` to mention someone. Martin suggests the meeting's guests first, then people from your earlier meetings, and matches on names and emails. Press Return or Tab to pick one.
+
+## Finding notes
+
+- **Notes** lists every note, newest first.
+- **Meetings** groups notes by recurring meeting. Click one to see all its notes. One-off meetings and notes without an event are under **Other notes**.
+- **Archive** (⇧⌘A) keeps notes you've put away without deleting them.
+
+Choose which pages appear in the navigation bar in Settings.
+
+## Calendars
+
+Martin reads the calendars you've added to macOS. To use Google Calendar, add your account in System Settings → Internet Accounts with Calendars turned on. In Settings, untick any calendars you don't want Martin to follow.
+
+## Your data
+
+Everything stays on your Mac. Each meeting is a folder in `~/Library/Application Support/Martin/meetings/` holding `note.md`, the note itself, and `meeting.json`, the event it belongs to. Mentions are saved in the note as `@{Ada Lovelace <ada@example.com>}`, so plain-text search finds every note that mentions someone.
+
+## Building from source
+
+You need Xcode and an Apple Development signing certificate.
 
 ```sh
 git config core.hooksPath .githooks
@@ -12,18 +50,8 @@ git config core.hooksPath .githooks
 open build/Martin.app
 ```
 
-## Calendar
+Run the tests with `swift test --package-path app`.
 
-**Take Notes** opens the note for the calendar event in progress, or a fresh note when nothing is on. **Upcoming Meetings…** in the menu shows today and the next three days; click a meeting to open its note. For Google Calendar, add the account in System Settings → Internet Accounts with Calendars turned on.
+## Releasing
 
-## Notes
-
-**Notes** lists every note, newest first, with the first line of each. **Meetings** lists each recurring meeting with its latest note and how many notes it has; one-off meetings and notes without an event share **Other notes**. Click a meeting to open its notes in a second column. Choose the pages in the navigation bar in Settings.
-
-## Data
-
-Each meeting is a folder in `~/Library/Application Support/Martin/meetings/` with `meeting.json` and `note.md`, which is the note you edit in Martin. A meeting taken from the calendar records `scheduledAt`, the event's start, which dates the note and follows the calendar each time you open the note from the event, and its `occurrence`: the event's series identifier, shared by every occurrence of a recurring meeting, and for recurring meetings that occurrence's original start, so a rescheduled meeting keeps its note. Its `attendees` are the event's guests, kept in step with the calendar the same way, each keyed by their lowercased `email` with the calendar's display `name` when there is one.
-
-## Mentions
-
-Type `@` in a note to mention someone: Martin suggests the meeting's attendees first, then everyone from earlier meetings, matching names and emails. Press Return or Tab to pick one. A mention is stored in `note.md` as `@{Kim Kam <kim.k@goodnotes.com>}`, or `@{inamiy@goodnotes.com}` for someone without a calendar name, so every note that mentions a person can be found by their email. The editor shows only `@Kim Kam` or `@inamiy`, moves the caret over a mention as one piece, and deletes it whole.
+Push a version tag such as `v0.1.0`. The Release workflow builds Martin, signs it with Developer ID, notarizes the app and the DMG, signs the update for Sparkle and publishes `Martin-<version>.dmg` and `appcast.xml` to a GitHub release. Installed copies find the update through the appcast of the latest release.
