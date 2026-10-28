@@ -448,7 +448,7 @@ struct Avatar: View {
         square ? AnyShape(.rect(cornerRadius: size * 0.26, style: .continuous)) : AnyShape(.circle)
     }
 
-    private static func hue(of title: String) -> Color {
+    static func hue(of title: String) -> Color {
         hues[title.unicodeScalars.reduce(0) { $0 &+ Int($1.value) } % hues.count]
     }
 }

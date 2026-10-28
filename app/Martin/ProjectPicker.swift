@@ -7,19 +7,18 @@ enum ProjectOption: Hashable {
     case new(String)
     case unassigned
 
-    static func options(for query: String, in projects: [Project], current: Project.ID?) -> (matches: [ProjectOption], others: [ProjectOption]) {
+    static func options(for query: String, in projects: [Project]) -> (matches: [ProjectOption], others: [ProjectOption]) {
         let name = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        let matches = projects.suggestions(for: name).filter { $0.id != current }
         let taken = projects.contains { $0.name.caseInsensitiveCompare(name) == .orderedSame }
-        let others = (name.isEmpty || taken ? [] : [ProjectOption.new(name)]) + (current == nil ? [] : [.unassigned])
-        return (matches.map(ProjectOption.project), others)
+        let others: [ProjectOption] = name.isEmpty ? [.unassigned] : taken ? [] : [.new(name)]
+        return (projects.suggestions(for: name).map(ProjectOption.project), others)
     }
 
-    var choice: Dropdown.Choice {
+    var title: String {
         switch self {
-        case .project(let project): Dropdown.Choice(badge: project.name.initials, title: project.name)
-        case .new(let name): Dropdown.Choice(badge: "+", title: name, detail: "New project")
-        case .unassigned: Dropdown.Choice(badge: "–", title: "Unassigned")
+        case .project(let project): project.name
+        case .new(let name): "Create “\(name)”"
+        case .unassigned: "Unassigned"
         }
     }
 }
@@ -27,145 +26,179 @@ enum ProjectOption: Hashable {
 struct ProjectChip: View {
     let app: AppState
     let meeting: Meeting
-    @State private var editing = false
+    @State private var picking = false
 
     var body: some View {
-        if editing {
-            Label {
-                ProjectField(projects: app.projects, current: meeting.project) { option in
-                    editing = false
-                    switch option {
-                    case .project(let project): app.file(meeting, in: project.id)
-                    case .new(let name): app.file(meeting, inNewProjectNamed: name)
-                    case .unassigned: app.file(meeting, in: nil)
-                    case nil: break
-                    }
+        let project = app.project(of: meeting)
+        Button { picking = true } label: {
+            Label(project?.name ?? "Unassigned", systemImage: "folder")
+                .font(.system(size: 11.5, weight: .medium))
+                .foregroundStyle(project == nil ? AnyShapeStyle(Theme.secondary) : AnyShapeStyle(Theme.cobalt))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(project == nil ? AnyShapeStyle(Theme.well) : AnyShapeStyle(Theme.cobalt.opacity(0.1)), in: .capsule)
+        }
+        .buttonStyle(Pressable())
+        .pointerStyle(.link)
+        .help("Move to Project")
+        .popover(isPresented: $picking, arrowEdge: .bottom) {
+            ProjectPicker(projects: app.projects, current: meeting.project) { option in
+                picking = false
+                switch option {
+                case .project(let project): app.file(meeting, in: project.id)
+                case .new(let name): app.file(meeting, inNewProjectNamed: name)
+                case .unassigned: app.file(meeting, in: nil)
                 }
-                .fixedSize()
-            } icon: {
-                Image(systemName: "folder")
             }
-            .chip(ink: Theme.ink, fill: Theme.paper)
-            .overlay(Capsule().strokeBorder(Theme.cobalt, lineWidth: 1.5))
-        } else {
-            let project = app.project(of: meeting)
-            Button { editing = true } label: {
-                Label(project?.name ?? "Unassigned", systemImage: "folder")
-                    .chip(ink: project == nil ? AnyShapeStyle(Theme.secondary) : AnyShapeStyle(Theme.cobalt), fill: project == nil ? AnyShapeStyle(Theme.well) : AnyShapeStyle(Theme.cobalt.opacity(0.1)))
-            }
-            .buttonStyle(Pressable())
-            .pointerStyle(.link)
-            .help("Move to Project")
         }
     }
 }
 
-private extension View {
-    func chip(ink: some ShapeStyle, fill: some ShapeStyle) -> some View {
-        font(.system(size: 11.5, weight: .medium))
-            .foregroundStyle(ink)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(fill, in: .capsule)
+private struct ProjectPicker: View {
+    private static let row: CGFloat = 24
+    private static let tallest: CGFloat = 264
+    let projects: [Project]
+    let current: Project.ID?
+    let pick: (ProjectOption) -> Void
+    @State private var query = ""
+    @State private var selected = 0
+
+    var body: some View {
+        let (matches, others) = ProjectOption.options(for: query, in: projects)
+        let options = matches + others
+        VStack(alignment: .leading, spacing: 4) {
+            SearchField(text: $query, prompt: "Find or create a project") { step in
+                if let step {
+                    selected = (selected + step + options.count) % options.count
+                } else if options.indices.contains(selected) {
+                    pick(options[selected])
+                }
+            }
+            .padding(.bottom, 2)
+            if matches.isEmpty, !query.isEmpty {
+                Text("No matching projects")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Theme.secondary)
+                    .padding(.horizontal, 7)
+                    .frame(height: Self.row)
+            }
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(Array(matches.enumerated()), id: \.element) { index, option in
+                            row(option, at: index)
+                        }
+                    }
+                }
+                .scrollIndicators(.never)
+                .frame(height: min(CGFloat(matches.count) * Self.row, Self.tallest))
+                .onChange(of: selected) { proxy.scrollTo(options[selected]) }
+            }
+            if !others.isEmpty {
+                if !matches.isEmpty || !query.isEmpty { Divider().padding(.horizontal, 6) }
+                ForEach(Array(others.enumerated()), id: \.element) { index, option in
+                    row(option, at: matches.count + index)
+                }
+            }
+        }
+        .padding(6)
+        .frame(width: 240)
+        .onChange(of: query) { selected = 0 }
+    }
+
+    private func row(_ option: ProjectOption, at index: Int) -> some View {
+        let chosen = index == selected
+        return HStack(spacing: 7) {
+            Image(systemName: "checkmark")
+                .font(.system(size: 10, weight: .bold))
+                .opacity(ticked(option) ? 1 : 0)
+            switch option {
+            case .project(let project):
+                RoundedRectangle(cornerRadius: 3.5, style: .continuous)
+                    .fill(Avatar.hue(of: project.name))
+                    .frame(width: 12, height: 12)
+            case .new:
+                Image(systemName: "plus")
+                    .font(.system(size: 10, weight: .semibold))
+                    .frame(width: 12)
+            case .unassigned:
+                EmptyView()
+            }
+            Text(option.title)
+                .lineLimit(1)
+                .truncationMode(.tail)
+            Spacer(minLength: 0)
+        }
+        .font(.system(size: 12.5))
+        .foregroundStyle(chosen ? AnyShapeStyle(.white) : AnyShapeStyle(Theme.ink))
+        .padding(.horizontal, 7)
+        .frame(height: Self.row)
+        .background(chosen ? AnyShapeStyle(Theme.cobalt) : AnyShapeStyle(.clear), in: .rect(cornerRadius: 5))
+        .contentShape(.rect)
+        .id(option)
+        .onHover { if $0 { selected = index } }
+        .onTapGesture { pick(option) }
+    }
+
+    private func ticked(_ option: ProjectOption) -> Bool {
+        switch option {
+        case .project(let project): project.id == current
+        case .unassigned: current == nil
+        case .new: false
+        }
     }
 }
 
-struct ProjectField: NSViewRepresentable {
-    let projects: [Project]
-    let current: Project.ID?
-    let done: (ProjectOption?) -> Void
+private struct SearchField: NSViewRepresentable {
+    @Binding var text: String
+    let prompt: String
+    let command: (Int?) -> Void
 
     func makeCoordinator() -> Coordinator {
         Coordinator(field: self)
     }
 
-    func makeNSView(context: Context) -> FocusedField {
-        let field = FocusedField()
-        field.isBordered = false
-        field.drawsBackground = false
+    func makeNSView(context: Context) -> FocusedSearchField {
+        let field = FocusedSearchField()
+        field.placeholderString = prompt
         field.focusRingType = .none
-        field.font = .systemFont(ofSize: 11.5, weight: .medium)
-        field.placeholderString = ProjectField.prompt(for: projects)
         field.delegate = context.coordinator
-        field.focused = { [weak coordinator = context.coordinator] in coordinator?.refresh() }
-        context.coordinator.text = field
         return field
     }
 
-    static func prompt(for projects: [Project]) -> String {
-        projects.isEmpty ? "Name a new project" : "Find or create a project"
-    }
-
-    func updateNSView(_ field: FocusedField, context: Context) {
+    func updateNSView(_ field: FocusedSearchField, context: Context) {
         context.coordinator.field = self
+        if field.stringValue != text { field.stringValue = text }
     }
 
     @MainActor
-    final class Coordinator: NSObject, NSTextFieldDelegate {
-        var field: ProjectField
-        private var options: [ProjectOption] = []
-        weak var text: NSTextField?
-        private lazy var dropdown = Dropdown { [weak self] in self?.choose($0) }
+    final class Coordinator: NSObject, NSSearchFieldDelegate {
+        var field: SearchField
 
-        init(field: ProjectField) {
+        init(field: SearchField) {
             self.field = field
         }
 
-        func refresh() {
-            guard let text, let window = text.window else { return }
-            let (matches, others) = ProjectOption.options(for: text.stringValue, in: field.projects, current: field.current)
-            options = matches + others
-            guard !options.isEmpty else { return dropdown.hide() }
-            let sections = [Dropdown.Section(title: "Projects", choices: matches.map(\.choice)), Dropdown.Section(choices: others.map(\.choice))]
-            dropdown.show(sections.filter { !$0.choices.isEmpty }, matching: text.stringValue, under: window.convertToScreen(text.convert(text.bounds, to: nil)), in: window)
-        }
-
         func controlTextDidChange(_ notification: Notification) {
-            refresh()
-        }
-
-        func controlTextDidEndEditing(_ notification: Notification) {
-            dropdown.hide()
-            field.done(nil)
+            guard let search = notification.object as? NSSearchField else { return }
+            field.text = search.stringValue
         }
 
         func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
             switch selector {
-            case #selector(NSResponder.moveUp(_:)): dropdown.move(by: -1)
-            case #selector(NSResponder.moveDown(_:)): dropdown.move(by: 1)
-            case #selector(NSResponder.insertNewline(_:)), #selector(NSResponder.insertTab(_:)): dropdown.selection.map(choose)
-            case #selector(NSResponder.cancelOperation(_:)): control.window?.makeFirstResponder(nil)
+            case #selector(NSResponder.moveUp(_:)): field.command(-1)
+            case #selector(NSResponder.moveDown(_:)): field.command(1)
+            case #selector(NSResponder.insertNewline(_:)): field.command(nil)
             default: return false
             }
             return true
         }
-
-        private func choose(_ index: Int) {
-            dropdown.hide()
-            field.done(options[index])
-        }
     }
 }
 
-final class FocusedField: NSTextField {
-    static let widest: CGFloat = 240
-    var focused: () -> Void = {}
-
-    override var intrinsicContentSize: NSSize {
-        let shown = stringValue.isEmpty ? placeholderString ?? "" : stringValue
-        let width = (shown as NSString).size(withAttributes: [.font: font ?? .systemFont(ofSize: NSFont.systemFontSize)]).width
-        return NSSize(width: min(ceil(width) + 6, Self.widest), height: super.intrinsicContentSize.height)
-    }
-
-    override func textDidChange(_ notification: Notification) {
-        super.textDidChange(notification)
-        invalidateIntrinsicContentSize()
-    }
-
+final class FocusedSearchField: NSSearchField {
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        guard let window else { return }
-        window.makeFirstResponder(self)
-        DispatchQueue.main.async { [weak self] in self?.focused() }
+        window?.makeFirstResponder(self)
     }
 }
