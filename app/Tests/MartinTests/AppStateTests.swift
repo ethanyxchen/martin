@@ -23,6 +23,13 @@ final class AppStateTests {
         #expect(relaunched.hiddenPages == [.upcoming])
     }
 
+    @Test func pageShortcutsNumberTheShownPagesAndStayPutOnAHiddenPage() {
+        let app = AppState(library: library, defaults: defaults)
+        app.hiddenPages = [.notes]
+        app.page = .notes
+        #expect(HomePage.allCases.map(app.shortcut(of:)) == [1, nil, 2, 3])
+    }
+
     @Test func savingANoteUpdatesItsPreview() throws {
         let meeting = try library.create(title: "Standup")
         try library.saveNote("# Before", for: meeting)
