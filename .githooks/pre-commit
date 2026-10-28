@@ -5,6 +5,7 @@ cache="$PWD/.build/pre-commit"
 snapshot="$(mktemp -d)"
 trap 'rm -rf "$snapshot"' EXIT
 git checkout-index --all --prefix="$snapshot/"
+unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE
 mkdir -p "$cache/source"
 rsync --archive --checksum --delete "$snapshot/" "$cache/source/"
 swift build -c release --package-path "$cache/source/app" --scratch-path "$cache/scratch" \

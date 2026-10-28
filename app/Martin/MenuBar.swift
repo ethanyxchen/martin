@@ -4,6 +4,7 @@ import SwiftUI
 
 struct MenuBar: View {
     let app: AppState
+    let updater: Updater
 
     var body: some View {
         Button("Take Notes") { Task { app.start(await CalendarLookup.currentEvent(hiding: app.hiddenCalendars)) } }
@@ -22,6 +23,7 @@ struct MenuBar: View {
         }
 
         Divider()
+        CheckForUpdatesButton(updater: updater)
         SettingsButton(app: app)
         Button("Quit \(Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Martin")") { NSApp.terminate(nil) }
             .keyboardShortcut("q")

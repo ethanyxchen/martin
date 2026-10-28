@@ -20,5 +20,11 @@
 	<string>26.0</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Martin names a meeting after the calendar event it belongs to.</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://github.com/ethanyxchen/martin/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>D3nhSylDVYBq3pCcMVbjgBxhmoYbgGQU3Y+9PqDDVA0=</string>
 </dict>
 </plist>

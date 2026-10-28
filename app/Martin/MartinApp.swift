@@ -8,12 +8,15 @@ struct MartinApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            MenuBar(app: delegate.app)
+            MenuBar(app: delegate.app, updater: delegate.updater)
         } label: {
             Image(nsImage: .menuBarIcon)
         }
         .commands {
             TextEditingCommands()
+            CommandGroup(after: .appInfo) {
+                CheckForUpdatesButton(updater: delegate.updater)
+            }
             CommandGroup(replacing: .appSettings) {
                 SettingsButton(app: delegate.app)
             }
@@ -34,6 +37,7 @@ struct MartinApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let app = AppState()
+    let updater = Updater()
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
         app.reopen()

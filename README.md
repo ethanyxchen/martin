@@ -51,3 +51,7 @@ open build/Martin.app
 ```
 
 Run the tests with `swift test --package-path app`.
+
+## Releasing
+
+Push a version tag such as `v0.1.0`. The Release workflow builds Martin, signs it with Developer ID, notarizes the app and the DMG, signs the update for Sparkle and publishes `Martin-<version>.dmg` and `appcast.xml` to a GitHub release. Installed copies find the update through the appcast of the latest release.

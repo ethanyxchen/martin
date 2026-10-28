@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Import Developer ID certificate
+        env:
+          DEVELOPER_ID_P12: ${{ secrets.DEVELOPER_ID_P12 }}
+          DEVELOPER_ID_P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+        run: |
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          password="$(uuidgen)"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          base64 --decode <<<"$DEVELOPER_ID_P12" >"$RUNNER_TEMP/developer-id.p12"
+          security import "$RUNNER_TEMP/developer-id.p12" -k "$keychain" \
+            -P "$DEVELOPER_ID_P12_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -k "$password" "$keychain"
+          security list-keychains -d user -s "$keychain"
+
+      - name: Build, sign, notarize and sign the update
+        env:
+          NOTARY_KEY: ${{ secrets.NOTARY_KEY }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          export NOTARY_KEY_PATH="$RUNNER_TEMP/notary.p8"
+          export SPARKLE_KEY_PATH="$RUNNER_TEMP/sparkle.key"
+          printf '%s' "$NOTARY_KEY" >"$NOTARY_KEY_PATH"
+          printf '%s' "$SPARKLE_PRIVATE_KEY" >"$SPARKLE_KEY_PATH"
+          ./scripts/release-app.sh
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" build/release/Martin-*.dmg build/release/appcast.xml --generate-notes --verify-tag
+
+      - name: Remove signing keychain
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" || true
