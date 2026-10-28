@@ -36,7 +36,6 @@ enum HomePage: String, CaseIterable {
 struct HomeView: View {
     @Bindable var app: AppState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var titlebar: CGFloat = 0
 
     var body: some View {
         ZStack {
@@ -46,12 +45,11 @@ struct HomeView: View {
                 .zIndex(Double(app.page.order))
         }
         .animation(.default, value: app.page)
-        .overlay(alignment: .top) {
-            PageTabs(pages: app.pages, page: $app.page, animation: reduceMotion ? nil : .spring(duration: 0.3, bounce: 0))
-                .frame(height: titlebar)
-                .ignoresSafeArea(edges: .top)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                PageTabs(pages: app.pages, page: $app.page, animation: reduceMotion ? nil : .spring(duration: 0.3, bounce: 0))
+            }
         }
-        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { titlebar = $0 }
     }
 
     @ViewBuilder private func view(of page: HomePage) -> some View {
@@ -80,38 +78,33 @@ private struct PageTabs: View {
     @Namespace private var selection
 
     var body: some View {
-        HStack(spacing: 3) {
-            ForEach(pages, id: \.self) { tab in
-                let selected = tab == page
-                Button { page = tab } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: tab.symbol)
-                        if selected {
-                            Text(tab.title)
-                                .fixedSize()
-                                .transition(.opacity)
+        GlassEffectContainer {
+            HStack(spacing: 2) {
+                ForEach(pages, id: \.self) { tab in
+                    let selected = tab == page
+                    Button { page = tab } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: tab.symbol)
+                            if selected {
+                                Text(tab.title)
+                                    .fixedSize()
+                                    .transition(.opacity)
+                            }
                         }
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(selected ? AnyShapeStyle(Theme.ink) : AnyShapeStyle(Theme.secondary))
+                        .padding(.horizontal, selected ? 14 : 0)
+                        .frame(minWidth: 36, minHeight: 28)
+                        .glassEffect(selected ? .regular.interactive() : .identity, in: .capsule)
+                        .glassEffectID(selected ? "selection" : nil, in: selection)
+                        .contentShape(.capsule)
                     }
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(selected ? AnyShapeStyle(Theme.ink) : AnyShapeStyle(Theme.tertiary))
-                    .padding(.horizontal, selected ? 12 : 0)
-                    .frame(minWidth: 36, minHeight: 22)
-                    .background {
-                        if selected {
-                            Capsule()
-                                .fill(Theme.paper)
-                                .shadow(color: .black.opacity(0.16), radius: 1.5, y: 1)
-                                .matchedGeometryEffect(id: "selection", in: selection)
-                        }
-                    }
-                    .contentShape(.capsule)
+                    .buttonStyle(Pressable())
+                    .help(tab.title)
                 }
-                .buttonStyle(Pressable())
-                .help(tab.title)
             }
+            .padding(4)
         }
-        .padding(3)
-        .background(Theme.well, in: .capsule)
         .animation(animation, value: page)
         .animation(animation, value: pages)
     }
