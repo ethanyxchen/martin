@@ -26,11 +26,9 @@ enum HomePage: String, CaseIterable {
 
     var hideable: Bool { self != .settings }
 
-    static func shown(hiding hidden: Set<HomePage>) -> [HomePage] {
-        allCases.filter { !$0.hideable || !hidden.contains($0) }
+    static func shown(hiding hidden: Set<HomePage>, on current: HomePage) -> [HomePage] {
+        allCases.filter { !$0.hideable || $0 == current || !hidden.contains($0) }
     }
-
-    fileprivate var order: Int { Self.allCases.firstIndex(of: self)! }
 }
 
 struct HomeView: View {
@@ -41,8 +39,7 @@ struct HomeView: View {
         ZStack {
             view(of: app.page)
                 .id(app.page)
-                .transition(transition(drifting: CGFloat(app.page.order) * 26 - 36))
-                .zIndex(Double(app.page.order))
+                .transition(transition)
         }
         .animation(.default, value: app.page)
         .toolbar {
@@ -61,12 +58,12 @@ struct HomeView: View {
         }
     }
 
-    private func transition(drifting x: CGFloat) -> AnyTransition {
-        guard !reduceMotion else { return .identity }
-        let drift = AnyTransition.offset(x: x).combined(with: .opacity)
+    private var transition: AnyTransition {
+        guard !reduceMotion else { return .opacity }
+        let settle = AnyTransition.scale(scale: 0.985).combined(with: .opacity)
         return .asymmetric(
-            insertion: drift.animation(.drawer(0.25)),
-            removal: drift.animation(.drawer(0.2))
+            insertion: settle.animation(.drawer(0.25)),
+            removal: settle.animation(.drawer(0.2))
         )
     }
 }
@@ -88,7 +85,7 @@ private struct PageTabs: View {
                             if selected {
                                 Text(tab.title)
                                     .fixedSize()
-                                    .transition(.opacity)
+                                    .transition(.blurReplace)
                             }
                         }
                         .font(.system(size: 13, weight: .medium))

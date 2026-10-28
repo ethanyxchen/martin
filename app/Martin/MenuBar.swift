@@ -15,7 +15,7 @@ struct MenuBar: View {
                 ForEach(app.meetings.prefix(8)) { meeting in
                     Button { app.open(meeting) } label: {
                         Text(meeting.displayTitle)
-                        Text(meeting.startedAt.formatted(.relative(presentation: .named)))
+                        Text(meeting.date.formatted(.relative(presentation: .named)))
                     }
                 }
             }

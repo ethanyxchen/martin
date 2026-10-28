@@ -38,6 +38,8 @@ enum Theme {
     static let measure: CGFloat = 560
     static let page = column + measure + margin
 
+    static let drawer = (0.32, 0.72, 0.0, 1.0)
+
     static let title = Font.system(size: 22, weight: .semibold, design: .serif)
     static let heading = Font.system(size: 15, weight: .semibold, design: .serif)
     static let meta = Font.system(size: 12)
@@ -45,12 +47,14 @@ enum Theme {
 
 extension Animation {
     static func drawer(_ duration: TimeInterval) -> Animation {
-        .timingCurve(0.32, 0.72, 0, 1, duration: duration)
+        .timingCurve(Theme.drawer.0, Theme.drawer.1, Theme.drawer.2, Theme.drawer.3, duration: duration)
     }
 }
 
 extension CAMediaTimingFunction {
-    static var drawer: CAMediaTimingFunction { CAMediaTimingFunction(controlPoints: 0.32, 0.72, 0, 1) }
+    static var drawer: CAMediaTimingFunction {
+        CAMediaTimingFunction(controlPoints: Float(Theme.drawer.0), Float(Theme.drawer.1), Float(Theme.drawer.2), Float(Theme.drawer.3))
+    }
 }
 
 struct Pressable: ButtonStyle {
@@ -69,15 +73,16 @@ extension View {
     }
 
     func flush() -> some View {
-        padding(.leading, Theme.column)
-            .padding(.trailing, Theme.margin)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        inset().frame(maxWidth: .infinity, alignment: .leading)
     }
 
     func column() -> some View {
-        padding(.leading, Theme.column)
-            .padding(.trailing, Theme.margin)
+        inset()
             .frame(maxWidth: Theme.page, alignment: .leading)
             .frame(maxWidth: .infinity)
+    }
+
+    private func inset() -> some View {
+        padding(.leading, Theme.column).padding(.trailing, Theme.margin)
     }
 }

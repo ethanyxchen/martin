@@ -44,20 +44,27 @@ final class AppState {
     private static let hiddenCalendarsKey = "hiddenCalendars"
     private static let pageKey = "page"
     private static let hiddenPagesKey = "hiddenPages"
-    let library = MeetingLibrary()
+    let library: MeetingLibrary
+    private let defaults: UserDefaults
     private(set) var meetings: [Meeting] = []
-    var page = UserDefaults.standard.string(forKey: pageKey).flatMap(HomePage.init) ?? .upcoming {
-        didSet { UserDefaults.standard.set(page.rawValue, forKey: Self.pageKey) }
+    private(set) var previews: [Meeting.ID: String] = [:]
+    var page: HomePage {
+        didSet { defaults.set(page.rawValue, forKey: Self.pageKey) }
     }
-    var hiddenPages = Set((UserDefaults.standard.stringArray(forKey: hiddenPagesKey) ?? []).compactMap(HomePage.init)) {
-        didSet { UserDefaults.standard.set(hiddenPages.map(\.rawValue).sorted(), forKey: Self.hiddenPagesKey) }
+    var hiddenPages: Set<HomePage> {
+        didSet { defaults.set(hiddenPages.map(\.rawValue).sorted(), forKey: Self.hiddenPagesKey) }
     }
-    var hiddenCalendars = Set(UserDefaults.standard.stringArray(forKey: hiddenCalendarsKey) ?? []) {
-        didSet { UserDefaults.standard.set(hiddenCalendars.sorted(), forKey: Self.hiddenCalendarsKey) }
+    var hiddenCalendars: Set<EventCalendar.ID> {
+        didSet { defaults.set(hiddenCalendars.sorted(), forKey: Self.hiddenCalendarsKey) }
     }
     @ObservationIgnored private var windows: [String: NSWindow] = [:]
 
-    init() {
+    init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = .standard) {
+        self.library = library
+        self.defaults = defaults
+        page = defaults.string(forKey: Self.pageKey).flatMap(HomePage.init) ?? .upcoming
+        hiddenPages = Set((defaults.stringArray(forKey: Self.hiddenPagesKey) ?? []).compactMap(HomePage.init))
+        hiddenCalendars = Set(defaults.stringArray(forKey: Self.hiddenCalendarsKey) ?? [])
         reload()
     }
 
@@ -66,7 +73,7 @@ final class AppState {
     }
 
     var pages: [HomePage] {
-        HomePage.shown(hiding: hiddenPages)
+        HomePage.shown(hiding: hiddenPages, on: page)
     }
 
     var people: [Person] {
@@ -75,6 +82,9 @@ final class AppState {
 
     func reload() {
         meetings = (try? library.meetings()) ?? []
+        previews = meetings.reduce(into: [:]) { previews, meeting in
+            previews[meeting.id] = library.note(of: meeting).flatMap(Markdown.preview(of:))
+        }
     }
 
     func start(_ event: CalendarEvent?) {
@@ -89,7 +99,7 @@ final class AppState {
 
     func save(_ note: String, for meeting: Meeting) {
         try? library.saveNote(note, for: meeting)
-        reload()
+        previews[meeting.id] = Markdown.preview(of: note)
     }
 
     func rename(_ meeting: Meeting, to title: String) {
@@ -115,9 +125,12 @@ final class AppState {
     }
 
     func widenHome(by width: CGFloat, over duration: TimeInterval) {
-        guard let window = windows["home"] else { return }
+        guard let window = windows["home"], !window.styleMask.contains(.fullScreen) else { return }
         var frame = window.frame
         frame.size.width += width
+        if let visible = window.screen?.visibleFrame {
+            frame.origin.x = max(visible.minX, min(frame.origin.x, visible.maxX - frame.width))
+        }
         NSAnimationContext.runAnimationGroup { context in
             context.duration = duration
             context.timingFunction = .drawer

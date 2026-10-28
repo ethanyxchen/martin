@@ -11,7 +11,7 @@ struct NotesView: View {
             } content: {
                 Rows(items: app.meetings) { meeting in
                     Button { app.open(meeting) } label: {
-                        ChatRow(avatar: Avatar(title: meeting.title), title: meeting.displayTitle, stamp: meeting.date.stamp(at: context.date), preview: app.preview(of: meeting))
+                        ChatRow(avatar: Avatar(title: meeting.title), title: meeting.displayTitle, stamp: meeting.date.stamp(at: context.date), preview: app.previews[meeting.id])
                     }
                 }
                 .padding(.horizontal, Theme.margin - ChatRow.inset)
@@ -40,7 +40,7 @@ struct MeetingsView: View {
                 } content: {
                     Rows(items: series) { series in
                         Button { select(series.id == selected ? nil : series.id) } label: {
-                            ChatRow(avatar: Avatar(title: series.avatar), title: series.title, stamp: series.meetings[0].date.stamp(at: context.date), preview: app.preview(of: series.meetings[0]), count: series.meetings.count, selected: series.id == selected)
+                            ChatRow(avatar: Avatar(title: series.avatar), title: series.title, stamp: series.meetings[0].date.stamp(at: context.date), preview: app.previews[series.meetings[0].id], count: series.meetings.count, selected: series.id == selected)
                         }
                     }
                     .padding(.horizontal, (open == nil ? Theme.margin : 18) - ChatRow.inset)
@@ -59,6 +59,9 @@ struct MeetingsView: View {
             }
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        .onChange(of: open?.id) { _, id in
+            if id == nil, selected != nil { select(nil, animated: false) }
+        }
         .onExitCommand { select(nil, animated: false) }
         .onDisappear { select(nil) }
     }
@@ -102,7 +105,7 @@ private struct SeriesView: View {
             ScrollView {
                 Rows(items: series.meetings) { meeting in
                     Button { app.open(meeting) } label: {
-                        ChatRow(title: meeting.date.formatted(.dateTime.weekday(.wide).day().month(.wide)), preview: app.preview(of: meeting))
+                        ChatRow(title: meeting.date.formatted(.dateTime.weekday(.wide).day().month(.wide)), preview: app.previews[meeting.id])
                     }
                 }
                 .padding(8)
@@ -224,12 +227,6 @@ struct Avatar: View {
 extension Series {
     var title: String { id == .other ? "Other notes" : meetings[0].displayTitle }
     var avatar: String? { id == .other ? nil : meetings[0].title }
-}
-
-extension AppState {
-    func preview(of meeting: Meeting) -> String? {
-        library.note(of: meeting).flatMap(Markdown.preview(of:))
-    }
 }
 
 extension Date {
