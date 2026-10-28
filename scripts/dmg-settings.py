@@ -1,0 +1,15 @@
+files = [defines["app"]]
+symlinks = {"Applications": "/Applications"}
+icon = "app/Resources/Martin.icns"
+background = defines["background"]
+format = "ULFO"
+window_rect = ((200, 200), (660, 432))
+show_toolbar = False
+show_status_bar = False
+show_pathbar = False
+show_sidebar = False
+show_tab_view = False
+default_view = "icon-view"
+icon_size = 128
+text_size = 12
+icon_locations = {"Martin.app": (180, 170), "Applications": (480, 170)}

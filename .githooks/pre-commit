@@ -11,3 +11,4 @@ rsync --archive --checksum --delete "$snapshot/" "$cache/source/"
 swift build -c release --package-path "$cache/source/app" --scratch-path "$cache/scratch" \
   -Xswiftc -warnings-as-errors
 swiftc -typecheck -warnings-as-errors "$cache/source/scripts/render-icon.swift"
+swiftc -typecheck -warnings-as-errors "$cache/source/scripts/render-dmg-background.swift"
