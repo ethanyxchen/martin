@@ -22,7 +22,7 @@ private struct ArchiveButton: ToolbarContent {
     var body: some ToolbarContent {
         ToolbarItem(placement: .primaryAction) {
             Button("Archive", systemImage: "archivebox") { app.openArchive() }
-                .help("Open Archive")
+                .help("Open Archive (⇧⌘A)")
         }
     }
 }
@@ -112,7 +112,7 @@ private struct NoteRow: View {
 
     var body: some View {
         Button { app.open(meeting) } label: { actionable }
-            .contextMenu { NoteMenu(app: app, meeting: meeting, shortcuts: false) }
+            .contextMenu { NoteActions(app: app, meeting: meeting, shortcuts: true) }
     }
 
     private var actionable: ChatRow {
