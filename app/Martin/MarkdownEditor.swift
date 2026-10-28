@@ -78,6 +78,7 @@ final class NoteTextView: NSTextView {
         Format(title: "Strikethrough", key: "x", shift: true, action: #selector(toggleStrikethrough(_:))),
         Format(title: "Code", key: "c", shift: true, action: #selector(toggleCode(_:))),
         Format(title: "Link", key: "k", shift: false, action: #selector(insertLink(_:))),
+        Format(title: "Checklist", key: "l", shift: true, action: #selector(toggleChecklist(_:))),
     ]
 
     private let style = MarkdownStyle()
@@ -255,6 +256,10 @@ final class NoteTextView: NSTextView {
 
     @objc func insertLink(_ sender: Any?) {
         apply(Markdown.link(in: string, selection: selectedRange()))
+    }
+
+    @objc func toggleChecklist(_ sender: Any?) {
+        apply(Markdown.checklist(in: string, selection: selectedRange()))
     }
 
     func continueList() -> Bool {

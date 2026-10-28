@@ -295,6 +295,38 @@ public enum Markdown {
         return Edit(range: range, replacement: outward ? "" : "\t", selection: NSRange(location: max(line.location, selection.location + shift), length: selection.length))
     }
 
+    public static func checklist(in text: String, selection: NSRange) -> Edit {
+        let text = text as NSString
+        var range = text.lineRange(for: NSRange(location: selection.location, length: max(0, selection.length - 1)))
+        if range.length > 0, text.character(at: NSMaxRange(range) - 1) == 0x0A { range.length -= 1 }
+        let lines = text.substring(with: range).components(separatedBy: "\n").map { ($0 as NSString, Line($0)) }
+        let filled = lines.filter { $0.1.block != .blank || lines.count == 1 }
+        let checked = filled.allSatisfy { if case .task = $0.1.block { true } else { false } }
+        let rewritten = lines.map { content, line -> (text: NSString, old: Int, new: Int) in
+            let lead = content.substring(to: min(content.rangeOfCharacter(from: CharacterSet(charactersIn: " \t").inverted).location, content.length))
+            let (head, prefix): (String, Int)
+            switch (checked, line.block) {
+            case (true, .task): (head, prefix) = (lead, line.prefix)
+            case (false, .list): (head, prefix) = (lead + content.substring(with: line.spans[0].range) + " [ ] ", line.prefix)
+            case (false, .blank) where lines.count > 1, (_, .task), (true, _): return (content, 0, 0)
+            default: (head, prefix) = (lead + "- [ ] ", lead.utf16.count)
+            }
+            return ((head + content.substring(from: prefix)) as NSString, prefix, head.utf16.count)
+        }
+        func moved(_ position: Int) -> Int {
+            var old = range.location, new = range.location
+            for ((content, _), (text, before, after)) in zip(lines, rewritten) {
+                let offset = position - old
+                if offset <= content.length { return new + (offset < before ? after : offset - before + after) }
+                old += content.length + 1
+                new += text.length + 1
+            }
+            return new
+        }
+        let start = moved(selection.location)
+        return Edit(range: range, replacement: rewritten.map { $0.text as String }.joined(separator: "\n"), selection: NSRange(location: start, length: moved(NSMaxRange(selection)) - start))
+    }
+
     public static func link(in text: String, selection: NSRange) -> Edit {
         let label = (text as NSString).substring(with: selection)
         let caret = selection.length == 0 ? selection.location + 1 : NSMaxRange(selection) + 3

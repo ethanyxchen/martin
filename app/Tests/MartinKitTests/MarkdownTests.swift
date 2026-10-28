@@ -186,6 +186,19 @@ struct MarkdownTests {
         #expect(empty == Markdown.Edit(range: NSRange(location: 0, length: 0), replacement: "~~~~", selection: NSRange(location: 2, length: 0)))
     }
 
+    @Test func checklistTurnsLinesIntoTasksAndBack() {
+        func checklist(_ text: String, _ location: Int, _ length: Int = 0) -> Markdown.Edit {
+            Markdown.checklist(in: text, selection: NSRange(location: location, length: length))
+        }
+        #expect(checklist("buy milk", 4) == Markdown.Edit(range: NSRange(location: 0, length: 8), replacement: "- [ ] buy milk", selection: NSRange(location: 10, length: 0)))
+        #expect(checklist("", 0) == Markdown.Edit(range: NSRange(location: 0, length: 0), replacement: "- [ ] ", selection: NSRange(location: 6, length: 0)))
+        #expect(checklist("\t- [x] done", 9) == Markdown.Edit(range: NSRange(location: 0, length: 11), replacement: "\tdone", selection: NSRange(location: 3, length: 0)))
+        #expect(checklist("- [ ] a", 2) == Markdown.Edit(range: NSRange(location: 0, length: 7), replacement: "a", selection: NSRange(location: 0, length: 0)))
+        #expect(checklist("2. two", 6) == Markdown.Edit(range: NSRange(location: 0, length: 6), replacement: "2. [ ] two", selection: NSRange(location: 10, length: 0)))
+        #expect(checklist("top\na\n\n- [ ] b\nend", 4, 11) == Markdown.Edit(range: NSRange(location: 4, length: 10), replacement: "- [ ] a\n\n- [ ] b", selection: NSRange(location: 10, length: 11)))
+        #expect(checklist("- [ ] a\n- [x] b\n", 0, 16) == Markdown.Edit(range: NSRange(location: 0, length: 15), replacement: "a\nb", selection: NSRange(location: 0, length: 4)))
+    }
+
     @Test func linkWrapsTheSelection() {
         #expect(Markdown.link(in: "ask Martin", selection: NSRange(location: 4, length: 6)) == Markdown.Edit(range: NSRange(location: 4, length: 6), replacement: "[Martin]()", selection: NSRange(location: 13, length: 0)))
         #expect(Markdown.link(in: "", selection: NSRange(location: 0, length: 0)).selection == NSRange(location: 1, length: 0))
