@@ -76,7 +76,7 @@ final class MentionPicker {
         let panel = NSPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
         panel.isOpaque = false
         panel.backgroundColor = .clear
-        panel.hasShadow = false
+        panel.hasShadow = true
         panel.contentView = NSHostingView(rootView: MentionList(choices: choices, pick: pick))
         self.panel = panel
         return panel

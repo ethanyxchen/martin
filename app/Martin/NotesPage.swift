@@ -24,7 +24,6 @@ struct MeetingsView: View {
     private static let wide: CGFloat = 780
     private static let slide: TimeInterval = 0.3
     let app: AppState
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selected: Series.ID?
     @State private var width: CGFloat = 0
     @State private var grown: CGFloat = 0
@@ -37,32 +36,37 @@ struct MeetingsView: View {
                 PageHeading(title: "Meetings")
             } content: {
                 Rows(items: series) { series in
-                    Button { withAnimation(reduceMotion ? nil : .drawer(Self.slide)) { selected = series.id == selected ? nil : series.id } } label: {
+                    Button { select(series.id == selected ? nil : series.id) } label: {
                         ChatRow(avatar: Avatar(title: series.avatar), title: series.title, stamp: series.meetings[0].date.stamp(at: context.date), preview: app.previews[series.meetings[0].id], count: series.meetings.count, selected: series.id == selected)
                     }
                 }
                 .padding(.horizontal, Theme.margin - ChatRow.inset)
             }
         }
-        .inspector(isPresented: Binding { open != nil } set: { if !$0 { selected = nil } }) {
+        .inspector(isPresented: Binding { open != nil } set: { if !$0 { select(nil, animated: false) } }) {
             if let open {
                 SeriesView(app: app, series: open)
                     .inspectorColumnWidth(min: 260, ideal: 300)
             }
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
-        .onChange(of: open != nil) { fit(inspecting: $1) }
-        .onExitCommand { selected = nil }
-        .onDisappear {
-            selected = nil
-            fit(inspecting: false)
+        .onChange(of: open?.id) { _, id in
+            if id == nil, selected != nil { select(nil, animated: false) }
         }
+        .onExitCommand { select(nil, animated: false) }
+        .onDisappear { select(nil) }
     }
 
-    private func fit(inspecting: Bool) {
-        let change = inspecting ? max(0, Self.wide - width) : -grown
-        grown += change
-        app.widenHome(by: change, over: Self.slide)
+    private func select(_ id: Series.ID?, animated: Bool = true) {
+        let duration = animated ? Self.slide : 0
+        if selected == nil, id != nil {
+            grown = max(0, Self.wide - width)
+            app.widenHome(by: grown, over: duration)
+        } else if selected != nil, id == nil {
+            app.widenHome(by: -grown, over: duration)
+            grown = 0
+        }
+        withAnimation(animated ? .drawer(duration) : nil) { selected = id }
     }
 }
 

@@ -5,13 +5,14 @@ struct Page<Header: View, Content: View>: View {
     @ViewBuilder let header: Header
     @ViewBuilder let content: Content
     @State private var viewport: CGFloat = 0
+    @State private var toolbar: CGFloat = 0
     @State private var collapsed = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 header
-                    .onGeometryChange(for: Bool.self) { $0.frame(in: .scrollView).maxY <= 0 } action: { collapsed = $0 }
+                    .onGeometryChange(for: Bool.self) { [toolbar] in $0.frame(in: .scrollView).maxY <= toolbar } action: { collapsed = $0 }
                     .padding(.top, 18)
                     .padding(.bottom, 22)
                     .movesWindow()
@@ -21,6 +22,7 @@ struct Page<Header: View, Content: View>: View {
         }
         .scrollEdgeEffectStyle(.soft, for: .top)
         .onScrollGeometryChange(for: CGFloat.self) { $0.containerSize.height - $0.contentInsets.top - $0.contentInsets.bottom } action: { viewport = $1 }
+        .onScrollGeometryChange(for: CGFloat.self) { $0.contentInsets.top } action: { toolbar = $1 }
         .background(Theme.paper)
         .toolbar {
             if let title {
