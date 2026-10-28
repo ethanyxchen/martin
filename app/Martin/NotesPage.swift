@@ -38,13 +38,12 @@ struct ProjectsView: View {
     private static let sidebar: CGFloat = 280
     private static let slide: TimeInterval = 0.3
     let app: AppState
-    @State private var selected: Shelf.ID?
     @State private var width: CGFloat = 0
     @State private var grown: CGFloat = 0
 
     var body: some View {
         let shelves = app.notes.shelved(in: app.projects)
-        let open = shelves.first { $0.id == selected }
+        let open = shelves.first { $0.id == app.selectedShelf }
         TimelineView(.everyMinute) { context in
             HStack(spacing: 0) {
                 Page {
@@ -52,11 +51,11 @@ struct ProjectsView: View {
                 } content: {
                     Rows(items: shelves, indent: ChatRow.avatarIndent) { shelf in
                         let latest = shelf.meetings.first
-                        Button { select(shelf.id == selected ? nil : shelf.id) } label: {
-                            ChatRow(avatar: Avatar(title: shelf.project?.name, square: true), title: shelf.title, stamp: latest?.date.stamp(at: context.date), preview: latest.flatMap { app.previews[$0.id] }, count: shelf.meetings.count, selected: shelf.id == selected)
+                        Button { select(shelf.id == app.selectedShelf ? nil : shelf.id) } label: {
+                            ChatRow(avatar: Avatar(title: shelf.project?.name, square: true), title: shelf.title, stamp: latest?.date.stamp(at: context.date), preview: latest.flatMap { app.previews[$0.id] }, count: shelf.meetings.count, selected: shelf.id == app.selectedShelf)
                         }
                         .contextMenu {
-                            if let project = shelf.project { ProjectActions(app: app, project: project) }
+                            if let project = shelf.project { ProjectActions(app: app, project: project, placement: .contextMenu) }
                         }
                     }
                     .padding(.horizontal, Theme.edge - ChatRow.inset)
@@ -73,7 +72,7 @@ struct ProjectsView: View {
         .toolbar { ArchiveButton(app: app) }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .onChange(of: open?.id) { _, id in
-            if id == nil, selected != nil { select(nil, animated: false) }
+            if id == nil, app.selectedShelf != nil { select(nil, animated: false) }
         }
         .onExitCommand { select(nil, animated: false) }
         .onDisappear { select(nil) }
@@ -81,14 +80,14 @@ struct ProjectsView: View {
 
     private func select(_ id: Shelf.ID?, animated: Bool = true) {
         let duration = animated ? Self.slide : 0
-        if selected == nil, id != nil {
+        if app.selectedShelf == nil, id != nil {
             grown = max(0, Self.wide - width)
             app.widenHome(by: grown, over: duration)
-        } else if selected != nil, id == nil {
+        } else if app.selectedShelf != nil, id == nil {
             app.widenHome(by: -grown, over: duration)
             grown = 0
         }
-        withAnimation(animated ? .drawer(duration) : nil) { selected = id }
+        withAnimation(animated ? .drawer(duration) : nil) { app.selectedShelf = id }
     }
 }
 
@@ -103,8 +102,8 @@ struct ArchiveView: View {
                 if !app.archivedProjects.isEmpty {
                     Rows(items: app.archivedProjects, indent: ChatRow.avatarIndent) { project in
                         let count = app.notes(in: project).count
-                        ChatRow(avatar: Avatar(title: project.name, square: true), title: project.name, stamp: project.archivedAt?.stamp(at: context.date), preview: count == 1 ? "1 note" : "\(count) notes", actions: AnyView(ProjectActions(app: app, project: project, row: true)))
-                            .contextMenu { ProjectActions(app: app, project: project) }
+                        ChatRow(avatar: Avatar(title: project.name, square: true), title: project.name, stamp: project.archivedAt?.stamp(at: context.date), preview: count == 1 ? "1 note" : "\(count) notes", actions: AnyView(ProjectActions(app: app, project: project, placement: .row)))
+                            .contextMenu { ProjectActions(app: app, project: project, placement: .contextMenu) }
                     }
                     .padding(.horizontal, Theme.edge - ChatRow.inset)
                 }
@@ -171,16 +170,32 @@ struct NoteMenu: View {
     }
 }
 
-struct NoteActions: View {
-    enum Placement {
-        case menu
-        case contextMenu
-        case row
+enum ActionPlacement {
+    case menu
+    case contextMenu
+    case row
+
+    func tooltip(_ text: String) -> String {
+        self == .row ? text : ""
     }
 
+    func archive(enabled: Bool) -> KeyboardShortcut? {
+        shortcut("a", modifiers: [.command, .control], enabled: enabled)
+    }
+
+    func delete(enabled: Bool) -> KeyboardShortcut? {
+        shortcut(.delete, modifiers: [.command, .option], enabled: enabled)
+    }
+
+    private func shortcut(_ key: KeyEquivalent, modifiers: EventModifiers, enabled: Bool) -> KeyboardShortcut? {
+        self == .menu && enabled ? KeyboardShortcut(key, modifiers: modifiers) : nil
+    }
+}
+
+struct NoteActions: View {
     let app: AppState
     let meeting: Meeting?
-    let placement: Placement
+    let placement: ActionPlacement
 
     var body: some View {
         if placement != .row {
@@ -196,48 +211,42 @@ struct NoteActions: View {
         Group {
             if meeting?.archivedAt == nil {
                 Button("Archive", systemImage: "archivebox") { meeting.map(app.archive) }
-                    .help(tooltip("Archive"))
+                    .help(placement.tooltip("Archive"))
             } else {
                 Button("Restore", systemImage: "arrow.uturn.backward") { meeting.map(app.restore) }
-                    .help(tooltip("Restore"))
+                    .help(placement.tooltip("Restore"))
             }
         }
-        .keyboardShortcut(shortcut("a", modifiers: [.command, .control]))
+        .keyboardShortcut(placement.archive(enabled: meeting != nil))
         .disabled(meeting == nil)
         Button("Delete…", systemImage: "trash", role: .destructive) { meeting.map(app.confirmDeletion) }
-            .help(tooltip("Delete"))
-            .keyboardShortcut(shortcut(.delete, modifiers: [.command, .option]))
+            .help(placement.tooltip("Delete"))
+            .keyboardShortcut(placement.delete(enabled: meeting != nil))
             .disabled(meeting == nil)
-    }
-
-    private func tooltip(_ text: String) -> String {
-        placement == .row ? text : ""
-    }
-
-    private func shortcut(_ key: KeyEquivalent, modifiers: EventModifiers) -> KeyboardShortcut? {
-        placement == .menu ? KeyboardShortcut(key, modifiers: modifiers) : nil
     }
 }
 
 struct ProjectActions: View {
     let app: AppState
-    let project: Project
-    var row = false
+    let project: Project?
+    let placement: ActionPlacement
 
     var body: some View {
-        if project.archivedAt == nil {
-            Button("Archive Project", systemImage: "archivebox") { app.archive(project) }
-                .help(tooltip("Archive"))
-        } else {
-            Button("Restore Project", systemImage: "arrow.uturn.backward") { app.restore(project) }
-                .help(tooltip("Restore"))
+        Group {
+            if project?.archivedAt == nil {
+                Button("Archive Project", systemImage: "archivebox") { project.map(app.archive) }
+                    .help(placement.tooltip("Archive"))
+            } else {
+                Button("Restore Project", systemImage: "arrow.uturn.backward") { project.map(app.restore) }
+                    .help(placement.tooltip("Restore"))
+            }
         }
-        Button("Delete Project…", systemImage: "trash", role: .destructive) { app.confirmDeletion(of: project) }
-            .help(tooltip("Delete"))
-    }
-
-    private func tooltip(_ text: String) -> String {
-        row ? text : ""
+        .keyboardShortcut(placement.archive(enabled: project != nil))
+        .disabled(project == nil)
+        Button("Delete Project…", systemImage: "trash", role: .destructive) { project.map(app.confirmDeletion) }
+            .help(placement.tooltip("Delete"))
+            .keyboardShortcut(placement.delete(enabled: project != nil))
+            .disabled(project == nil)
     }
 }
 
@@ -296,7 +305,7 @@ private struct ShelfView: View {
                     .buttonStyle(RowAction())
                     .help("New note in \(shelf.title)")
                 if let project = shelf.project {
-                    Menu("Project", systemImage: "ellipsis") { ProjectActions(app: app, project: project) }
+                    Menu("Project", systemImage: "ellipsis") { ProjectActions(app: app, project: project, placement: .menu) }
                         .menuStyle(.button)
                         .menuIndicator(.hidden)
                         .buttonStyle(RowAction())

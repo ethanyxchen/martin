@@ -26,6 +26,9 @@ struct MartinApp: App {
             CommandMenu("Note") {
                 NoteActions(app: delegate.app, meeting: delegate.app.focusedNote, placement: .menu)
             }
+            CommandMenu("Project") {
+                ProjectActions(app: delegate.app, project: delegate.app.focusedProject, placement: .menu)
+            }
             CommandGroup(before: .windowList) {
                 ForEach(HomePage.shown(hiding: delegate.app.hiddenPages), id: \.self) { page in
                     Button(page.title) { delegate.app.openHome(on: page) }
@@ -74,6 +77,7 @@ final class AppState {
     var hiddenPages: Set<HomePage> {
         didSet { defaults.set(hiddenPages.map(\.rawValue).sorted(), forKey: Self.hiddenPagesKey) }
     }
+    var selectedShelf: Shelf.ID?
     var hiddenCalendars: Set<EventCalendar.ID> {
         didSet { defaults.set(hiddenCalendars.sorted(), forKey: Self.hiddenCalendarsKey) }
     }
@@ -95,6 +99,11 @@ final class AppState {
 
     var focusedNote: Meeting? {
         keyWindow.flatMap(meeting)
+    }
+
+    var focusedProject: Project? {
+        guard keyWindow == "home", page == .projects, case .project(let id) = selectedShelf else { return nil }
+        return projects.first { $0.id == id }
     }
 
     var notes: [Meeting] {

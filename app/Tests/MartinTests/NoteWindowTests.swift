@@ -40,6 +40,26 @@ final class NoteWindowTests {
         NotificationCenter.default.post(name: NSWindow.didResignKeyNotification, object: window)
         #expect(app.focusedNote == nil)
     }
+
+    @Test func theProjectMenuActsOnTheProjectOpenInTheKeyHomeWindow() throws {
+        let app = AppState(library: library, defaults: defaults)
+        app.file(try library.create(), inNewProjectNamed: "Atlas")
+        let atlas = try #require(app.projects.first)
+        let window = app.present(HomeView(app: app), id: "home", title: "Martin", size: NSSize(width: 520, height: 640))
+        app.page = .projects
+        app.selectedShelf = .project(atlas.id)
+        #expect(app.focusedProject == nil)
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: window)
+        #expect(app.focusedProject == atlas)
+        app.selectedShelf = .unassigned
+        #expect(app.focusedProject == nil)
+        app.selectedShelf = .project(atlas.id)
+        app.page = .notes
+        #expect(app.focusedProject == nil)
+        app.page = .projects
+        NotificationCenter.default.post(name: NSWindow.didResignKeyNotification, object: window)
+        #expect(app.focusedProject == nil)
+    }
 }
 
 private extension NSView {

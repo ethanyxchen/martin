@@ -30,3 +30,18 @@ struct QuickNoteTests {
         #expect(QuickNoteButton.shortcut == KeyboardShortcut("n", modifiers: .command))
     }
 }
+
+@MainActor
+struct ActionShortcutTests {
+    @Test func onlyTheMenuBarCarriesTheArchiveAndDeleteShortcuts() {
+        #expect(ActionPlacement.menu.archive(enabled: true) == KeyboardShortcut("a", modifiers: [.command, .control]))
+        #expect(ActionPlacement.menu.delete(enabled: true) == KeyboardShortcut(.delete, modifiers: [.command, .option]))
+        #expect(ActionPlacement.contextMenu.archive(enabled: true) == nil)
+        #expect(ActionPlacement.row.delete(enabled: true) == nil)
+    }
+
+    @Test func aMenuWithNothingToActOnLeavesTheShortcutsToTheOther() {
+        #expect(ActionPlacement.menu.archive(enabled: false) == nil)
+        #expect(ActionPlacement.menu.delete(enabled: false) == nil)
+    }
+}
