@@ -116,7 +116,7 @@ final class AppState {
     }
 
     var notes: [Meeting] {
-        meetings.filter { $0.archivedAt == nil }
+        revealed.filter { $0.archivedAt == nil }
     }
 
     var pinned: [Meeting] {
@@ -124,20 +124,16 @@ final class AppState {
     }
 
     var unpinned: [Meeting] {
-        revealed.filter { $0.archivedAt == nil && !$0.isPinned }
+        notes.filter { !$0.isPinned }
     }
 
     var shelves: [Shelf] {
-        let secrets = secrets
-        return revealed.filter { $0.archivedAt == nil }.shelved(in: projects.filter { !secrets.contains($0.id) })
-    }
-
-    private var secrets: Set<Project.ID> {
-        showsSecrets ? [] : Set(allProjects.filter(\.isSecret).map(\.id))
+        notes.shelved(in: projects.filter { showsSecrets || !$0.isSecret })
     }
 
     private var revealed: [Meeting] {
-        let secrets = secrets
+        guard !showsSecrets else { return meetings }
+        let secrets = Set(allProjects.filter(\.isSecret).map(\.id))
         return meetings.filter { $0.project.map(secrets.contains) != true }
     }
 
@@ -269,6 +265,7 @@ final class AppState {
     func keepSecret(_ project: Project, _ secret: Bool) {
         guard var changed = allProjects.first(where: { $0.id == project.id }) else { return }
         changed.secretAt = secret ? .now : nil
+        if secret, !showsSecrets { notes(in: project).forEach { windows[$0.id]?.close() } }
         try? library.save(changed)
         reload()
     }

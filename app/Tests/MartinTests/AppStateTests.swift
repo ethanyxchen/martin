@@ -77,9 +77,9 @@ final class AppStateTests {
         let atlas = try #require(app.projects.first)
         #expect(atlas.name == "Atlas")
         #expect(app.project(of: try #require(app.meeting(meeting.id))) == atlas)
-        #expect(app.notes.shelved(in: app.projects).map(\.id) == [.project(atlas.id)])
+        #expect(app.shelves.map(\.id) == [.project(atlas.id)])
         app.file(meeting, in: nil)
-        #expect(app.notes.shelved(in: app.projects).map(\.id) == [.project(atlas.id), .unassigned])
+        #expect(app.shelves.map(\.id) == [.project(atlas.id), .unassigned])
     }
 
     @Test func aNoteIsLabelledWithItsProjectEvenOnceTheProjectIsArchived() throws {
