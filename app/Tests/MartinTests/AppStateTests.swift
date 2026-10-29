@@ -297,7 +297,7 @@ final class AppStateTests {
         await app.suggestRepositories()
         await AppState(library: library, defaults: defaults, finder: finding(martin, asked: asked)).suggestRepositories()
         #expect(await asked.times == 2)
-        #expect(try library.lookups().values.map(\.matches) == [["ethanyxchen/martin"]])
+        #expect(library.lookups().values.map(\.matches) == [["ethanyxchen/martin"]])
     }
 
     @Test func aSecretProjectIsNotLookedUpInTheBackground() async throws {

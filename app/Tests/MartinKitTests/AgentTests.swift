@@ -81,17 +81,18 @@ struct AgentTests {
         #expect(picked(interviews, Data("Not logged in".utf8), [martin]) == nil)
     }
 
-    @Test func theFingerprintChangesWithTheNotesNameOrClonesButNotTheirOrder() throws {
+    @Test func theFingerprintChangesWithTheNotesNameClonesOrAssistantButNotTheClonesOrder() throws {
         let overload = clones.repository("GoodnotesGlobal/ma-turbo-overload", in: "ma-turbo-overload")
         let martin = clones.repository("ethanyxchen/martin", in: "martin")
         let goodmeet = Project(id: "goodmeet", name: "Goodmeet")
-        let fingerprint = Agent.fingerprint(for: goodmeet, notes: ["# Tasks"], among: [overload, martin])
-        #expect(Agent.fingerprint(for: goodmeet, notes: ["# Tasks"], among: [martin, overload]) == fingerprint)
-        #expect(Agent.fingerprint(for: goodmeet, notes: ["# Tasks", "# Sync"], among: [overload, martin]) != fingerprint)
-        #expect(Agent.fingerprint(for: Project(id: "goodmeet", name: "GoodMeet"), notes: ["# Tasks"], among: [overload, martin]) != fingerprint)
-        #expect(Agent.fingerprint(for: goodmeet, notes: ["# Tasks"], among: [overload]) != fingerprint)
+        let fingerprint = Agent.fingerprint(for: goodmeet, notes: ["# Tasks"], among: [overload, martin], using: .claude)
+        #expect(Agent.fingerprint(for: goodmeet, notes: ["# Tasks"], among: [martin, overload], using: .claude) == fingerprint)
+        #expect(Agent.fingerprint(for: goodmeet, notes: ["# Tasks", "# Sync"], among: [overload, martin], using: .claude) != fingerprint)
+        #expect(Agent.fingerprint(for: Project(id: "goodmeet", name: "GoodMeet"), notes: ["# Tasks"], among: [overload, martin], using: .claude) != fingerprint)
+        #expect(Agent.fingerprint(for: goodmeet, notes: ["# Tasks"], among: [overload], using: .claude) != fingerprint)
+        #expect(Agent.fingerprint(for: goodmeet, notes: ["# Tasks"], among: [overload, martin], using: .codex) != fingerprint)
         try "The Goodmeet app.".write(to: overload.folder.appending(path: "README.md"), atomically: true, encoding: .utf8)
-        #expect(Agent.fingerprint(for: goodmeet, notes: ["# Tasks"], among: [overload, martin]) != fingerprint)
+        #expect(Agent.fingerprint(for: goodmeet, notes: ["# Tasks"], among: [overload, martin], using: .claude) != fingerprint)
     }
 
     @Test func anAnswerIsItsSlugsUnlessItCannotBeReadOrNamesTooMany() {

@@ -32,8 +32,8 @@ public enum Agent {
         return await assistant.answer(prompt(for: project, notes: notes, among: candidates), instructions: instructions, schema: schema).flatMap(matches(in:))
     }
 
-    public static func fingerprint(for project: Project, notes: [String], among candidates: [Repository]) -> String {
-        let inputs = [project.name, excerpts(of: notes)] + lines(for: candidates).sorted()
+    public static func fingerprint(for project: Project, notes: [String], among candidates: [Repository], using assistant: Assistant) -> String {
+        let inputs = [assistant.rawValue, instructions, schema, project.name, excerpts(of: notes)] + lines(for: candidates).sorted()
         return SHA256.hash(data: Data(inputs.joined(separator: "\n").utf8)).map { String(format: "%02x", $0) }.joined()
     }
 

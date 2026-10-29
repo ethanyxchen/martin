@@ -123,17 +123,16 @@ public struct MeetingLibrary: Sendable {
             try delete(meeting)
         }
         try save(projects().filter { $0.id != project.id })
-        var lookups = try lookups()
+        var lookups = lookups()
         if lookups.removeValue(forKey: project.id) != nil { try save(lookups) }
     }
 
-    public func lookups() throws -> [Project.ID: RepositoryLookup] {
-        guard FileManager.default.fileExists(atPath: lookupsFile.path) else { return [:] }
-        return try Self.decoder.decode([Project.ID: RepositoryLookup].self, from: Data(contentsOf: lookupsFile))
+    public func lookups() -> [Project.ID: RepositoryLookup] {
+        (try? Self.decoder.decode([Project.ID: RepositoryLookup].self, from: Data(contentsOf: lookupsFile))) ?? [:]
     }
 
     public func save(_ lookup: RepositoryLookup, for project: Project.ID) throws {
-        var lookups = try lookups()
+        var lookups = lookups()
         lookups[project] = lookup
         try save(lookups)
     }
