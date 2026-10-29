@@ -29,6 +29,7 @@ private final class Run: @unchecked Sendable {
     private var status: Int32?
     private var drained = false
     private var exited = false
+    private var timedOut = false
     private var finished = false
     private var reader: DispatchIO?
     private var writer: DispatchIO?
@@ -121,7 +122,7 @@ private final class Run: @unchecked Sendable {
     private func noticeExit() {
         guard !exited else { return }
         var info = siginfo_t()
-        let result = waitid(P_PID, id_t(group), &info, WEXITED | WNOHANG | WNOWAIT)
+        let result = retrying { waitid(P_PID, id_t(group), &info, WEXITED | WNOHANG | WNOWAIT) }
         if result == -1, errno == ECHILD {
             status = -1
             return finish(nil)
@@ -129,31 +130,36 @@ private final class Run: @unchecked Sendable {
         guard result == 0, info.si_pid == group else { return }
         exited = true
         exit?.cancel()
-        guard !drained else {
-            reap()
-            return settle()
-        }
-        queue.asyncAfter(deadline: .now() + Command.grace) { [self] in
-            guard !finished else { return }
-            killpg(group, SIGKILL)
-            drained = true
-            reap()
-            settle()
-        }
+        if drained { reap() }
+        settle()
     }
 
     private func reap() {
         guard status == nil else { return }
         var status: Int32 = 0
-        self.status = waitpid(group, &status, 0) == group ? status : -1
+        self.status = retrying { waitpid(group, &status, 0) } == group ? status : -1
+    }
+
+    private func retrying(_ call: () -> Int32) -> Int32 {
+        var result: Int32
+        repeat { result = call() } while result == -1 && errno == EINTR
+        return result
     }
 
     private func startDeadline() {
         let deadline = DispatchSource.makeTimerSource(queue: queue)
         deadline.schedule(deadline: .now() + timeout)
         deadline.setEventHandler { [self] in
+            noticeExit()
+            guard !finished else { return }
+            timedOut = !exited
             killpg(group, SIGKILL)
-            queue.asyncAfter(deadline: .now() + Command.grace) { self.finish(nil) }
+            queue.asyncAfter(deadline: .now() + Command.grace) { [self] in
+                guard exited else { return finish(nil) }
+                drained = true
+                reap()
+                settle()
+            }
         }
         deadline.resume()
         self.deadline = deadline
@@ -161,7 +167,7 @@ private final class Run: @unchecked Sendable {
 
     private func settle() {
         guard let status, drained else { return }
-        let succeeded = status & 0x7f == 0 && (status >> 8) & 0xff == 0
+        let succeeded = !timedOut && status & 0x7f == 0 && (status >> 8) & 0xff == 0
         finish(succeeded ? String(decoding: output, as: UTF8.self) : nil)
     }
 

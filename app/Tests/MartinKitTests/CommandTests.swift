@@ -36,9 +36,13 @@ struct CommandTests {
         #expect(await Command.run("martin-no-such-tool", [], timeout: 5) == nil)
     }
 
-    @Test func aToolThatSucceededIsNotHeldUpByAHelperThatLeftItsProcessGroup() async {
+    @Test func aToolThatSucceededKeepsItsAnswerWhenAHelperThatLeftItsProcessGroupHoldsTheOutput() async {
         let start = ContinuousClock.now
-        #expect(await Command.run("sh", ["-c", "perl -MPOSIX -e 'POSIX::setsid(); sleep 5' & echo ok"], timeout: 30) == "ok\n")
+        #expect(await Command.run("sh", ["-c", "perl -MPOSIX -e 'POSIX::setsid(); sleep 5' & echo ok"], timeout: 1) == "ok\n")
         #expect(ContinuousClock.now - start < .seconds(4))
+    }
+
+    @Test func aHelperThatWritesAfterTheToolExitsIsWaitedFor() async {
+        #expect(await Command.run("sh", ["-c", "(sleep 1.5; echo late) & echo early"], timeout: 10) == "early\nlate\n")
     }
 }
