@@ -84,6 +84,7 @@ final class AppState {
     private(set) var clones: [Repository] = []
     private(set) var suggestions: [Project.ID: RepositorySuggestion] = [:]
     @ObservationIgnored private var scouting: Task<[Repository], Never>?
+    @ObservationIgnored private var lookupRound = 0
     var page: HomePage {
         didSet { defaults.set(page.rawValue, forKey: Self.pageKey) }
     }
@@ -94,6 +95,7 @@ final class AppState {
         didSet {
             defaults.set(assistant?.rawValue, forKey: Self.assistantKey)
             suggestions = [:]
+            lookupRound += 1
         }
     }
     var selectedShelf: Shelf.ID?
@@ -318,20 +320,21 @@ final class AppState {
     func suggestRepository(for project: Project) async {
         guard let assistant, project.repository?.folder == nil, suggestions[project.id] == nil else { return }
         suggestions[project.id] = .thinking
+        let round = lookupRound
         if scouting == nil { await scoutRepositories() }
         let candidates = await scouting?.value ?? []
         let notes = notes(in: project).prefix(Agent.noteLimit).map { "# \($0.displayTitle)\n\(library.note(of: $0) ?? "")" }
         let fingerprint = await Task.detached { Agent.fingerprint(for: project, notes: notes, among: candidates, using: assistant) }.value
-        let saved = library.lookups()[project.id]
+        let saved = (try? library.lookups())?[project.id]
         var matches = saved?.fingerprint == fingerprint ? saved?.matches : nil
         if matches == nil {
             matches = await finder.match(project, notes, candidates, assistant)
-            guard self.assistant == assistant, allProjects.contains(where: { $0.id == project.id }) else { return }
+            guard round == lookupRound, allProjects.contains(where: { $0.id == project.id }) else { return }
             if let matches { try? library.save(RepositoryLookup(fingerprint: fingerprint, matches: matches), for: project.id) }
         }
         let found = matches ?? []
         let repository = await Task.detached { Agent.pick(for: project, matches: found, among: candidates) }.value
-        guard self.assistant == assistant else { return }
+        guard round == lookupRound else { return }
         suggestions[project.id] = .found(repository)
         if let repository, let waiting = allProjects.first(where: { $0.id == project.id && $0.repository == .unset }) {
             link(waiting, to: .folder(repository.folder))
@@ -373,6 +376,7 @@ final class AppState {
 
     func delete(_ project: Project) {
         notes(in: project).forEach { windows[$0.id]?.close() }
+        suggestions[project.id] = nil
         try? library.delete(project)
         reload()
     }

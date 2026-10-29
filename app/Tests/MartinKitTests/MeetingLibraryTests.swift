@@ -251,20 +251,20 @@ struct ArchivedProjectNoteTests {
 
     @Test func aProjectsLookupIsSavedUntilTheProjectIsDeleted() throws {
         let kept = try library.createProject(named: "Martin"), deleted = try library.createProject(named: "Goodmeet")
-        #expect(library.lookups().isEmpty)
+        #expect(try library.lookups().isEmpty)
         let lookup = RepositoryLookup(fingerprint: "abc", matches: ["ethanyxchen/martin"])
         try library.save(lookup, for: kept.id)
         try library.save(RepositoryLookup(fingerprint: "def", matches: []), for: deleted.id)
         try library.delete(deleted)
-        #expect(library.lookups() == [kept.id: lookup])
+        #expect(try library.lookups() == [kept.id: lookup])
     }
 
     @Test func aDamagedLookupFileCountsAsNoLookupsAndDoesNotStopADeletion() throws {
         let project = try library.createProject(named: "Martin")
         try "{ truncated".write(to: library.root.appending(path: "lookups.json"), atomically: true, encoding: .utf8)
-        #expect(library.lookups().isEmpty)
+        #expect(try library.lookups().isEmpty)
         try library.delete(project)
         try library.save(RepositoryLookup(fingerprint: "abc", matches: []), for: "other")
-        #expect(library.lookups().keys.sorted() == ["other"])
+        #expect(try library.lookups().keys.sorted() == ["other"])
     }
 }

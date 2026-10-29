@@ -297,7 +297,7 @@ final class AppStateTests {
         await app.suggestRepositories()
         await AppState(library: library, defaults: defaults, finder: finding(martin, asked: asked)).suggestRepositories()
         #expect(await asked.times == 2)
-        #expect(library.lookups().values.map(\.matches) == [["ethanyxchen/martin"]])
+        #expect(try library.lookups().values.map(\.matches) == [["ethanyxchen/martin"]])
     }
 
     @Test func aSecretProjectIsNotLookedUpInTheBackground() async throws {
@@ -309,6 +309,31 @@ final class AppStateTests {
         await app.suggestRepositories()
         #expect(await asked.times == 0)
     }
+
+    @Test(arguments: [true, false])
+    func aLookupAbandonedWhileTheAssistantWorksIsNotSaved(deleting: Bool) async throws {
+        let martin = try clone("martin")
+        let current = Current()
+        let finder = RepositoryFinder(nearby: { _ in [martin] }, match: { project, _, _, _ in
+            await MainActor.run {
+                guard let app = current.app else { return }
+                if deleting { app.delete(project) } else { app.assistant = .codex }
+            }
+            return [martin.slug.lowercased()]
+        })
+        let app = AppState(library: library, defaults: defaults, finder: finder)
+        current.app = app
+        app.file(try library.create(), inNewProjectNamed: "Notepad")
+        app.assistant = .claude
+        await app.suggestRepository(for: try #require(app.projects.first ?? app.allProjects.first))
+        #expect(try library.lookups().isEmpty)
+        #expect(app.suggestions.isEmpty)
+    }
+}
+
+@MainActor
+final class Current: @unchecked Sendable {
+    var app: AppState?
 }
 
 actor Asked {
