@@ -4,14 +4,16 @@ public enum Agent {
     public static let noteLimit = 5
     static let excerpt = 600
     static let summaryLimit = 600
+    static let matchLimit = 3
 
     static let instructions = """
-        Pick the GitHub repository that holds this project's code, judging by the project's name and notes and each repository's README. \
-        First quote the evidence that ties the project to a repository, then answer with that repository's slug exactly as listed, or null unless the evidence clearly matches one.
+        List the GitHub repositories that hold this project's code: every one whose name or README names the project, or the product its notes discuss. \
+        A repository that is merely about a similar topic does not count. \
+        First quote the evidence, then list at most \(matchLimit) slugs exactly as written, or none when nothing names the project.
         """
 
     static let schema = """
-        {"type":"object","properties":{"evidence":{"type":"string"},"slug":{"type":["string","null"]}},"required":["evidence","slug"],"additionalProperties":false}
+        {"type":"object","properties":{"evidence":{"type":"string"},"slugs":{"type":"array","items":{"type":"string"}}},"required":["evidence","slugs"],"additionalProperties":false}
         """
 
     public static func pickRepository(for project: Project, notes: [String], among candidates: [Repository], using assistant: Assistant) async -> Repository? {
@@ -36,9 +38,9 @@ public enum Agent {
 
     static func pick(from answer: Data, among candidates: [Repository]) -> Repository? {
         struct Answer: Decodable {
-            let slug: String?
+            let slugs: [String]
         }
-        guard let slug = (try? JSONDecoder().decode(Answer.self, from: answer))?.slug else { return nil }
-        return candidates.first { $0.slug.caseInsensitiveCompare(slug) == .orderedSame }
+        guard let slugs = (try? JSONDecoder().decode(Answer.self, from: answer))?.slugs.map({ $0.lowercased() }), slugs.count <= matchLimit else { return nil }
+        return candidates.first { slugs.contains($0.slug.lowercased()) }
     }
 }

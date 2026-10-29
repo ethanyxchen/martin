@@ -72,12 +72,42 @@ final class RepositoryTests {
         #expect(Repository.clones(in: [root, root.appending(path: "absent")]).map(\.slug) == ["ethanyxchen/martin"])
     }
 
-    @Test func recentGitHubActivityRanksFirstAndEachRepositoryAppearsOnce() {
+    private func work(in gitDirectory: URL, at seconds: TimeInterval) throws {
+        let log = gitDirectory.appending(path: "logs/HEAD")
+        try FileManager.default.createDirectory(at: log.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "checkout\n".write(to: log, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSince1970: seconds)], ofItemAtPath: log.path(percentEncoded: false))
+    }
+
+    @Test func aCloneWasLastWorkedOnWhenItOrAnyOfItsWorktreesLastMoved() throws {
+        let folder = try clone("martin", origin: "git@github.com:ethanyxchen/martin.git")
+        #expect(Repository(at: folder)?.lastWorkedOn == nil)
+        try work(in: folder.appending(path: ".git"), at: 1_000)
+        #expect(Repository(at: folder)?.lastWorkedOn == Date(timeIntervalSince1970: 1_000))
+        try work(in: folder.appending(path: ".git/worktrees/feature"), at: 2_000)
+        try work(in: folder.appending(path: ".git/worktrees/fix"), at: 1_500)
+        #expect(Repository(at: folder)?.lastWorkedOn == Date(timeIntervalSince1970: 2_000))
+    }
+
+    @Test func theMostRecentlyWorkedOnRanksFirstAndEachRepositoryAppearsOnce() throws {
         let martin = repository("ethanyxchen/martin", in: "martin")
         let copy = repository("ethanyxchen/martin", in: "a-martin-copy")
+        try work(in: root.appending(path: "ma-rocket-tortoise/.git"), at: 3_000)
+        try work(in: root.appending(path: "ma-turbo-overload/.git"), at: 1_000)
+        let tortoise = repository("Goodnotes-CN/ma-rocket-tortoise", in: "ma-rocket-tortoise")
         let overload = repository("GoodnotesGlobal/ma-turbo-overload", in: "ma-turbo-overload")
         let atlas = repository("acme/atlas", in: "atlas")
-        let activity = ["GoodnotesGlobal/ma-turbo-overload", "ethanyxchen/Martin", "ethanyxchen/martin"]
-        #expect([atlas, copy, martin, overload].ranked(by: activity) == [overload, martin, atlas])
+        let activity = ["goodnotesglobal/ma-turbo-overload": Date(timeIntervalSince1970: 4_000), "ethanyxchen/martin": Date(timeIntervalSince1970: 2_000)]
+        let ranked = [atlas, copy, martin, tortoise, overload].ranked(by: activity)
+        #expect(ranked.map(\.folder.lastPathComponent) == ["ma-turbo-overload", "ma-rocket-tortoise", "martin", "atlas"])
+        #expect(ranked.map(\.lastWorkedOn) == [4_000, 3_000, 2_000].map(Date.init(timeIntervalSince1970:)) + [nil])
+    }
+
+    @Test func gitHubActivityIsTheLatestEventOnEachRepository() {
+        let events = ["GoodnotesGlobal/ma-turbo-overload 2026-10-29T09:00:00Z", "ethanyxchen/martin 2026-10-28T10:00:00Z", "GoodnotesGlobal/MA-turbo-overload 2026-10-01T09:00:00Z", "garbled"]
+        #expect(GitHub.activity(in: events) == [
+            "goodnotesglobal/ma-turbo-overload": Date(timeIntervalSince1970: 1_793_264_400),
+            "ethanyxchen/martin": Date(timeIntervalSince1970: 1_793_181_600),
+        ])
     }
 }

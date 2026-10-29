@@ -5,8 +5,8 @@ import Testing
 struct AgentTests {
     let clones = RepositoryTests()
 
-    private func answer(_ slug: String?) -> Data {
-        Data(#"{"slug":\#(slug.map { "\"\($0)\"" } ?? "null")}"#.utf8)
+    private func answer(_ slugs: String...) -> Data {
+        Data(#"{"evidence":"","slugs":[\#(slugs.map { "\"\($0)\"" }.joined(separator: ","))]}"#.utf8)
     }
 
     @Test func thePromptListsTheNotesThenOneLinePerRepositoryInRankedOrder() throws {
@@ -42,16 +42,18 @@ struct AgentTests {
         #expect(prompt.hasSuffix(": " + String(repeating: "b", count: Agent.summaryLimit)))
     }
 
-    @Test func thePickIsTheCandidateTheAgentNamed() {
+    @Test func ofTheRepositoriesTheAgentNamesThePickIsTheFirstCandidateWhichIsTheMostRecentlyWorkedOn() {
         let overload = clones.repository("GoodnotesGlobal/ma-turbo-overload", in: "ma-turbo-overload")
+        let platform = clones.repository("GoodnotesGlobal/data-platform", in: "data-platform")
         let martin = clones.repository("ethanyxchen/martin", in: "martin")
-        #expect(Agent.pick(from: answer("goodnotesglobal/MA-turbo-overload"), among: [martin, overload]) == overload)
+        #expect(Agent.pick(from: answer("GoodnotesGlobal/data-platform", "goodnotesglobal/MA-turbo-overload"), among: [martin, overload, platform]) == overload)
     }
 
-    @Test func thereIsNoPickWhenTheAgentDeclinesOrNamesAStranger() {
+    @Test func thereIsNoPickWhenTheAgentNamesNoneOnlyStrangersOrTooManyToBelieve() {
         let martin = clones.repository("ethanyxchen/martin", in: "martin")
-        #expect(Agent.pick(from: answer(nil), among: [martin]) == nil)
+        #expect(Agent.pick(from: answer(), among: [martin]) == nil)
         #expect(Agent.pick(from: answer("acme/atlas"), among: [martin]) == nil)
+        #expect(Agent.pick(from: answer("ethanyxchen/martin", "a/b", "c/d", "e/f"), among: [martin]) == nil)
         #expect(Agent.pick(from: Data("Not logged in".utf8), among: [martin]) == nil)
     }
 }

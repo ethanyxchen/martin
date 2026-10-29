@@ -6,15 +6,18 @@ public struct Repository: Hashable, Sendable {
 
     public let folder: URL
     public let slug: String
+    public internal(set) var lastWorkedOn: Date?
     private let gitDirectory: URL
 
     public init?(at folder: URL) {
-        guard let gitDirectory = Self.gitDirectory(of: folder),
-              let config = try? String(contentsOf: Self.commonDirectory(of: gitDirectory).appending(path: "config"), encoding: .utf8),
+        guard let gitDirectory = Self.gitDirectory(of: folder) else { return nil }
+        let common = Self.commonDirectory(of: gitDirectory)
+        guard let config = try? String(contentsOf: common.appending(path: "config"), encoding: .utf8),
               let slug = Self.slug(inConfig: config) else { return nil }
         self.folder = folder
         self.slug = slug
         self.gitDirectory = gitDirectory
+        lastWorkedOn = Self.lastWorkedOn(in: common)
     }
 
     public var name: String { String(slug.split(separator: "/").last ?? "") }
@@ -45,8 +48,15 @@ public struct Repository: Hashable, Sendable {
     }
 
     public static func nearby(_ folders: [URL]) async -> [Repository] {
-        async let activity = GitHub.recentRepositories()
+        async let activity = GitHub.recentActivity()
         return clones(in: roots + folders).ranked(by: await activity)
+    }
+
+    private static func lastWorkedOn(in common: URL) -> Date? {
+        let worktrees = (try? FileManager.default.contentsOfDirectory(at: common.appending(path: "worktrees"), includingPropertiesForKeys: nil)) ?? []
+        return ([common] + worktrees)
+            .compactMap { try? $0.appending(path: "logs/HEAD").resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate }
+            .max()
     }
 
     static func slug(of remote: String) -> String? {
@@ -84,21 +94,34 @@ public struct Repository: Hashable, Sendable {
 }
 
 public extension [Repository] {
-    func ranked(by activity: [String]) -> [Repository] {
-        let recency = Dictionary(activity.enumerated().map { ($1.lowercased(), $0) }) { first, _ in first }
+    func ranked(by activity: [String: Date]) -> [Repository] {
         var seen: Set<String> = []
         let order = { (repository: Repository) in
-            (recency[repository.slug.lowercased()] ?? .max, repository.folder.lastPathComponent == repository.name ? 0 : 1, repository.folder.path)
+            (-(repository.lastWorkedOn ?? .distantPast).timeIntervalSinceReferenceDate, repository.folder.lastPathComponent == repository.name ? 0 : 1, repository.folder.path)
         }
-        return sorted { order($0) < order($1) }
-            .filter { seen.insert($0.slug.lowercased()).inserted }
+        return map { repository in
+            var worked = repository
+            worked.lastWorkedOn = [repository.lastWorkedOn, activity[repository.slug.lowercased()]].compactMap(\.self).max()
+            return worked
+        }
+        .sorted { order($0) < order($1) }
+        .filter { seen.insert($0.slug.lowercased()).inserted }
     }
 }
 
 enum GitHub {
-    static func recentRepositories() async -> [String] {
-        guard let login = await gh(["api", "user", "--jq", ".login"]).first else { return [] }
-        return await gh(["api", "--paginate", "users/\(login)/events?per_page=100", "--jq", ".[].repo.name"])
+    static func recentActivity() async -> [String: Date] {
+        guard let login = await gh(["api", "user", "--jq", ".login"]).first else { return [:] }
+        let events = await gh(["api", "--paginate", "users/\(login)/events?per_page=100", "--jq", ".[] | \"\\(.repo.name) \\(.created_at)\""])
+        return activity(in: events)
+    }
+
+    static func activity(in events: [String]) -> [String: Date] {
+        Dictionary(events.compactMap { event in
+            let fields = event.split(separator: " ")
+            guard fields.count == 2, let date = try? Date(String(fields[1]), strategy: .iso8601) else { return nil }
+            return (fields[0].lowercased(), date)
+        }, uniquingKeysWith: max)
     }
 
     private static func gh(_ arguments: [String]) async -> [String] {
