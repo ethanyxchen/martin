@@ -4,6 +4,7 @@ import SwiftUI
 
 struct MarkdownEditor: NSViewRepresentable {
     @Binding var text: String
+    let images: NoteImages?
     let attendees: [Person]
     let acquaintances: [Person]
 
@@ -16,6 +17,7 @@ struct MarkdownEditor: NSViewRepresentable {
         textView.delegate = context.coordinator
         textView.attendees = attendees
         textView.acquaintances = acquaintances
+        textView.images = images
         textView.load(text)
         NotificationCenter.default.addObserver(context.coordinator, selector: #selector(Coordinator.storageChanged(_:)), name: NSTextStorage.didProcessEditingNotification, object: textView.textStorage)
         return textView
@@ -25,6 +27,7 @@ struct MarkdownEditor: NSViewRepresentable {
         context.coordinator.text = $text
         textView.attendees = attendees
         textView.acquaintances = acquaintances
+        textView.images = images
         if textView.textStorage?.mutableString.isEqual(to: text) == false { textView.load(text) }
     }
 
@@ -48,12 +51,12 @@ struct MarkdownEditor: NSViewRepresentable {
         func textView(_ textView: NSTextView, willChangeSelectionFromCharacterRanges old: [NSValue], toCharacterRanges new: [NSValue]) -> [NSValue] {
             guard let textView = textView as? NoteTextView else { return new }
             let from = old.first?.rangeValue.location ?? 0
-            return new.map { NSValue(range: textView.skippingMentions($0.rangeValue, from: from)) }
+            return new.map { NSValue(range: textView.skippingImages(textView.skippingMentions($0.rangeValue, from: from))) }
         }
 
         func textView(_ textView: NSTextView, doCommandBy selector: Selector) -> Bool {
             guard let textView = textView as? NoteTextView else { return false }
-            if textView.pickMention(for: selector) { return true }
+            if textView.pickMention(for: selector) || textView.moveOffImage(for: selector) { return true }
             return switch selector {
             case #selector(NSResponder.insertNewline(_:)): textView.continueList()
             case #selector(NSResponder.insertTab(_:)): textView.indentList(outward: false)
@@ -81,12 +84,24 @@ final class NoteTextView: NSTextView {
         Format(title: "Checklist", key: "l", shift: true, action: #selector(toggleChecklist(_:))),
     ]
 
-    private let style = MarkdownStyle()
+    let style = MarkdownStyle()
     var attendees: [Person] = []
     var acquaintances: [Person] = []
     private lazy var picker = Dropdown { [weak self] in self?.insertMention($0) }
     private var suggested: [Person] = []
     private var dismissedMention: Int?
+    var images: NoteImages? {
+        didSet {
+            guard images != oldValue else { return }
+            style.images = images
+            refreshImages()
+        }
+    }
+    var imageDrag: ImageDrag?
+    private lazy var defaultSelection = selectedTextAttributes
+    lazy var imageBar = ImageBar(owner: self)
+    lazy var dropGuide = DropGuide()
+    lazy var sizeBadge = SizeBadge()
 
     static func make() -> NoteTextView {
         let view = NoteTextView(usingTextLayoutManager: true)
@@ -110,6 +125,7 @@ final class NoteTextView: NSTextView {
         view.textContainer?.lineFragmentPadding = 0
         view.textContainerInset = NSSize(width: Theme.margin, height: 2)
         view.isContinuousSpellCheckingEnabled = true
+        view.registerForDraggedTypes([.fileURL, .png, .tiff])
         NotificationCenter.default.addObserver(view, selector: #selector(selectionChanged), name: NSTextView.didChangeSelectionNotification, object: view)
         view.insertionPointColor = Theme.ink.ns
         view.typingAttributes = MarkdownStyle.typing
@@ -137,6 +153,7 @@ final class NoteTextView: NSTextView {
     override func didChangeText() {
         super.didChangeText()
         invalidateIntrinsicContentSize()
+        layoutImageBar()
     }
 
     override func setFrameSize(_ size: NSSize) {
@@ -144,7 +161,10 @@ final class NoteTextView: NSTextView {
         super.setFrameSize(size)
         let inset = Theme.margin + max(0, (size.width - Theme.page) / 2)
         if textContainerInset.width != inset { textContainerInset.width = inset }
-        if resized { invalidateIntrinsicContentSize() }
+        if resized {
+            refreshImages()
+            invalidateIntrinsicContentSize()
+        }
     }
 
     override func becomeFirstResponder() -> Bool {
@@ -170,7 +190,9 @@ final class NoteTextView: NSTextView {
 
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
-        if event.modifierFlags.contains(.command) || !isEditable, let url = character(under: point).flatMap(link(at:)) {
+        if isEditable, beginResizing(at: point) || selectImage(under: point) {
+            return
+        } else if event.modifierFlags.contains(.command) || !isEditable, let url = character(under: point).flatMap(link(at:)) {
             NSWorkspace.shared.open(url)
         } else if isEditable, let mark = checkbox(under: point) {
             let tick = (string as NSString).substring(with: mark) == " " ? "x" : " "
@@ -180,13 +202,24 @@ final class NoteTextView: NSTextView {
         }
     }
 
+    override func mouseDragged(with event: NSEvent) {
+        guard imageDrag != nil else { return super.mouseDragged(with: event) }
+        continueResizing(to: convert(event.locationInWindow, from: nil), precisely: event.modifierFlags.contains(.option))
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        guard imageDrag != nil else { return super.mouseUp(with: event) }
+        finishResizing()
+    }
+
     override func mouseMoved(with event: NSEvent) {
         guard let cursor = cursor(at: convert(event.locationInWindow, from: nil)) else { return super.mouseMoved(with: event) }
         cursor.set()
     }
 
     func cursor(at point: NSPoint) -> NSCursor? {
-        isEditable && checkbox(under: point) != nil ? .pointingHand : nil
+        if let cursor = imageCursor(at: point) { return cursor }
+        return isEditable && checkbox(under: point) != nil ? .pointingHand : nil
     }
 
     override func menu(for event: NSEvent) -> NSMenu? {
@@ -224,6 +257,7 @@ final class NoteTextView: NSTextView {
     }
 
     override func deleteBackward(_ sender: Any?) {
+        if removeSelectedImage() { return }
         let caret = selectedRange()
         guard caret.length == 0, !hasMarkedText() else { return super.deleteBackward(sender) }
         if let mention = mentions(near: caret.location).first(where: { NSMaxRange($0) == caret.location }) { return delete(mention) }
@@ -233,6 +267,7 @@ final class NoteTextView: NSTextView {
     }
 
     override func deleteForward(_ sender: Any?) {
+        if removeSelectedImage() { return }
         let caret = selectedRange()
         guard caret.length == 0, let mention = mentions(near: caret.location).first(where: { $0.location == caret.location }) else { return super.deleteForward(sender) }
         delete(mention)
@@ -344,7 +379,7 @@ final class NoteTextView: NSTextView {
         apply(Markdown.Edit(range: range, replacement: "", selection: NSRange(location: range.location, length: 0)))
     }
 
-    private func line(at index: Int) -> (range: NSRange, line: Markdown.Line)? {
+    func line(at index: Int) -> (range: NSRange, line: Markdown.Line)? {
         let text = string as NSString
         return text.length == 0 ? nil : style.line(at: min(index, text.length - 1), in: text)
     }
@@ -396,11 +431,18 @@ final class NoteTextView: NSTextView {
     @objc private func selectionChanged() {
         reveal(window?.firstResponder === self ? selectedRange() : nil)
         showMentions()
+        layoutImageBar()
+        selectedTextAttributes = selectedImage == nil ? defaultSelection : [.backgroundColor: NSColor.clear]
     }
 
     private func reveal(_ selection: NSRange?) {
+        guard let textStorage else { return }
+        refresh(style.select(selection, in: textStorage.string as NSString))
+    }
+
+    func refresh(_ ranges: some Sequence<NSRange>) {
         guard let textStorage, let textLayoutManager, let content = textContentStorage else { return }
-        for range in style.select(selection, in: textStorage.string as NSString) {
+        for range in ranges {
             textStorage.edited(.editedAttributes, range: range, changeInLength: 0)
             guard let start = content.location(content.documentRange.location, offsetBy: range.location),
                   let end = content.location(start, offsetBy: range.length) else { continue }
@@ -409,7 +451,7 @@ final class NoteTextView: NSTextView {
         invalidateIntrinsicContentSize()
     }
 
-    private func apply(_ edit: Markdown.Edit) {
+    func apply(_ edit: Markdown.Edit) {
         guard shouldChangeText(in: edit.range, replacementString: edit.replacement) else { return }
         textStorage?.replaceCharacters(in: edit.range, with: NSAttributedString(string: edit.replacement, attributes: MarkdownStyle.typing))
         setSelectedRange(edit.selection)
