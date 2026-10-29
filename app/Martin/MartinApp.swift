@@ -75,6 +75,7 @@ final class AppState {
     private(set) var meetings: [Meeting] = []
     private(set) var allProjects: [Project] = []
     private(set) var previews: [Meeting.ID: String] = [:]
+    private(set) var clones: [Repository] = []
     var page: HomePage {
         didSet { defaults.set(page.rawValue, forKey: Self.pageKey) }
     }
@@ -248,6 +249,31 @@ final class AppState {
         reload()
     }
 
+    func link(_ project: Project, to folder: URL?) {
+        guard var linked = allProjects.first(where: { $0.id == project.id }), linked.repository != folder else { return }
+        linked.repository = folder
+        try? library.save(linked)
+        reload()
+    }
+
+    func chooseRepository(for project: Project) {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.prompt = "Link"
+        panel.message = "Choose the folder where you cloned \(project.name)’s GitHub repository."
+        panel.directoryURL = project.repository ?? Repository.roots.first
+        guard panel.runModal() == .OK, let folder = panel.url else { return }
+        guard Repository(at: folder) != nil else {
+            return inform("“\(folder.lastPathComponent)” isn’t a GitHub repository", "Choose the top folder of a clone whose origin remote is on GitHub.")
+        }
+        link(project, to: folder)
+    }
+
+    func scoutRepositories() async {
+        clones = await Repository.nearby(allProjects.compactMap { $0.repository?.deletingLastPathComponent() })
+    }
+
     func archive(_ project: Project) {
         notes(in: project).forEach { windows[$0.id]?.close() }
         try? library.archive(project)
@@ -370,10 +396,14 @@ final class AppState {
     }
 
     private func explain(_ error: Error) {
+        inform("Martin can't start the note", error.localizedDescription)
+    }
+
+    private func inform(_ message: String, _ detail: String) {
         NSApp.activate()
         let alert = NSAlert()
-        alert.messageText = "Martin can't start the note"
-        alert.informativeText = error.localizedDescription
+        alert.messageText = message
+        alert.informativeText = detail
         alert.runModal()
     }
 }

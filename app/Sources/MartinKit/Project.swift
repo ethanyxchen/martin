@@ -5,11 +5,13 @@ public struct Project: Identifiable, Hashable, Codable, Sendable {
     public var name: String
     public var series: [String]
     public var archivedAt: Date?
+    public var repository: URL?
 
-    public init(id: String = UUID().uuidString, name: String, series: [String] = []) {
+    public init(id: String = UUID().uuidString, name: String, series: [String] = [], repository: URL? = nil) {
         self.id = id
         self.name = name
         self.series = series
+        self.repository = repository
     }
 }
 

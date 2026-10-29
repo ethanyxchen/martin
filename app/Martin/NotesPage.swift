@@ -76,6 +76,7 @@ struct ProjectsView: View {
         }
         .onExitCommand { select(nil, animated: false) }
         .onDisappear { select(nil) }
+        .task { await app.scoutRepositories() }
     }
 
     private func select(_ id: Shelf.ID?, animated: Bool = true) {
@@ -144,7 +145,7 @@ private struct NoteRow: View {
     }
 }
 
-private struct RowAction: ButtonStyle {
+struct RowAction: ButtonStyle {
     static let size: CGFloat = 26
     static let glyph: CGFloat = 14
 
@@ -321,6 +322,7 @@ private struct ShelfView: View {
             }
             .flush()
         } content: {
+            if let project = shelf.project { RepositoryCard(app: app, project: project) }
             NoteList(app: app, meetings: shelf.meetings, now: now) { app.previews[$0.id] }
         }
     }

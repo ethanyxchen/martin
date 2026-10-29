@@ -161,4 +161,24 @@ final class AppStateTests {
         #expect(app.allProjects.isEmpty)
         #expect(app.meetings.map(\.id) == [kept.id])
     }
+
+    @Test func aLinkedRepositoryIsRememberedUntilUnlinked() throws {
+        let app = AppState(library: library, defaults: defaults)
+        app.file(try library.create(), inNewProjectNamed: "Martin")
+        let folder = URL(filePath: "/Users/ada/Developer/martin", directoryHint: .isDirectory)
+        app.link(try #require(app.projects.first), to: folder)
+        #expect(AppState(library: library, defaults: defaults).projects.map(\.repository) == [folder])
+        app.link(try #require(app.projects.first), to: nil)
+        #expect(AppState(library: library, defaults: defaults).projects.map(\.repository) == [nil])
+    }
+
+    @Test func linkingAProjectArchivedSinceKeepsItArchived() throws {
+        let app = AppState(library: library, defaults: defaults)
+        app.file(try library.create(), inNewProjectNamed: "Martin")
+        let martin = try #require(app.projects.first)
+        app.archive(martin)
+        app.link(martin, to: URL(filePath: "/Users/ada/Developer/martin", directoryHint: .isDirectory))
+        #expect(app.projects.isEmpty)
+        #expect(app.archivedProjects.map(\.repository?.lastPathComponent) == ["martin"])
+    }
 }
