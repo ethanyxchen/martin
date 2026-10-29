@@ -6,13 +6,16 @@ struct Page<Header: View, Content: View>: View {
     @ViewBuilder let content: Content
     @State private var viewport: CGFloat = 0
     @State private var toolbar: CGFloat = 0
-    @State private var collapsed = false
+    @State private var headerEdge: CGFloat = .infinity
+    @State private var titleEdge: CGFloat?
+    private var collapsed: Bool { (titleEdge ?? headerEdge) <= toolbar }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 header
-                    .onGeometryChange(for: Bool.self) { [toolbar] in $0.frame(in: .scrollView).maxY <= toolbar } action: { collapsed = $0 }
+                    .onGeometryChange(for: CGFloat.self) { $0.frame(in: .scrollView).maxY } action: { headerEdge = $0 }
+                    .onPreferenceChange(TitleEdge.self) { titleEdge = $0 }
                     .padding(.top, 18)
                     .padding(.bottom, 22)
                     .movesWindow()
@@ -20,6 +23,7 @@ struct Page<Header: View, Content: View>: View {
             }
             .frame(minHeight: viewport, alignment: .top)
         }
+        .coordinateSpace(name: "pageScroll")
         .scrollEdgeEffectStyle(.soft, for: .top)
         .onScrollGeometryChange(for: CGFloat.self) { $0.containerSize.height - $0.contentInsets.top - $0.contentInsets.bottom } action: { viewport = $1 }
         .onScrollGeometryChange(for: CGFloat.self) { $0.contentInsets.top } action: { toolbar = $1 }
@@ -38,6 +42,20 @@ struct Page<Header: View, Content: View>: View {
                 .sharedBackgroundVisibility(.hidden)
             }
         }
+    }
+}
+
+private struct TitleEdge: PreferenceKey {
+    static let defaultValue: CGFloat? = nil
+    static func reduce(value: inout CGFloat?, nextValue: () -> CGFloat?) { value = nextValue() ?? value }
+}
+
+extension View {
+    /// Marks the view whose bottom edge decides when a page's title moves into the window bar.
+    func pageTitle() -> some View {
+        overlay(GeometryReader { proxy in
+            Color.clear.preference(key: TitleEdge.self, value: proxy.frame(in: .named("pageScroll")).maxY)
+        })
     }
 }
 
