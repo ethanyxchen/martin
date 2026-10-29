@@ -18,4 +18,21 @@ struct CommandTests {
         #expect(await Command.run("sh", ["-c", "cat; echo done"], input: "notes\n", timeout: 10) == "notes\ndone\n")
         #expect(await Command.run("sh", ["-c", "echo nope; exit 1"], timeout: 10) == nil)
     }
+
+    @Test func theHelpersAToolStartedAreStoppedWithItAtTheTimeout() async throws {
+        let mark = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        #expect(await Command.run("sh", ["-c", "sh -c 'sleep 2; touch \(mark.path(percentEncoded: false))' & wait"], timeout: 0.5) == nil)
+        try await Task.sleep(for: .seconds(3))
+        #expect(!FileManager.default.fileExists(atPath: mark.path(percentEncoded: false)))
+    }
+
+    @Test func aToolThatSucceededIsJudgedByItsExitEvenWhenAHelperOutlivesTheDeadline() async {
+        let start = ContinuousClock.now
+        #expect(await Command.run("sh", ["-c", "sleep 30 & echo ok"], timeout: 0.5) == "ok\n")
+        #expect(ContinuousClock.now - start < .seconds(5))
+    }
+
+    @Test func aToolThatCannotBeFoundFails() async {
+        #expect(await Command.run("martin-no-such-tool", [], timeout: 5) == nil)
+    }
 }

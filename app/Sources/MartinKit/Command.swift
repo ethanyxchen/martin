@@ -1,59 +1,160 @@
+import Darwin
 import Foundation
 
 enum Command {
+    static let grace: TimeInterval = 1
+
     static func run(_ tool: String, _ arguments: [String], input: String? = nil, timeout: TimeInterval) async -> String? {
         await withCheckedContinuation { continuation in
-            DispatchQueue.global().async {
-                let finish = Once { continuation.resume(returning: $0) }
-                let process = Process()
-                let output = Pipe()
-                process.executableURL = URL(filePath: "/usr/bin/env")
-                process.arguments = [tool] + arguments
-                var environment = ProcessInfo.processInfo.environment
-                environment["PATH"] = [environment["PATH"], "/opt/homebrew/bin", "/usr/local/bin", URL.homeDirectory.appending(path: ".local/bin").path(percentEncoded: false)]
-                    .compactMap(\.self).joined(separator: ":")
-                process.environment = environment
-                process.standardOutput = output
-                process.standardError = FileHandle.nullDevice
-                let stdin = input.map { _ in Pipe() }
-                process.standardInput = stdin ?? FileHandle.nullDevice
-                guard (try? process.run()) != nil else {
-                    finish(nil)
-                    return
-                }
-                DispatchQueue.global().asyncAfter(deadline: .now() + timeout) {
-                    if finish(nil), process.isRunning { kill(process.processIdentifier, SIGKILL) }
-                }
-                if let stdin, let input {
-                    DispatchQueue.global().async {
-                        _ = fcntl(stdin.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1)
-                        try? stdin.fileHandleForWriting.write(contentsOf: Data(input.utf8))
-                        try? stdin.fileHandleForWriting.close()
-                    }
-                }
-                let data = output.fileHandleForReading.readDataToEndOfFile()
-                process.waitUntilExit()
-                finish(process.terminationReason == .exit && process.terminationStatus == 0 ? String(decoding: data, as: UTF8.self) : nil)
-            }
+            Run(arguments: ["/usr/bin/env", tool] + arguments, input: input, timeout: timeout) { continuation.resume(returning: $0) }.start()
         }
+    }
+
+    fileprivate static var environment: [String] {
+        var environment = ProcessInfo.processInfo.environment
+        environment["PATH"] = [environment["PATH"], "/opt/homebrew/bin", "/usr/local/bin", URL.homeDirectory.appending(path: ".local/bin").path(percentEncoded: false)]
+            .compactMap(\.self).joined(separator: ":")
+        return environment.map { "\($0.key)=\($0.value)" }
     }
 }
 
-private final class Once: @unchecked Sendable {
-    private let lock = NSLock()
-    private var body: ((String?) -> Void)?
+private final class Run: @unchecked Sendable {
+    private let queue = DispatchQueue(label: "Command.run")
+    private let arguments: [String]
+    private let input: String?
+    private let timeout: TimeInterval
+    private let done: (String?) -> Void
+    private var group: pid_t = 0
+    private var output = Data()
+    private var status: Int32?
+    private var drained = false
+    private var finished = false
+    private var reader: DispatchIO?
+    private var writer: DispatchIO?
+    private var exit: DispatchSourceProcess?
+    private var deadline: DispatchSourceTimer?
 
-    init(_ body: @escaping (String?) -> Void) {
-        self.body = body
+    init(arguments: [String], input: String?, timeout: TimeInterval, done: @escaping (String?) -> Void) {
+        self.arguments = arguments
+        self.input = input
+        self.timeout = timeout
+        self.done = done
     }
 
-    @discardableResult
-    func callAsFunction(_ value: String?) -> Bool {
-        let body = lock.withLock {
-            defer { self.body = nil }
-            return self.body
+    func start() {
+        queue.async { self.launch() }
+    }
+
+    private func launch() {
+        var stdout: [Int32] = [-1, -1], stdin: [Int32] = [-1, -1]
+        guard pipe(&stdout) == 0, input == nil || pipe(&stdin) == 0 else { return finish(nil) }
+        guard let pid = spawn(stdin: stdin[0], stdout: stdout[1]) else {
+            [stdout[0], stdin[1]].filter { $0 >= 0 }.forEach { close($0) }
+            return finish(nil)
         }
-        body?(value)
-        return body != nil
+        group = pid
+        read(from: stdout[0])
+        if let input { write(input, to: stdin[1]) }
+        watchExit()
+        startDeadline()
+    }
+
+    private func spawn(stdin: Int32, stdout: Int32) -> pid_t? {
+        var actions: posix_spawn_file_actions_t?
+        posix_spawn_file_actions_init(&actions)
+        defer { posix_spawn_file_actions_destroy(&actions) }
+        if stdin >= 0 {
+            posix_spawn_file_actions_adddup2(&actions, stdin, STDIN_FILENO)
+        } else {
+            posix_spawn_file_actions_addopen(&actions, STDIN_FILENO, "/dev/null", O_RDONLY, 0)
+        }
+        posix_spawn_file_actions_adddup2(&actions, stdout, STDOUT_FILENO)
+        posix_spawn_file_actions_addopen(&actions, STDERR_FILENO, "/dev/null", O_WRONLY, 0)
+        var attributes: posix_spawnattr_t?
+        posix_spawnattr_init(&attributes)
+        defer { posix_spawnattr_destroy(&attributes) }
+        posix_spawnattr_setflags(&attributes, Int16(POSIX_SPAWN_SETPGROUP | POSIX_SPAWN_CLOEXEC_DEFAULT))
+        posix_spawnattr_setpgroup(&attributes, 0)
+        let argv = arguments.map { strdup($0) } + [nil]
+        let envp = Command.environment.map { strdup($0) } + [nil]
+        defer { (argv + envp).forEach { free($0) } }
+        var pid = pid_t()
+        let spawned = posix_spawn(&pid, arguments[0], &actions, &attributes, argv, envp) == 0
+        [stdin, stdout].filter { $0 >= 0 }.forEach { close($0) }
+        return spawned ? pid : nil
+    }
+
+    private func read(from descriptor: Int32) {
+        let reader = DispatchIO(type: .stream, fileDescriptor: descriptor, queue: queue) { _ in close(descriptor) }
+        reader.setLimit(lowWater: 1)
+        reader.read(offset: 0, length: .max, queue: queue) { [self] done, data, _ in
+            if let data { output.append(contentsOf: data) }
+            if done {
+                drained = true
+                settle()
+            }
+        }
+        self.reader = reader
+    }
+
+    private func write(_ input: String, to descriptor: Int32) {
+        _ = fcntl(descriptor, F_SETNOSIGPIPE, 1)
+        let writer = DispatchIO(type: .stream, fileDescriptor: descriptor, queue: queue) { _ in close(descriptor) }
+        let data = Data(input.utf8).withUnsafeBytes { DispatchData(bytes: $0) }
+        writer.write(offset: 0, data: data, queue: queue) { done, _, _ in
+            if done { writer.close() }
+        }
+        self.writer = writer
+    }
+
+    private func watchExit() {
+        let exit = DispatchSource.makeProcessSource(identifier: group, eventMask: .exit, queue: queue)
+        exit.setEventHandler { [self] in reap() }
+        exit.resume()
+        self.exit = exit
+        reap()
+    }
+
+    private func reap() {
+        guard status == nil else { return }
+        var status: Int32 = 0
+        guard waitpid(group, &status, WNOHANG) == group else { return }
+        self.status = status
+        exit?.cancel()
+        settle()
+    }
+
+    private func startDeadline() {
+        let deadline = DispatchSource.makeTimerSource(queue: queue)
+        deadline.schedule(deadline: .now() + timeout)
+        deadline.setEventHandler { [self] in
+            killpg(group, SIGKILL)
+            queue.asyncAfter(deadline: .now() + Command.grace) { self.finish(nil) }
+        }
+        deadline.resume()
+        self.deadline = deadline
+    }
+
+    private func settle() {
+        guard let status, drained else { return }
+        let succeeded = status & 0x7f == 0 && (status >> 8) & 0xff == 0
+        finish(succeeded ? String(decoding: output, as: UTF8.self) : nil)
+    }
+
+    private func finish(_ result: String?) {
+        guard !finished else { return }
+        finished = true
+        deadline?.cancel()
+        exit?.cancel()
+        reader?.close(flags: .stop)
+        writer?.close(flags: .stop)
+        if group > 0, status == nil {
+            let group = group
+            DispatchQueue.global().async {
+                var status: Int32 = 0
+                waitpid(group, &status, 0)
+            }
+        }
+        done(result)
     }
 }
