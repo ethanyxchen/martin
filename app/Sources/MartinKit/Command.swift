@@ -28,6 +28,7 @@ private final class Run: @unchecked Sendable {
     private var output = Data()
     private var status: Int32?
     private var drained = false
+    private var exited = false
     private var finished = false
     private var reader: DispatchIO?
     private var writer: DispatchIO?
@@ -47,9 +48,10 @@ private final class Run: @unchecked Sendable {
 
     private func launch() {
         var stdout: [Int32] = [-1, -1], stdin: [Int32] = [-1, -1]
-        guard pipe(&stdout) == 0, input == nil || pipe(&stdin) == 0 else { return finish(nil) }
-        guard let pid = spawn(stdin: stdin[0], stdout: stdout[1]) else {
-            [stdout[0], stdin[1]].filter { $0 >= 0 }.forEach { close($0) }
+        let piped = pipe(&stdout) == 0 && (input == nil || pipe(&stdin) == 0)
+        (stdout + stdin).filter { $0 >= 0 }.forEach { _ = fcntl($0, F_SETFD, FD_CLOEXEC) }
+        guard piped, let pid = spawn(stdin: stdin[0], stdout: stdout[1]) else {
+            (piped ? [stdout[0], stdin[1]] : stdout + stdin).filter { $0 >= 0 }.forEach { close($0) }
             return finish(nil)
         }
         group = pid
@@ -91,6 +93,7 @@ private final class Run: @unchecked Sendable {
             if let data { output.append(contentsOf: data) }
             if done {
                 drained = true
+                if exited { reap() }
                 settle()
             }
         }
@@ -109,19 +112,40 @@ private final class Run: @unchecked Sendable {
 
     private func watchExit() {
         let exit = DispatchSource.makeProcessSource(identifier: group, eventMask: .exit, queue: queue)
-        exit.setEventHandler { [self] in reap() }
+        exit.setEventHandler { [self] in noticeExit() }
         exit.resume()
         self.exit = exit
-        reap()
+        noticeExit()
+    }
+
+    private func noticeExit() {
+        guard !exited else { return }
+        var info = siginfo_t()
+        let result = waitid(P_PID, id_t(group), &info, WEXITED | WNOHANG | WNOWAIT)
+        if result == -1, errno == ECHILD {
+            status = -1
+            return finish(nil)
+        }
+        guard result == 0, info.si_pid == group else { return }
+        exited = true
+        exit?.cancel()
+        guard !drained else {
+            reap()
+            return settle()
+        }
+        queue.asyncAfter(deadline: .now() + Command.grace) { [self] in
+            guard !finished else { return }
+            killpg(group, SIGKILL)
+            drained = true
+            reap()
+            settle()
+        }
     }
 
     private func reap() {
         guard status == nil else { return }
         var status: Int32 = 0
-        guard waitpid(group, &status, WNOHANG) == group else { return }
-        self.status = status
-        exit?.cancel()
-        settle()
+        self.status = waitpid(group, &status, 0) == group ? status : -1
     }
 
     private func startDeadline() {
