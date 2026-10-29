@@ -5,6 +5,8 @@ import Testing
 struct AgentTests {
     let clones = RepositoryTests()
 
+    let goodmeet = Project(name: "Goodmeet"), interviews = Project(name: "Interviews")
+
     private func answer(_ slugs: String...) -> Data {
         Data(#"{"evidence":"","slugs":[\#(slugs.map { "\"\($0)\"" }.joined(separator: ","))]}"#.utf8)
     }
@@ -46,14 +48,32 @@ struct AgentTests {
         let overload = clones.repository("GoodnotesGlobal/ma-turbo-overload", in: "ma-turbo-overload")
         let platform = clones.repository("GoodnotesGlobal/data-platform", in: "data-platform")
         let martin = clones.repository("ethanyxchen/martin", in: "martin")
-        #expect(Agent.pick(from: answer("GoodnotesGlobal/data-platform", "goodnotesglobal/MA-turbo-overload"), among: [martin, overload, platform]) == overload)
+        #expect(Agent.pick(for: goodmeet, from: answer("GoodnotesGlobal/data-platform", "goodnotesglobal/MA-turbo-overload"), among: [martin, overload, platform]) == overload)
+    }
+
+    @Test func aRepositoryWhoseNameOrReadmeNamesTheProjectCountsEvenWhenTheAgentLeavesItOut() throws {
+        let platform = clones.repository("GoodnotesGlobal/data-platform", in: "data-platform")
+        let overload = clones.repository("GoodnotesGlobal/ma-turbo-overload", in: "ma-turbo-overload")
+        let agents = clones.repository("GoodnotesGlobal/infrastructure-goodmeet-agents", in: "infrastructure-goodmeet-agents")
+        try "# Turbo Overload\nSet up **Goodmeet .env** first.".write(to: overload.folder.appending(path: "README.md"), atomically: true, encoding: .utf8)
+        #expect(Agent.pick(for: goodmeet, from: answer("GoodnotesGlobal/data-platform"), among: [overload, platform]) == overload)
+        #expect(Agent.pick(for: goodmeet, from: nil, among: [agents, overload]) == agents)
+        #expect(Agent.pick(for: Project(name: "Good"), from: nil, among: [agents, overload]) == nil)
+        #expect(Agent.pick(for: Project(name: "Overload"), from: nil, among: [platform, overload]) == overload)
+    }
+
+    @Test func aProjectNameTooShortToMeanAnythingNamesNoRepository() {
+        let platform = clones.repository("GoodnotesGlobal/data-platform", in: "data-platform")
+        #expect(!Agent.names(Project(name: "QA"), platform))
+        #expect(!Agent.names(Project(name: " - "), platform))
+        #expect(Agent.names(Project(name: "Data Platform"), platform))
     }
 
     @Test func thereIsNoPickWhenTheAgentNamesNoneOnlyStrangersOrTooManyToBelieve() {
         let martin = clones.repository("ethanyxchen/martin", in: "martin")
-        #expect(Agent.pick(from: answer(), among: [martin]) == nil)
-        #expect(Agent.pick(from: answer("acme/atlas"), among: [martin]) == nil)
-        #expect(Agent.pick(from: answer("ethanyxchen/martin", "a/b", "c/d", "e/f"), among: [martin]) == nil)
-        #expect(Agent.pick(from: Data("Not logged in".utf8), among: [martin]) == nil)
+        #expect(Agent.pick(for: interviews, from: answer(), among: [martin]) == nil)
+        #expect(Agent.pick(for: interviews, from: answer("acme/atlas"), among: [martin]) == nil)
+        #expect(Agent.pick(for: interviews, from: answer("ethanyxchen/martin", "a/b", "c/d", "e/f"), among: [martin]) == nil)
+        #expect(Agent.pick(for: interviews, from: Data("Not logged in".utf8), among: [martin]) == nil)
     }
 }

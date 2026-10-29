@@ -18,8 +18,8 @@ public enum Agent {
 
     public static func pickRepository(for project: Project, notes: [String], among candidates: [Repository], using assistant: Assistant) async -> Repository? {
         guard !candidates.isEmpty else { return nil }
-        return await assistant.answer(prompt(for: project, notes: notes, among: candidates), instructions: instructions, schema: schema)
-            .flatMap { pick(from: $0, among: candidates) }
+        let answer = await assistant.answer(prompt(for: project, notes: notes, among: candidates), instructions: instructions, schema: schema)
+        return pick(for: project, from: answer, among: candidates)
     }
 
     static func prompt(for project: Project, notes: [String], among candidates: [Repository]) -> String {
@@ -36,11 +36,27 @@ public enum Agent {
             """
     }
 
-    static func pick(from answer: Data, among candidates: [Repository]) -> Repository? {
+    static func pick(for project: Project, from answer: Data?, among candidates: [Repository]) -> Repository? {
+        let named = slugs(in: answer)
+        return candidates.first { named.contains($0.slug.lowercased()) || names(project, $0) }
+    }
+
+    private static func slugs(in answer: Data?) -> Set<String> {
         struct Answer: Decodable {
             let slugs: [String]
         }
-        guard let slugs = (try? JSONDecoder().decode(Answer.self, from: answer))?.slugs.map({ $0.lowercased() }), slugs.count <= matchLimit else { return nil }
-        return candidates.first { slugs.contains($0.slug.lowercased()) }
+        guard let slugs = answer.flatMap({ try? JSONDecoder().decode(Answer.self, from: $0) })?.slugs, slugs.count <= matchLimit else { return [] }
+        return Set(slugs.map { $0.lowercased() })
+    }
+
+    static func names(_ project: Project, _ repository: Repository) -> Bool {
+        let name = project.name.words
+        return name.joined().count >= 3 && "\(repository.slug) \(repository.summary ?? "")".words.contains(name)
+    }
+}
+
+private extension String {
+    var words: [Substring] {
+        lowercased()[...].split { !$0.isLetter && !$0.isNumber }
     }
 }
