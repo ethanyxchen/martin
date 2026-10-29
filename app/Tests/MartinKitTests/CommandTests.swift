@@ -36,10 +36,19 @@ struct CommandTests {
         #expect(await Command.run("martin-no-such-tool", [], timeout: 5) == nil)
     }
 
-    @Test func aToolThatSucceededKeepsItsAnswerWhenAHelperThatLeftItsProcessGroupHoldsTheOutput() async {
+    @Test(arguments: [
+        "perl -MPOSIX -e 'POSIX::setsid(); sleep 2; open(my $f, \">\", $ARGV[0])' MARK & echo ok",
+        "perl -MPOSIX -e 'POSIX::setsid(); close STDOUT; sleep 2; open(my $f, \">\", $ARGV[0])' MARK & echo ok",
+        "(exec >/dev/null; sleep 2; touch MARK) & echo ok",
+        "perl -MPOSIX -e 'close STDOUT; POSIX::close(3); POSIX::setsid(); sleep 2; open(my $f, \">\", $ARGV[0])' MARK & sleep 0.5; echo ok",
+    ])
+    func noHelperOutlivesASuccessfulRunEvenOneThatLeftTheProcessGroup(script: String) async throws {
+        let mark = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString).path(percentEncoded: false)
         let start = ContinuousClock.now
-        #expect(await Command.run("sh", ["-c", "perl -MPOSIX -e 'POSIX::setsid(); sleep 5' & echo ok"], timeout: 1) == "ok\n")
-        #expect(ContinuousClock.now - start < .seconds(4))
+        #expect(await Command.run("sh", ["-c", script.replacingOccurrences(of: "MARK", with: mark)], timeout: 30) == "ok\n")
+        #expect(ContinuousClock.now - start < .seconds(2))
+        try await Task.sleep(for: .seconds(3))
+        #expect(!FileManager.default.fileExists(atPath: mark))
     }
 
     @Test func aHelperThatWritesAfterTheToolExitsIsWaitedFor() async {
