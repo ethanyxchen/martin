@@ -199,6 +199,10 @@ enum ActionPlacement {
         shortcut("a", modifiers: [.command, .control], enabled: enabled)
     }
 
+    func secret(enabled: Bool) -> KeyboardShortcut? {
+        shortcut("s", modifiers: [.command, .control], enabled: enabled)
+    }
+
     func delete(enabled: Bool) -> KeyboardShortcut? {
         shortcut(.delete, modifiers: [.command, .option], enabled: enabled)
     }
@@ -258,6 +262,7 @@ struct ProjectActions: View {
             let secret = project?.isSecret == true
             Button(secret ? "Make Not Secret" : "Make Secret", systemImage: secret ? "eye" : "eye.slash") { project.map { app.keepSecret($0, !secret) } }
                 .help(placement.tooltip(secret ? "Make Not Secret" : "Make Secret"))
+                .keyboardShortcut(placement.secret(enabled: project != nil))
                 .disabled(project == nil)
         }
         Group {
