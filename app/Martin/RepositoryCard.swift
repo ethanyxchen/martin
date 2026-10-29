@@ -5,13 +5,15 @@ import SwiftUI
 struct RepositoryCard: View {
     let app: AppState
     let project: Project
+    let repository: RepositoryLink
 
     var body: some View {
         content.task(id: project.id) { await app.suggestRepository(for: project) }
     }
 
     @ViewBuilder private var content: some View {
-        if let folder = project.repository {
+        switch repository {
+        case .folder(let folder):
             if let repository = Repository(at: folder) {
                 card(icon: "chevron.left.forwardslash.chevron.right", tint: Theme.ink, title: repository.slug, detail: [folder.abbreviated, repository.branch].compactMap(\.self).joined(separator: " · ")) {
                     linkedMenu(repository)
@@ -21,18 +23,11 @@ struct RepositoryCard: View {
                     linkedMenu(nil)
                 }
             }
-        } else if app.assistant == nil {
-            card(icon: "sparkles", tint: Theme.cobalt, title: "Find this project’s repository", detail: "Set up an assistant to suggest one", tentative: true) {
-                Button("Set Up…") { app.openAssistantSetup() }
-                    .buttonStyle(Chip())
-                Menu("Link Manually", systemImage: "ellipsis") { LinkChoices(app: app, project: project) }
-                    .menuButton(RowAction())
-            }
-        } else {
+        case .unset:
             switch app.suggestions[project.id] {
             case .found(let pick?):
                 card(icon: "sparkles", tint: Theme.cobalt, title: pick.repository.slug, detail: pick.reason, tentative: true) {
-                    Button("Link") { app.link(project, to: pick.repository.folder) }
+                    Button("Link") { app.link(project, to: .folder(pick.repository.folder)) }
                         .buttonStyle(Chip())
                         .help("Link \(pick.repository.folder.abbreviated) to \(project.name)")
                     Menu("More", systemImage: "ellipsis") { LinkChoices(app: app, project: project) }
@@ -59,7 +54,7 @@ struct RepositoryCard: View {
                 Divider()
             }
             Menu("Change Repository", systemImage: "arrow.triangle.swap") { LinkChoices(app: app, project: project) }
-            Button("Unlink Repository", systemImage: "link.badge.minus") { app.link(project, to: nil) }
+            Button("Remove Repository", systemImage: "link.badge.minus") { app.link(project, to: nil) }
         }
         .menuButton(RowAction())
     }
@@ -81,7 +76,8 @@ struct RepositoryCard: View {
                 Text(detail)
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.secondary)
-                    .lineLimit(2)
+                    .lineLimit(tentative ? 2 : 1)
+                    .truncationMode(tentative ? .tail : .middle)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             HStack(spacing: 4) { actions() }
@@ -108,11 +104,11 @@ private struct LinkChoices: View {
     let project: Project
 
     var body: some View {
-        let choices = app.clones.filter { $0.folder != project.repository }.prefix(Self.shown)
+        let choices = app.clones.filter { $0.folder != project.repository?.folder }.prefix(Self.shown)
         if !choices.isEmpty {
             Section("On This Mac") {
                 ForEach(choices, id: \.folder) { repository in
-                    Button(repository.slug) { app.link(project, to: repository.folder) }
+                    Button(repository.slug) { app.link(project, to: .folder(repository.folder)) }
                 }
             }
             Divider()

@@ -5,13 +5,22 @@ public struct Project: Identifiable, Hashable, Codable, Sendable {
     public var name: String
     public var series: [String]
     public var archivedAt: Date?
-    public var repository: URL?
+    public var repository: RepositoryLink?
 
-    public init(id: String = UUID().uuidString, name: String, series: [String] = [], repository: URL? = nil) {
+    public init(id: String = UUID().uuidString, name: String, series: [String] = [], repository: RepositoryLink? = nil) {
         self.id = id
         self.name = name
         self.series = series
         self.repository = repository
+    }
+}
+
+public enum RepositoryLink: Codable, Hashable, Sendable {
+    case unset
+    case folder(URL)
+
+    public var folder: URL? {
+        if case .folder(let folder) = self { folder } else { nil }
     }
 }
 

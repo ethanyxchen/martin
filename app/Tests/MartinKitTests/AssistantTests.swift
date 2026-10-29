@@ -23,10 +23,8 @@ struct AssistantTests {
         #expect(try object(Assistant.codex.structuredOutput(of: #"{"slug":null,"reason":"Nothing fits"}"#)) == ["slug": NSNull(), "reason": "Nothing fits"])
     }
 
-    @Test func eachAssistantSaysHowToInstallItAndSignIn() {
+    @Test func eachAssistantNamesTheAccountItSignsInWith() {
         #expect(Assistant.allCases.map(\.title) == ["Claude Code", "Codex"])
-        #expect(Assistant.claude.signIn == "claude auth login")
-        #expect(Assistant.codex.install == "brew install --cask codex")
-        #expect(Assistant.codex.signIn == "codex login")
+        #expect(Assistant.allCases.map(\.account) == ["Claude", "ChatGPT"])
     }
 }

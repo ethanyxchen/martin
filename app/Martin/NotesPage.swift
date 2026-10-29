@@ -240,6 +240,13 @@ struct ProjectActions: View {
     let placement: ActionPlacement
 
     var body: some View {
+        if placement != .row, project?.archivedAt == nil {
+            Toggle("GitHub Repository", systemImage: "chevron.left.forwardslash.chevron.right", isOn: Binding { project?.repository != nil } set: { on in
+                project.map { app.link($0, to: on ? .unset : nil) }
+            })
+            .disabled(project == nil)
+            Divider()
+        }
         Group {
             if project?.archivedAt == nil {
                 Button("Archive Project", systemImage: "archivebox") { project.map(app.archive) }
@@ -322,7 +329,7 @@ private struct ShelfView: View {
             }
             .flush()
         } content: {
-            if let project = shelf.project { RepositoryCard(app: app, project: project) }
+            if let project = shelf.project, let repository = project.repository { RepositoryCard(app: app, project: project, repository: repository) }
             NoteList(app: app, meetings: shelf.meetings, now: now) { app.previews[$0.id] }
         }
     }

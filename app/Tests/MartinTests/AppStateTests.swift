@@ -162,12 +162,15 @@ final class AppStateTests {
         #expect(app.meetings.map(\.id) == [kept.id])
     }
 
-    @Test func aLinkedRepositoryIsRememberedUntilUnlinked() throws {
+    @Test func aRepositoryIsTurnedOnThenLinkedAndRememberedUntilRemoved() throws {
         let app = AppState(library: library, defaults: defaults)
         app.file(try library.create(), inNewProjectNamed: "Martin")
+        #expect(app.projects.map(\.repository) == [nil])
+        app.link(try #require(app.projects.first), to: .unset)
+        #expect(AppState(library: library, defaults: defaults).projects.map(\.repository) == [.unset])
         let folder = URL(filePath: "/Users/ada/Developer/martin", directoryHint: .isDirectory)
-        app.link(try #require(app.projects.first), to: folder)
-        #expect(AppState(library: library, defaults: defaults).projects.map(\.repository) == [folder])
+        app.link(try #require(app.projects.first), to: .folder(folder))
+        #expect(AppState(library: library, defaults: defaults).projects.map(\.repository) == [.folder(folder)])
         app.link(try #require(app.projects.first), to: nil)
         #expect(AppState(library: library, defaults: defaults).projects.map(\.repository) == [nil])
     }
@@ -177,9 +180,9 @@ final class AppStateTests {
         app.file(try library.create(), inNewProjectNamed: "Martin")
         let martin = try #require(app.projects.first)
         app.archive(martin)
-        app.link(martin, to: URL(filePath: "/Users/ada/Developer/martin", directoryHint: .isDirectory))
+        app.link(martin, to: .folder(URL(filePath: "/Users/ada/Developer/martin", directoryHint: .isDirectory)))
         #expect(app.projects.isEmpty)
-        #expect(app.archivedProjects.map(\.repository?.lastPathComponent) == ["martin"])
+        #expect(app.archivedProjects.map(\.repository?.folder?.lastPathComponent) == ["martin"])
     }
 
     @Test func theChosenAssistantIsRememberedAcrossLaunches() {
@@ -191,13 +194,17 @@ final class AppStateTests {
         #expect(AppState(library: library, defaults: defaults).assistant == nil)
     }
 
-    @Test func noRepositoryIsSoughtWithoutAnAssistantOrForALinkedProject() async throws {
+    @Test func aRepositoryIsSoughtOnlyWithAnAssistantForAProjectThatWantsOneButHasNone() async throws {
         let app = AppState(library: library, defaults: defaults)
         app.file(try library.create(), inNewProjectNamed: "Martin")
+        app.link(try #require(app.projects.first), to: .unset)
         await app.suggestRepository(for: try #require(app.projects.first))
         #expect(app.suggestions.isEmpty)
         app.assistant = .claude
-        app.link(try #require(app.projects.first), to: URL(filePath: "/Users/ada/Developer/martin", directoryHint: .isDirectory))
+        app.link(try #require(app.projects.first), to: nil)
+        await app.suggestRepository(for: try #require(app.projects.first))
+        #expect(app.suggestions.isEmpty)
+        app.link(try #require(app.projects.first), to: .folder(URL(filePath: "/Users/ada/Developer/martin", directoryHint: .isDirectory)))
         await app.suggestRepository(for: try #require(app.projects.first))
         #expect(app.suggestions.isEmpty)
     }

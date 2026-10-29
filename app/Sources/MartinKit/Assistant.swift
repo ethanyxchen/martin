@@ -26,20 +26,6 @@ public enum Assistant: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    public var install: String {
-        switch self {
-        case .claude: "curl -fsSL https://claude.ai/install.sh | bash"
-        case .codex: "brew install --cask codex"
-        }
-    }
-
-    public var signIn: String {
-        switch self {
-        case .claude: "claude auth login"
-        case .codex: "codex login"
-        }
-    }
-
     private var tool: String { rawValue }
 
     public func status() async -> Status {

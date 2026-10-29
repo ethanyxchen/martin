@@ -260,9 +260,9 @@ final class AppState {
         reload()
     }
 
-    func link(_ project: Project, to folder: URL?) {
-        guard var linked = allProjects.first(where: { $0.id == project.id }), linked.repository != folder else { return }
-        linked.repository = folder
+    func link(_ project: Project, to repository: RepositoryLink?) {
+        guard var linked = allProjects.first(where: { $0.id == project.id }), linked.repository != repository else { return }
+        linked.repository = repository
         try? library.save(linked)
         reload()
     }
@@ -273,23 +273,23 @@ final class AppState {
         panel.canChooseDirectories = true
         panel.prompt = "Link"
         panel.message = "Choose the repository folder for \(project.name)."
-        panel.directoryURL = project.repository ?? Repository.roots.first
+        panel.directoryURL = project.repository?.folder ?? Repository.roots.first
         guard panel.runModal() == .OK, let folder = panel.url else { return }
         guard Repository(at: folder) != nil else {
             return inform("“\(folder.lastPathComponent)” isn’t a GitHub repository", "Choose a folder cloned from GitHub.")
         }
-        link(project, to: folder)
+        link(project, to: .folder(folder))
     }
 
     func scoutRepositories() async {
-        let folders = allProjects.compactMap { $0.repository?.deletingLastPathComponent() }
+        let folders = allProjects.compactMap { $0.repository?.folder?.deletingLastPathComponent() }
         let scouting = Task { await Repository.nearby(folders) }
         self.scouting = scouting
         clones = await scouting.value
     }
 
     func suggestRepository(for project: Project) async {
-        guard let assistant, project.repository == nil, suggestions[project.id] == nil else { return }
+        guard let assistant, project.repository == .unset, suggestions[project.id] == nil else { return }
         suggestions[project.id] = .thinking
         if scouting == nil { await scoutRepositories() }
         let candidates = await scouting?.value ?? []
@@ -310,13 +310,6 @@ final class AppState {
 
     func closeAssistantSetup() {
         windows["assistant"]?.close()
-    }
-
-    func runInTerminal(_ command: String, titled title: String) {
-        let script = FileManager.default.temporaryDirectory.appending(path: "\(title).command")
-        guard (try? "#!/bin/zsh -l\n\(command)\n".write(to: script, atomically: true, encoding: .utf8)) != nil,
-              (try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path(percentEncoded: false))) != nil else { return }
-        NSWorkspace.shared.open(script)
     }
 
     func archive(_ project: Project) {
