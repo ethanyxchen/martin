@@ -43,7 +43,7 @@ public enum Assistant: String, CaseIterable, Identifiable, Sendable {
     func answer(_ prompt: String, instructions: String, schema: String) async -> Data? {
         switch self {
         case .claude:
-            let arguments = ["-p", "--model", "sonnet", "--tools", "", "--setting-sources", "", "--no-session-persistence",
+            let arguments = ["-p", "--model", "haiku", "--tools", "", "--setting-sources", "", "--no-session-persistence",
                              "--system-prompt", instructions, "--output-format", "json", "--json-schema", schema]
             return await Command.run(tool, arguments, input: prompt).flatMap(structuredOutput(of:))
         case .codex:
@@ -53,7 +53,7 @@ public enum Assistant: String, CaseIterable, Identifiable, Sendable {
             guard (try? FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)) != nil,
                   (try? schema.write(to: schemaFile, atomically: true, encoding: .utf8)) != nil else { return nil }
             let arguments = ["exec", "--ephemeral", "--skip-git-repo-check", "--ignore-user-config", "--ignore-rules", "--sandbox", "read-only",
-                             "--color", "never", "--cd", scratch.path(percentEncoded: false), "--output-schema", schemaFile.path(percentEncoded: false), "-"]
+                             "--color", "never", "--model", "gpt-6-luna", "--config", "model_reasoning_effort=\"low\"", "--cd", scratch.path(percentEncoded: false), "--output-schema", schemaFile.path(percentEncoded: false), "-"]
             return await Command.run(tool, arguments, input: "\(instructions)\n\n\(prompt)").flatMap(structuredOutput(of:))
         }
     }

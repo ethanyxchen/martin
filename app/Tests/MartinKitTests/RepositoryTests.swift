@@ -39,9 +39,9 @@ final class RepositoryTests {
         #expect(repository.name == "martin")
         #expect(repository.branch == "ethanc/repos")
         #expect(repository.web == URL(string: "https://github.com/ethanyxchen/martin"))
-        #expect(repository.readme == nil)
-        try "# Martin\nA menu bar notepad".write(to: folder.appending(path: "README.md"), atomically: true, encoding: .utf8)
-        #expect(repository.readme == "# Martin\nA menu bar notepad")
+        #expect(repository.summary == nil)
+        try "# Martin\n\n[![Build](https://x/badge.svg)](https://x)\n<img src=\"icon.png\">\nalt=\"chat\"></a>\n\n  A menu bar notepad.  \n```sh\nopen Martin.app\n```\n| a | b |\nTake notes.".write(to: folder.appending(path: "README.md"), atomically: true, encoding: .utf8)
+        #expect(repository.summary == "# Martin A menu bar notepad. Take notes.")
     }
 
     @Test func aFolderWithoutAGitHubOriginIsNotARepository() throws {

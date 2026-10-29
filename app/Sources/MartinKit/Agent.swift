@@ -1,16 +1,17 @@
 import Foundation
 
 public enum Agent {
-    static let excerpt = 1_500
+    public static let noteLimit = 5
+    static let excerpt = 600
+    static let summaryLimit = 600
 
     static let instructions = """
-        You link projects in a meeting-notes app to the GitHub repository where each project's code lives. \
-        Read the project's name and notes, then pick the one candidate repository that holds its code, judging by names, READMEs and what the notes discuss. \
-        Answer with its slug exactly as listed, or null when no candidate clearly fits.
+        Pick the GitHub repository that holds this project's code, judging by the project's name and notes and each repository's README. \
+        First quote the evidence that ties the project to a repository, then answer with that repository's slug exactly as listed, or null unless the evidence clearly matches one.
         """
 
     static let schema = """
-        {"type":"object","properties":{"slug":{"type":["string","null"]}},"required":["slug"],"additionalProperties":false}
+        {"type":"object","properties":{"evidence":{"type":"string"},"slug":{"type":["string","null"]}},"required":["evidence","slug"],"additionalProperties":false}
         """
 
     public static func pickRepository(for project: Project, notes: [String], among candidates: [Repository], using assistant: Assistant) async -> Repository? {
@@ -20,14 +21,15 @@ public enum Agent {
     }
 
     static func prompt(for project: Project, notes: [String], among candidates: [Repository]) -> String {
-        let notes = notes.map { "<note>\n\($0.prefix(excerpt))\n</note>" }
-        let repositories = candidates.map { "<repository slug=\"\($0.slug)\" folder=\"\($0.folder.lastPathComponent)\">\n\(($0.readme ?? "").prefix(excerpt))\n</repository>" }
+        let notes = notes.isEmpty ? "No notes yet." : notes.map { String($0.prefix(excerpt)) }.joined(separator: "\n\n")
+        let repositories = candidates.map { [$0.slug, $0.summary.map { String($0.prefix(summaryLimit)) }].compactMap(\.self).joined(separator: ": ") }
         return """
-            <project name="\(project.name)">
-            \((notes.isEmpty ? ["No notes yet."] : notes).joined(separator: "\n"))
-            </project>
+            Project: \(project.name)
 
-            Candidate repositories cloned on this Mac, the ones the user worked on most recently first:
+            Notes:
+            \(notes)
+
+            Repositories:
             \(repositories.joined(separator: "\n"))
             """
     }

@@ -21,8 +21,15 @@ public struct Repository: Hashable, Sendable {
 
     public var web: URL { URL(string: "https://github.com/\(slug)")! }
 
-    public var readme: String? {
-        ["README.md", "readme.md", "README"].lazy.compactMap { try? String(contentsOf: folder.appending(path: $0), encoding: .utf8) }.first
+    public var summary: String? {
+        guard let readme = ["README.md", "readme.md", "README"].lazy
+            .compactMap({ try? String(contentsOf: self.folder.appending(path: $0), encoding: .utf8) }).first else { return nil }
+        var code = false
+        let prose = readme.split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }.filter { line in
+            if line.hasPrefix("```") { code.toggle(); return false }
+            return !code && !line.isEmpty && !line.contains("</") && !["<", "![", "[![", "|", "---"].contains(where: line.hasPrefix)
+        }
+        return prose.isEmpty ? nil : prose.joined(separator: " ")
     }
 
     public var branch: String? {

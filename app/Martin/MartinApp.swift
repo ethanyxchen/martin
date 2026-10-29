@@ -70,7 +70,6 @@ final class AppState {
     private static let windowSize = NSSize(width: 520, height: 640)
     private static let hiddenCalendarsKey = "hiddenCalendars"
     private static let pageKey = "page"
-    private static let suggestionNotes = 12
     private static let hiddenPagesKey = "hiddenPages"
     private static let assistantKey = "assistant"
     let library: MeetingLibrary
@@ -307,7 +306,7 @@ final class AppState {
         suggestions[project.id] = .thinking
         if scouting == nil { await scoutRepositories() }
         let candidates = await scouting?.value ?? []
-        let notes = notes(in: project).prefix(Self.suggestionNotes).map { "# \($0.displayTitle)\n\(library.note(of: $0) ?? "")" }
+        let notes = notes(in: project).prefix(Agent.noteLimit).map { "# \($0.displayTitle)\n\(library.note(of: $0) ?? "")" }
         let repository = await finder.pick(project, notes, candidates, assistant)
         guard self.assistant == assistant else { return }
         suggestions[project.id] = .found(repository)
