@@ -33,13 +33,14 @@ private struct ArchiveButton: ToolbarContent {
     }
 }
 
-private struct SecretsToggle: ToolbarContent {
+struct SecretsToggle: ToolbarContent {
+    static let shortcut = KeyboardShortcut("s", modifiers: [.command, .shift])
     @Bindable var app: AppState
 
     var body: some ToolbarContent {
         ToolbarItem(placement: .primaryAction) {
             Toggle("Secret Projects", systemImage: "eye", isOn: $app.showsSecrets)
-                .help(app.showsSecrets ? "Keep Secret Projects Secret" : "Show Secret Projects")
+                .help(app.showsSecrets ? "Keep Secret Projects Secret (⇧⌘S)" : "Show Secret Projects (⇧⌘S)")
         }
     }
 }

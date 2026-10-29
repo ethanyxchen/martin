@@ -28,6 +28,9 @@ struct MartinApp: App {
             }
             CommandMenu("Project") {
                 ProjectActions(app: delegate.app, project: delegate.app.focusedProject, placement: .menu)
+                Divider()
+                Toggle("Show Secret Projects", isOn: Bindable(delegate.app).showsSecrets)
+                    .keyboardShortcut(SecretsToggle.shortcut)
             }
             CommandGroup(before: .windowList) {
                 ForEach(HomePage.shown(hiding: delegate.app.hiddenPages), id: \.self) { page in
