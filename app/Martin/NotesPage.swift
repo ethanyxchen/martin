@@ -33,6 +33,17 @@ private struct ArchiveButton: ToolbarContent {
     }
 }
 
+private struct SecretsToggle: ToolbarContent {
+    @Bindable var app: AppState
+
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .primaryAction) {
+            Toggle("Secret Projects", systemImage: "eye", isOn: $app.showsSecrets)
+                .help(app.showsSecrets ? "Keep Secret Projects Secret" : "Show Secret Projects")
+        }
+    }
+}
+
 struct ProjectsView: View {
     private static let wide: CGFloat = 860
     private static let sidebar: CGFloat = 280
@@ -42,7 +53,7 @@ struct ProjectsView: View {
     @State private var grown: CGFloat = 0
 
     var body: some View {
-        let shelves = app.notes.shelved(in: app.projects)
+        let shelves = app.shelves
         let open = shelves.first { $0.id == app.selectedShelf }
         TimelineView(.everyMinute) { context in
             HStack(spacing: 0) {
@@ -69,7 +80,10 @@ struct ProjectsView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .toolbar { ArchiveButton(app: app) }
+        .toolbar {
+            SecretsToggle(app: app)
+            ArchiveButton(app: app)
+        }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .onChange(of: open?.id) { _, id in
             if id == nil, app.selectedShelf != nil { select(nil, animated: false) }
@@ -239,6 +253,12 @@ struct ProjectActions: View {
     let placement: ActionPlacement
 
     var body: some View {
+        if project?.archivedAt == nil {
+            let secret = project?.isSecret == true
+            Button(secret ? "Make Not Secret" : "Make Secret", systemImage: secret ? "eye" : "eye.slash") { project.map { app.keepSecret($0, !secret) } }
+                .help(placement.tooltip(secret ? "Make Not Secret" : "Make Secret"))
+                .disabled(project == nil)
+        }
         Group {
             if project?.archivedAt == nil {
                 Button("Archive Project", systemImage: "archivebox") { project.map(app.archive) }

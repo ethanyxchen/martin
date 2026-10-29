@@ -5,12 +5,15 @@ public struct Project: Identifiable, Hashable, Codable, Sendable {
     public var name: String
     public var series: [String]
     public var archivedAt: Date?
+    public var secretAt: Date?
 
     public init(id: String = UUID().uuidString, name: String, series: [String] = []) {
         self.id = id
         self.name = name
         self.series = series
     }
+
+    public var isSecret: Bool { secretAt != nil }
 }
 
 public struct Shelf: Identifiable, Hashable, Sendable {

@@ -82,6 +82,7 @@ final class AppState {
         didSet { defaults.set(hiddenPages.map(\.rawValue).sorted(), forKey: Self.hiddenPagesKey) }
     }
     var selectedShelf: Shelf.ID?
+    var showsSecrets = false
     var hiddenCalendars: Set<EventCalendar.ID> {
         didSet { defaults.set(hiddenCalendars.sorted(), forKey: Self.hiddenCalendarsKey) }
     }
@@ -116,11 +117,25 @@ final class AppState {
     }
 
     var pinned: [Meeting] {
-        meetings.filter(\.isPinned).sorted { $0.pinnedAt! > $1.pinnedAt! }
+        revealed.filter(\.isPinned).sorted { $0.pinnedAt! > $1.pinnedAt! }
     }
 
     var unpinned: [Meeting] {
-        notes.filter { !$0.isPinned }
+        revealed.filter { $0.archivedAt == nil && !$0.isPinned }
+    }
+
+    var shelves: [Shelf] {
+        let secrets = secrets
+        return revealed.filter { $0.archivedAt == nil }.shelved(in: projects.filter { !secrets.contains($0.id) })
+    }
+
+    private var secrets: Set<Project.ID> {
+        showsSecrets ? [] : Set(allProjects.filter(\.isSecret).map(\.id))
+    }
+
+    private var revealed: [Meeting] {
+        let secrets = secrets
+        return meetings.filter { $0.project.map(secrets.contains) != true }
     }
 
     var archive: [Meeting] {
@@ -245,6 +260,13 @@ final class AppState {
         guard var renamed = allProjects.first(where: { $0.id == project.id }), !name.isEmpty, renamed.name != name else { return }
         renamed.name = name
         try? library.save(renamed)
+        reload()
+    }
+
+    func keepSecret(_ project: Project, _ secret: Bool) {
+        guard var changed = allProjects.first(where: { $0.id == project.id }) else { return }
+        changed.secretAt = secret ? .now : nil
+        try? library.save(changed)
         reload()
     }
 
