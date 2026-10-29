@@ -13,7 +13,7 @@ struct SettingsView: View {
                     NavigationToggles(hidden: $app.hiddenPages)
                         .flush()
                 }
-                SettingsSection(title: "Assistant", detail: "Finds each project’s repository from its notes.") {
+                SettingsSection(title: "Assistant", detail: "Reads your notes to keep your projects up to date.") {
                     HStack(spacing: 10) {
                         Text(app.assistant?.title ?? "None")
                             .font(.system(size: 13))

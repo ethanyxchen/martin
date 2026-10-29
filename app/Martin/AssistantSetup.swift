@@ -25,7 +25,7 @@ struct AssistantSetup: View {
                 .font(Theme.title)
                 .foregroundStyle(Theme.ink)
                 .padding(.bottom, 6)
-            Text("Martin uses it to find each project’s repository. Your notes go only to the assistant you choose.")
+            Text("Martin uses it to read your notes and keep your projects up to date. Your notes go only to the assistant you choose.")
                 .font(.system(size: 12.5))
                 .foregroundStyle(Theme.secondary)
                 .fixedSize(horizontal: false, vertical: true)
