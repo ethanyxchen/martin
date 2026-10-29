@@ -1,8 +1,11 @@
 import Foundation
 
 enum Command {
-    static func run(_ tool: String, _ arguments: [String], input: String? = nil) async -> String? {
-        await withCheckedContinuation { continuation in
+    private static let ignoringBrokenPipes: Void = { _ = signal(SIGPIPE, SIG_IGN) }()
+
+    static func run(_ tool: String, _ arguments: [String], input: String? = nil, timeout: TimeInterval = 90) async -> String? {
+        ignoringBrokenPipes
+        return await withCheckedContinuation { continuation in
             DispatchQueue.global().async {
                 let process = Process()
                 let output = Pipe()
@@ -17,9 +20,12 @@ enum Command {
                 let stdin = input.map { _ in Pipe() }
                 process.standardInput = stdin ?? FileHandle.nullDevice
                 guard (try? process.run()) != nil else { return continuation.resume(returning: nil) }
+                DispatchQueue.global().asyncAfter(deadline: .now() + timeout) {
+                    if process.isRunning { process.terminate() }
+                }
                 if let stdin, let input {
                     DispatchQueue.global().async {
-                        stdin.fileHandleForWriting.write(Data(input.utf8))
+                        try? stdin.fileHandleForWriting.write(contentsOf: Data(input.utf8))
                         try? stdin.fileHandleForWriting.close()
                     }
                 }
