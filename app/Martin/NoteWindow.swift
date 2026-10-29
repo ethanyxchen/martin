@@ -22,7 +22,7 @@ struct NoteView: View {
         Page(title: current.displayTitle) {
             header
         } content: {
-            MarkdownEditor(text: $note, attendees: current.attendees, acquaintances: app.people)
+            MarkdownEditor(text: $note, images: NoteImages(meetingFolder: library.folder(of: meeting)), attendees: current.attendees, acquaintances: app.people)
                 .frame(maxHeight: .infinity)
                 .padding(.bottom, Theme.margin)
         }

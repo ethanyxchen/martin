@@ -4,6 +4,9 @@ import MartinKit
 @MainActor
 final class MarkdownStyle: NSObject {
     nonisolated static let step: CGFloat = 18
+    nonisolated static let smallest: CGFloat = 24
+    nonisolated static let above: CGFloat = 4
+    nonisolated static let below: CGFloat = 8
 
     static let typing: [NSAttributedString.Key: Any] = {
         let look = Look(.text)
@@ -20,12 +23,50 @@ final class MarkdownStyle: NSObject {
     private var codeBlocks: [NSRange] = []
     private var references: [String: String] = [:]
     private var selection: NSRange?
+    private var pictures: [String: NSImage] = [:]
+    var images: NoteImages? {
+        didSet { pictures = [:] }
+    }
+    var resizing: (location: Int, width: CGFloat)?
 
     func select(_ selection: NSRange?, in text: NSString) -> Set<NSRange> {
         guard selection != self.selection else { return [] }
-        let before = headings(revealedBy: self.selection, in: text)
+        let before = headings(revealedBy: self.selection, in: text).union(selectedImages(self.selection, in: text))
         self.selection = selection
-        return before.symmetricDifference(headings(revealedBy: selection, in: text))
+        return before.symmetricDifference(headings(revealedBy: selection, in: text).union(selectedImages(selection, in: text)))
+    }
+
+    func picture(_ image: NoteImage) -> NSImage? {
+        if let cached = pictures[image.path] { return cached }
+        guard let url = images?.url(for: image.path), let picture = NSImage(contentsOf: url), picture.size.width > 0, picture.size.height > 0 else { return nil }
+        pictures[image.path] = picture
+        return picture
+    }
+
+    func imageLine(at location: Int, in text: NSString) -> (paragraph: NSRange, contents: NSRange, image: NoteImage)? {
+        let (contents, line) = self.line(at: min(location, text.length), in: text)
+        guard line.block == .text, let image = NoteImage(line: text.substring(with: contents)), picture(image) != nil else { return nil }
+        return (text.paragraphRange(for: contents), contents, image)
+    }
+
+    func size(of image: NoteImage, at location: Int, width container: CGFloat) -> CGSize? {
+        guard let picture = picture(image) else { return nil }
+        let natural = picture.size
+        let available = available(width: container)
+        var width = CGFloat(image.width ?? Int(natural.width.rounded()))
+        if let resizing, resizing.location == location { width = resizing.width }
+        width = min(max(width, Self.smallest), available)
+        return CGSize(width: width, height: (width * natural.height / natural.width).rounded())
+    }
+
+    func available(width container: CGFloat) -> CGFloat {
+        max(Self.smallest, (container > 100 ? container : Theme.measure + Theme.gutter) - Theme.gutter)
+    }
+
+    private func selectedImages(_ selection: NSRange?, in text: NSString) -> Set<NSRange> {
+        guard let selection, selection.length > 0, NSMaxRange(selection) <= text.length,
+              let found = imageLine(at: selection.location, in: text), found.contents == selection else { return [] }
+        return [found.paragraph]
     }
 
     func line(at location: Int, in text: NSString) -> (range: NSRange, line: Markdown.Line) {
@@ -191,6 +232,15 @@ extension MarkdownStyle: @preconcurrency NSTextContentStorageDelegate {
         guard let source = textContentStorage.textStorage else { return nil }
         let text = NSMutableAttributedString(attributedString: source.attributedSubstring(from: range))
         let (contents, line) = line(at: range.location, in: source.string as NSString)
+        let width = textContentStorage.textLayoutManagers.first?.textContainer?.size.width ?? 0
+        if line.block == .text, let image = NoteImage(line: (source.string as NSString).substring(with: contents)), let size = size(of: image, at: range.location, width: width) {
+            let selected = selection == contents
+            let style = NSMutableParagraphStyle()
+            style.minimumLineHeight = size.height + Self.above + Self.below
+            style.maximumLineHeight = size.height + Self.above + Self.below
+            text.addAttributes([.font: Self.collapsed, .foregroundColor: NSColor.clear, .paragraphStyle: style, .picture: Picture(image: picture(image)!, size: size, selected: selected)], range: NSRange(location: 0, length: text.length))
+            return NSTextParagraph(attributedString: text)
+        }
         let revealed = selection.map { NSIntersectionRange(Self.paragraphs(of: $0, in: source.string as NSString), range).length > 0 } ?? false
         style(text, as: line, length: contents.length, edge: edge(of: line, at: range.location), revealed: revealed)
         return NSTextParagraph(attributedString: text)
@@ -223,6 +273,9 @@ extension MarkdownStyle: @preconcurrency NSTextLayoutManagerDelegate {
             return NSTextLayoutFragment(textElement: textElement, range: range)
         }
         let attributes = paragraph.attributedString.attributes(at: 0, effectiveRange: nil)
+        if let picture = attributes[.picture] as? Picture {
+            return PictureFragment(textElement: textElement, range: range, picture: picture)
+        }
         if let edge = attributes[.codeBlock] as? CodeEdge {
             return CodeFragment(textElement: textElement, range: range, edge: edge)
         }
@@ -237,7 +290,74 @@ private enum CodeEdge {
     case top, middle, bottom
 }
 
+final class Picture: NSObject {
+    let image: NSImage
+    let size: CGSize
+    let selected: Bool
+
+    init(image: NSImage, size: CGSize, selected: Bool) {
+        self.image = image
+        self.size = size
+        self.selected = selected
+    }
+
+    var bounds: CGRect {
+        CGRect(x: Theme.gutter, y: MarkdownStyle.above, width: size.width, height: size.height)
+    }
+
+    static func handles(of bounds: CGRect) -> [CGRect] {
+        [CGPoint(x: bounds.minX, y: bounds.minY), CGPoint(x: bounds.maxX, y: bounds.minY), CGPoint(x: bounds.minX, y: bounds.maxY), CGPoint(x: bounds.maxX, y: bounds.maxY)]
+            .map { CGRect(x: $0.x - handleSize / 2, y: $0.y - handleSize / 2, width: handleSize, height: handleSize) }
+    }
+
+    static let handleSize: CGFloat = 10
+}
+
+final class PictureFragment: NSTextLayoutFragment {
+    let picture: Picture
+
+    init(textElement: NSTextElement, range: NSTextRange?, picture: Picture) {
+        self.picture = picture
+        super.init(textElement: textElement, range: range)
+    }
+
+    required init?(coder: NSCoder) {
+        return nil
+    }
+
+    override var renderingSurfaceBounds: CGRect {
+        super.renderingSurfaceBounds.union(picture.bounds.insetBy(dx: -8, dy: -8))
+    }
+
+    override func draw(at point: CGPoint, in context: CGContext) {
+        let bounds = picture.bounds.offsetBy(dx: point.x, dy: point.y)
+        context.saveGState()
+        context.addPath(CGPath(roundedRect: bounds, cornerWidth: 3, cornerHeight: 3, transform: nil))
+        context.clip()
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
+        picture.image.draw(in: bounds, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
+        NSGraphicsContext.restoreGraphicsState()
+        context.restoreGState()
+        guard picture.selected else { return }
+        let cobalt = Theme.cobalt.ns.cgColor
+        context.saveGState()
+        context.setStrokeColor(cobalt)
+        context.setLineWidth(2)
+        context.stroke(bounds.insetBy(dx: -1, dy: -1))
+        context.setLineWidth(1.5)
+        for handle in Picture.handles(of: bounds) {
+            let dot = handle.insetBy(dx: 1, dy: 1)
+            context.setFillColor(NSColor.white.cgColor)
+            context.fillEllipse(in: dot)
+            context.strokeEllipse(in: dot)
+        }
+        context.restoreGState()
+    }
+}
+
 private extension NSAttributedString.Key {
+    static let picture = NSAttributedString.Key("martin.picture")
     static let codeBlock = NSAttributedString.Key("martin.codeBlock")
     static let bullet = NSAttributedString.Key("martin.bullet")
 }

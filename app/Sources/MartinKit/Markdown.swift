@@ -240,7 +240,7 @@ public enum Markdown {
         let references = references(in: text)
         var preview: String?
         source.enumerateSubstrings(in: NSRange(location: 0, length: source.length), options: .byLines) { line, range, _, stop in
-            guard let line, !blocks.contains(where: { NSLocationInRange(range.location, $0) }) else { return }
+            guard let line, !blocks.contains(where: { NSLocationInRange(range.location, $0) }), NoteImage(line: line) == nil else { return }
             let parsed = Line(line, references: references)
             switch parsed.block {
             case .blank, .fence, .code, .rule, .definition: return
