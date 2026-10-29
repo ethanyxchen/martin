@@ -4,6 +4,8 @@ public struct Repository: Hashable, Sendable {
     public static let roots = ["Developer", "Code", "Projects", "src", "GitHub", "dev", "repos", "Documents/GitHub"]
         .map { URL.homeDirectory.appending(path: $0, directoryHint: .isDirectory) }
 
+    static let activityWindow: TimeInterval = 30 * 24 * 60 * 60
+
     public let folder: URL
     public let slug: String
     public internal(set) var lastWorkedOn: Date?
@@ -39,6 +41,15 @@ public struct Repository: Hashable, Sendable {
         (try? String(contentsOf: gitDirectory.appending(path: "HEAD"), encoding: .utf8))?
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .firstMatch(of: /^ref: refs\/heads\/(.+)$/).map { String($0.1) }
+    }
+
+    public func activity(since date: Date?) async -> String? {
+        let since = (date ?? .now.addingTimeInterval(-Self.activityWindow)).formatted(.iso8601.year().month().day())
+        let commits = await Command.run("git", ["-C", folder.path(percentEncoded: false), "log", "--all", "--since", since, "--date=short", "--pretty=format:%ad %s", "-n", "40"], timeout: 30)
+        let pulls = await Command.run("gh", ["pr", "list", "--repo", slug, "--state", "all", "--limit", "15", "--search", "updated:>=\(since)", "--json", "title,state,updatedAt",
+                                             "--jq", #".[] | "\(.updatedAt[:10]) pull request \(.state): \(.title)""#], timeout: 30)
+        let lines = [commits, pulls].compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        return lines.isEmpty ? nil : lines.joined(separator: "\n")
     }
 
     public static func clones(in roots: [URL]) -> [Repository] {

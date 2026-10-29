@@ -156,6 +156,10 @@ public struct MeetingLibrary: Sendable {
         try? String(contentsOf: noteURL(of: meeting), encoding: .utf8)
     }
 
+    public func noteChangedAt(of meeting: Meeting) -> Date? {
+        try? noteURL(of: meeting).resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+    }
+
     public func saveNote(_ note: String, for meeting: Meeting) throws {
         try note.write(to: noteURL(of: meeting), atomically: true, encoding: .utf8)
     }

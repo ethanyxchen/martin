@@ -28,3 +28,11 @@ struct AssistantTests {
         #expect(Assistant.allCases.map(\.account) == ["Claude", "ChatGPT"])
     }
 }
+
+struct AssistantEffortTests {
+    @Test func deepWorkUsesTheLargeModelAtHighEffortWithMoreTime() {
+        #expect(Assistant.claude.claudeModel(for: .deep) == ["--model", "opus", "--effort", "high"])
+        #expect(Assistant.claude.claudeModel(for: .quick) == ["--model", "haiku"])
+        #expect(Assistant.claude.timeout(for: .deep) > Assistant.claude.timeout(for: .quick))
+    }
+}

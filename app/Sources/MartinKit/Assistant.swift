@@ -14,6 +14,12 @@ public enum Assistant: String, CaseIterable, Identifiable, Sendable {
 
     private static let probeTimeout: TimeInterval = 30
     private static let answerTimeout: TimeInterval = 120
+    private static let deepTimeout: TimeInterval = 300
+
+    public enum Effort: Sendable {
+        case quick
+        case deep
+    }
 
     public var title: String {
         switch self {
@@ -43,12 +49,12 @@ public enum Assistant: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    func answer(_ prompt: String, instructions: String, schema: String) async -> Data? {
+    func answer(_ prompt: String, instructions: String, schema: String, effort: Effort = .quick) async -> Data? {
         switch self {
         case .claude:
-            let arguments = ["-p", "--model", "haiku", "--tools", "", "--setting-sources", "", "--no-session-persistence",
+            let arguments = ["-p"] + claudeModel(for: effort) + ["--tools", "", "--setting-sources", "", "--no-session-persistence",
                              "--system-prompt", instructions, "--output-format", "json", "--json-schema", schema]
-            return await Command.run(tool, arguments, input: prompt, timeout: Self.answerTimeout).flatMap(structuredOutput(of:))
+            return await Command.run(tool, arguments, input: prompt, timeout: timeout(for: effort)).flatMap(structuredOutput(of:))
         case .codex:
             let scratch = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory)
             defer { try? FileManager.default.removeItem(at: scratch) }
@@ -56,9 +62,17 @@ public enum Assistant: String, CaseIterable, Identifiable, Sendable {
             guard (try? FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)) != nil,
                   (try? schema.write(to: schemaFile, atomically: true, encoding: .utf8)) != nil else { return nil }
             let arguments = ["exec", "--ephemeral", "--skip-git-repo-check", "--ignore-user-config", "--ignore-rules", "--sandbox", "read-only",
-                             "--color", "never", "--model", "gpt-6-luna", "--config", "model_reasoning_effort=\"low\"", "--cd", scratch.path(percentEncoded: false), "--output-schema", schemaFile.path(percentEncoded: false), "-"]
-            return await Command.run(tool, arguments, input: "\(instructions)\n\n\(prompt)", timeout: Self.answerTimeout).flatMap(structuredOutput(of:))
+                             "--color", "never", "--model", "gpt-6-luna", "--config", "model_reasoning_effort=\"\(effort == .deep ? "high" : "low")\"", "--cd", scratch.path(percentEncoded: false), "--output-schema", schemaFile.path(percentEncoded: false), "-"]
+            return await Command.run(tool, arguments, input: "\(instructions)\n\n\(prompt)", timeout: timeout(for: effort)).flatMap(structuredOutput(of:))
         }
+    }
+
+    func claudeModel(for effort: Effort) -> [String] {
+        effort == .deep ? ["--model", "opus", "--effort", "high"] : ["--model", "haiku"]
+    }
+
+    func timeout(for effort: Effort) -> TimeInterval {
+        effort == .deep ? Self.deepTimeout : Self.answerTimeout
     }
 
     func structuredOutput(of output: String) -> Data? {
