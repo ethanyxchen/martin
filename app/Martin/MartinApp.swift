@@ -282,6 +282,10 @@ final class AppState {
         guard var linked = allProjects.first(where: { $0.id == project.id }), linked.repository != repository else { return }
         linked.repository = repository
         try? library.save(linked)
+        if let folder = repository?.folder {
+            try? library.save(RepositoryLookup(folder: folder), for: project.id)
+            suggestions[project.id] = .found(Repository(at: folder))
+        }
         reload()
     }
 
@@ -318,23 +322,24 @@ final class AppState {
     }
 
     func suggestRepository(for project: Project) async {
-        guard let assistant, project.repository?.folder == nil, suggestions[project.id] == nil else { return }
+        guard project.repository?.folder == nil, suggestions[project.id] == nil else { return }
+        if let saved = (try? library.lookups())?[project.id] {
+            return found(saved.folder.flatMap(Repository.init(at:)), for: project)
+        }
+        guard let assistant else { return }
         suggestions[project.id] = .thinking
         let round = lookupRound
         if scouting == nil { await scoutRepositories() }
         let candidates = await scouting?.value ?? []
         let notes = notes(in: project).prefix(Agent.noteLimit).map { "# \($0.displayTitle)\n\(library.note(of: $0) ?? "")" }
-        let fingerprint = await Task.detached { Agent.fingerprint(for: project, notes: notes, among: candidates, using: assistant) }.value
-        let saved = (try? library.lookups())?[project.id]
-        var matches = saved?.fingerprint == fingerprint ? saved?.matches : nil
-        if matches == nil {
-            matches = await finder.match(project, notes, candidates, assistant)
-            guard round == lookupRound, allProjects.contains(where: { $0.id == project.id }) else { return }
-            if let matches { try? library.save(RepositoryLookup(fingerprint: fingerprint, matches: matches), for: project.id) }
-        }
-        let found = matches ?? []
-        let repository = await Task.detached { Agent.pick(for: project, matches: found, among: candidates) }.value
-        guard round == lookupRound else { return }
+        let matches = await finder.match(project, notes, candidates, assistant)
+        let repository = await Task.detached { Agent.pick(for: project, matches: matches ?? [], among: candidates) }.value
+        guard round == lookupRound, allProjects.contains(where: { $0.id == project.id }) else { return }
+        if matches != nil { try? library.save(RepositoryLookup(folder: repository?.folder), for: project.id) }
+        found(repository, for: project)
+    }
+
+    private func found(_ repository: Repository?, for project: Project) {
         suggestions[project.id] = .found(repository)
         if let repository, let waiting = allProjects.first(where: { $0.id == project.id && $0.repository == .unset }) {
             link(waiting, to: .folder(repository.folder))

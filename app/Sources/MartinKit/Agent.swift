@@ -1,13 +1,10 @@
-import CryptoKit
 import Foundation
 
 public struct RepositoryLookup: Codable, Hashable, Sendable {
-    public let fingerprint: String
-    public let matches: Set<String>
+    public let folder: URL?
 
-    public init(fingerprint: String, matches: Set<String>) {
-        self.fingerprint = fingerprint
-        self.matches = matches
+    public init(folder: URL?) {
+        self.folder = folder
     }
 }
 
@@ -30,11 +27,6 @@ public enum Agent {
     public static func match(_ project: Project, notes: [String], among candidates: [Repository], using assistant: Assistant) async -> Set<String>? {
         guard !candidates.isEmpty else { return [] }
         return await assistant.answer(prompt(for: project, notes: notes, among: candidates), instructions: instructions, schema: schema).flatMap(matches(in:))
-    }
-
-    public static func fingerprint(for project: Project, notes: [String], among candidates: [Repository], using assistant: Assistant) -> String {
-        let inputs = [assistant.rawValue, instructions, schema, prompt(for: project, notes: notes, among: candidates.sorted { $0.slug < $1.slug })]
-        return SHA256.hash(data: Data(inputs.joined(separator: "\n").utf8)).map { String(format: "%02x", $0) }.joined()
     }
 
     public static func pick(for project: Project, matches: Set<String>, among candidates: [Repository]) -> Repository? {

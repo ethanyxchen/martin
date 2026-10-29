@@ -271,7 +271,7 @@ final class AppStateTests {
         #expect(app.pinned.map(\.id) == [filed.id])
     }
 
-    @Test func aLookupIsReusedAfterARelaunchUntilTheProjectsNotesChange() async throws {
+    @Test func aSavedLookupIsKeptAcrossRelaunchesEvenAfterTheNotesChange() async throws {
         let martin = try clone("martin")
         let asked = Asked()
         let meeting = try library.create(title: "Kickoff")
@@ -279,13 +279,39 @@ final class AppStateTests {
         app.file(meeting, inNewProjectNamed: "Notepad")
         app.assistant = .claude
         await app.suggestRepositories()
-        let relaunched = AppState(library: library, defaults: defaults, finder: finding(martin, asked: asked))
+        app.save("- ship the menu bar", for: try #require(app.meeting(meeting.id)))
+        let relaunched = AppState(library: library, defaults: defaults, finder: finding(nil, asked: asked))
         await relaunched.suggestRepositories()
         #expect(await asked.times == 1)
         #expect(relaunched.suggestions.values.map(\.self) == [.found(martin)])
-        relaunched.save("- ship the menu bar", for: try #require(relaunched.meeting(meeting.id)))
-        await AppState(library: library, defaults: defaults, finder: finding(martin, asked: asked)).suggestRepositories()
-        #expect(await asked.times == 2)
+    }
+
+    @Test func findingNothingIsSavedTooAndNotAskedAgain() async throws {
+        let asked = Asked()
+        let app = AppState(library: library, defaults: defaults, finder: finding(nil, asked: asked))
+        app.file(try library.create(), inNewProjectNamed: "Interviews")
+        app.assistant = .claude
+        await app.suggestRepositories()
+        let relaunched = AppState(library: library, defaults: defaults, finder: finding(try clone("martin"), asked: asked))
+        await relaunched.suggestRepositories()
+        #expect(await asked.times == 1)
+        #expect(relaunched.suggestions.values.map(\.self) == [.found(nil)])
+    }
+
+    @Test func aRepositoryLinkedByHandReplacesTheSavedLookup() async throws {
+        let martin = try clone("martin"), notepad = try clone("notepad")
+        let asked = Asked()
+        let app = AppState(library: library, defaults: defaults, finder: finding(martin, asked: asked))
+        app.file(try library.create(), inNewProjectNamed: "Notepad")
+        app.assistant = .claude
+        await app.suggestRepositories()
+        app.link(try #require(app.projects.first), to: .folder(notepad.folder))
+        app.link(try #require(app.projects.first), to: nil)
+        let relaunched = AppState(library: library, defaults: defaults, finder: finding(martin, asked: asked))
+        await relaunched.suggestRepositories()
+        relaunched.addRepository(to: try #require(relaunched.projects.first))
+        #expect(relaunched.projects.map(\.repository) == [.folder(notepad.folder)])
+        #expect(await asked.times == 1)
     }
 
     @Test func aFailedLookupIsNotSavedSoTheNextLaunchAsksAgain() async throws {
@@ -297,7 +323,7 @@ final class AppStateTests {
         await app.suggestRepositories()
         await AppState(library: library, defaults: defaults, finder: finding(martin, asked: asked)).suggestRepositories()
         #expect(await asked.times == 2)
-        #expect(try library.lookups().values.map(\.matches) == [["ethanyxchen/martin"]])
+        #expect(try library.lookups().values.map(\.folder) == [martin.folder])
     }
 
     @Test func aSecretProjectIsNotLookedUpInTheBackground() async throws {
