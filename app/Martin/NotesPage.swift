@@ -49,7 +49,7 @@ struct ProjectsView: View {
                 Page {
                     PageHeading(title: "Projects")
                 } content: {
-                    Rows(items: shelves, indent: ChatRow.avatarIndent) { shelf in
+                    Rows(items: shelves, indent: ChatRow.avatarIndent, selected: app.selectedShelf) { shelf in
                         let latest = shelf.meetings.first
                         Button { select(shelf.id == app.selectedShelf ? nil : shelf.id) } label: {
                             ChatRow(avatar: Avatar(title: shelf.project?.name, square: true), title: shelf.title, stamp: latest?.date.stamp(at: context.date), preview: latest.flatMap { app.previews[$0.id] }, count: shelf.meetings.count, selected: shelf.id == app.selectedShelf)
@@ -326,9 +326,10 @@ private struct ShelfView: View {
     }
 }
 
-private struct Rows<Item: Identifiable, Row: View>: View {
+struct Rows<Item: Identifiable, Row: View>: View {
     let items: [Item]
     var indent: CGFloat = 0
+    var selected: Item.ID?
     @ViewBuilder let row: (Item) -> Row
     @State private var hovered: Item.ID?
 
@@ -349,13 +350,17 @@ private struct Rows<Item: Identifiable, Row: View>: View {
                                 .frame(height: 1)
                                 .padding(.leading, ChatRow.inset + indent)
                                 .padding(.trailing, ChatRow.inset)
-                                .opacity(hovered == item.id || hovered == previous ? 0 : 1)
+                                .opacity(Self.divides(item.id, below: previous, lit: [hovered, selected]) ? 1 : 0)
                         }
                     }
             }
         }
         .animation(.easeOut(duration: 0.12), value: hovered)
         .padding(.bottom, 20)
+    }
+
+    static func divides(_ item: Item.ID, below previous: Item.ID, lit: Set<Item.ID?>) -> Bool {
+        lit.isDisjoint(with: [item, previous])
     }
 }
 

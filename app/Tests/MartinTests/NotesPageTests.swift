@@ -45,3 +45,16 @@ struct ActionShortcutTests {
         #expect(ActionPlacement.menu.delete(enabled: false) == nil)
     }
 }
+
+struct RowsTests {
+    private struct Item: Identifiable { let id: Int }
+
+    @Test func theDividerHidesBesideALitRow() {
+        typealias List = Rows<Item, EmptyView>
+        #expect(List.divides(2, below: 1, lit: [nil, nil]))
+        #expect(List.divides(3, below: 2, lit: [1, nil]))
+        #expect(!List.divides(2, below: 1, lit: [nil, 1]))
+        #expect(!List.divides(2, below: 1, lit: [nil, 2]))
+        #expect(!List.divides(2, below: 1, lit: [1, nil]))
+    }
+}
