@@ -60,7 +60,7 @@ struct ProjectsView: View {
                     }
                     .padding(.horizontal, Theme.edge - ChatRow.inset)
                 }
-                .frame(width: open == nil ? (width > 0 ? width : nil) : Self.sidebar)
+                .frame(maxWidth: open == nil ? max(width, Self.sidebar) : Self.sidebar)
                 if let open {
                     Divider()
                     ShelfView(app: app, shelf: open, now: context.date)
