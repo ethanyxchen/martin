@@ -5,9 +5,8 @@ import Testing
 struct AgentTests {
     let clones = RepositoryTests()
 
-    private func answer(_ slug: String?, reason: String = "Notes discuss the summary pipeline") -> Data {
-        let slug = slug.map { "\"\($0)\"" } ?? "null"
-        return Data(#"{"slug":\#(slug),"reason":"\#(reason)"}"#.utf8)
+    private func answer(_ slug: String?) -> Data {
+        Data(#"{"slug":\#(slug.map { "\"\($0)\"" } ?? "null")}"#.utf8)
     }
 
     @Test func thePromptCarriesTheNotesAndEachCandidatesReadmeInRankedOrder() throws {
@@ -30,10 +29,10 @@ struct AgentTests {
         #expect(prompt.contains(String(repeating: "a", count: Agent.excerpt) + "\n</note>"))
     }
 
-    @Test func thePickIsTheCandidateTheAgentNamedWithItsReason() {
+    @Test func thePickIsTheCandidateTheAgentNamed() {
         let overload = clones.repository("GoodnotesGlobal/ma-turbo-overload", in: "ma-turbo-overload")
         let martin = clones.repository("ethanyxchen/martin", in: "martin")
-        #expect(Agent.pick(from: answer("goodnotesglobal/MA-turbo-overload"), among: [martin, overload]) == RepositoryPick(repository: overload, reason: "Notes discuss the summary pipeline"))
+        #expect(Agent.pick(from: answer("goodnotesglobal/MA-turbo-overload"), among: [martin, overload]) == overload)
     }
 
     @Test func thereIsNoPickWhenTheAgentDeclinesOrNamesAStranger() {

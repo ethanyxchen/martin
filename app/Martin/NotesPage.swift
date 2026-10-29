@@ -242,7 +242,7 @@ struct ProjectActions: View {
     var body: some View {
         if placement != .row, project?.archivedAt == nil {
             Toggle("GitHub Repository", systemImage: "chevron.left.forwardslash.chevron.right", isOn: Binding { project?.repository != nil } set: { on in
-                project.map { app.link($0, to: on ? .unset : nil) }
+                project.map { on ? app.addRepository(to: $0) : app.link($0, to: nil) }
             })
             .disabled(project == nil)
             Divider()

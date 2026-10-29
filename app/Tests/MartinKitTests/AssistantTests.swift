@@ -9,8 +9,8 @@ struct AssistantTests {
     }
 
     @Test func claudesAnswerIsTheStructuredOutputOfASuccessfulRun() throws {
-        let output = #"{"type":"result","is_error":false,"result":"done","structured_output":{"slug":"ethanyxchen/martin","reason":"README"}}"#
-        #expect(try object(Assistant.claude.structuredOutput(of: output)) == ["slug": "ethanyxchen/martin", "reason": "README"])
+        let output = #"{"type":"result","is_error":false,"result":"done","structured_output":{"slug":"ethanyxchen/martin"}}"#
+        #expect(try object(Assistant.claude.structuredOutput(of: output)) == ["slug": "ethanyxchen/martin"])
     }
 
     @Test func claudeHasNoAnswerWhenTheRunFailed() {
@@ -20,7 +20,7 @@ struct AssistantTests {
     }
 
     @Test func codexPrintsItsAnswerAsIs() throws {
-        #expect(try object(Assistant.codex.structuredOutput(of: #"{"slug":null,"reason":"Nothing fits"}"#)) == ["slug": NSNull(), "reason": "Nothing fits"])
+        #expect(try object(Assistant.codex.structuredOutput(of: #"{"slug":null}"#)) == ["slug": NSNull()])
     }
 
     @Test func eachAssistantNamesTheAccountItSignsInWith() {

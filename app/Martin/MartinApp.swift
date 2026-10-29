@@ -55,6 +55,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         app.reopen()
+        Task { await app.suggestRepositories() }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
@@ -74,6 +75,7 @@ final class AppState {
     private static let assistantKey = "assistant"
     let library: MeetingLibrary
     private let defaults: UserDefaults
+    private let finder: RepositoryFinder
     private(set) var meetings: [Meeting] = []
     private(set) var allProjects: [Project] = []
     private(set) var previews: [Meeting.ID: String] = [:]
@@ -99,9 +101,10 @@ final class AppState {
     private var keyWindow: String?
     @ObservationIgnored private var windows: [String: NSWindow] = [:]
 
-    init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = .standard) {
+    init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = .standard, finder: RepositoryFinder = RepositoryFinder()) {
         self.library = library
         self.defaults = defaults
+        self.finder = finder
         page = defaults.string(forKey: Self.pageKey).flatMap(HomePage.init) ?? .upcoming
         hiddenPages = Set((defaults.stringArray(forKey: Self.hiddenPagesKey) ?? []).compactMap(HomePage.init))
         assistant = defaults.string(forKey: Self.assistantKey).flatMap(Assistant.init)
@@ -283,20 +286,34 @@ final class AppState {
 
     func scoutRepositories() async {
         let folders = allProjects.compactMap { $0.repository?.folder?.deletingLastPathComponent() }
-        let scouting = Task { await Repository.nearby(folders) }
+        let scouting = Task { [finder] in await finder.nearby(folders) }
         self.scouting = scouting
         clones = await scouting.value
     }
 
+    func addRepository(to project: Project) {
+        guard case .found(let repository?) = suggestions[project.id] else { return link(project, to: .unset) }
+        link(project, to: .folder(repository.folder))
+    }
+
+    func suggestRepositories() async {
+        for project in projects {
+            await suggestRepository(for: project)
+        }
+    }
+
     func suggestRepository(for project: Project) async {
-        guard let assistant, project.repository == .unset, suggestions[project.id] == nil else { return }
+        guard let assistant, project.repository?.folder == nil, suggestions[project.id] == nil else { return }
         suggestions[project.id] = .thinking
         if scouting == nil { await scoutRepositories() }
         let candidates = await scouting?.value ?? []
         let notes = notes(in: project).prefix(Self.suggestionNotes).map { "# \($0.displayTitle)\n\(library.note(of: $0) ?? "")" }
-        let pick = await Agent.pickRepository(for: project, notes: notes, among: candidates, using: assistant)
+        let repository = await finder.pick(project, notes, candidates, assistant)
         guard self.assistant == assistant else { return }
-        suggestions[project.id] = .found(pick)
+        suggestions[project.id] = .found(repository)
+        if let repository, let waiting = allProjects.first(where: { $0.id == project.id && $0.repository == .unset }) {
+            link(waiting, to: .folder(repository.folder))
+        }
     }
 
     func openAssistantSetup() {
@@ -306,6 +323,7 @@ final class AppState {
     func use(_ assistant: Assistant) {
         self.assistant = assistant
         closeAssistantSetup()
+        Task { await suggestRepositories() }
     }
 
     func closeAssistantSetup() {
@@ -451,7 +469,12 @@ extension Meeting {
     var untitled: String { occurrence == nil ? "Quick note" : "Meeting" }
 }
 
-enum RepositorySuggestion {
+struct RepositoryFinder: Sendable {
+    var nearby: @Sendable ([URL]) async -> [Repository] = Repository.nearby
+    var pick: @Sendable (Project, [String], [Repository], Assistant) async -> Repository? = Agent.pickRepository
+}
+
+enum RepositorySuggestion: Equatable {
     case thinking
-    case found(RepositoryPick?)
+    case found(Repository?)
 }

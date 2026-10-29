@@ -1,25 +1,19 @@
 import Foundation
 
-public struct RepositoryPick: Hashable, Sendable {
-    public let repository: Repository
-    public let reason: String
-}
-
 public enum Agent {
     static let excerpt = 1_500
 
     static let instructions = """
         You link projects in a meeting-notes app to the GitHub repository where each project's code lives. \
         Read the project's name and notes, then pick the one candidate repository that holds its code, judging by names, READMEs and what the notes discuss. \
-        Answer with its slug exactly as listed, or null when no candidate clearly fits. \
-        Give the reason as one plain sentence under 60 characters, shown as a caption under the repository's name, citing the evidence.
+        Answer with its slug exactly as listed, or null when no candidate clearly fits.
         """
 
     static let schema = """
-        {"type":"object","properties":{"slug":{"type":["string","null"]},"reason":{"type":"string"}},"required":["slug","reason"],"additionalProperties":false}
+        {"type":"object","properties":{"slug":{"type":["string","null"]}},"required":["slug"],"additionalProperties":false}
         """
 
-    public static func pickRepository(for project: Project, notes: [String], among candidates: [Repository], using assistant: Assistant) async -> RepositoryPick? {
+    public static func pickRepository(for project: Project, notes: [String], among candidates: [Repository], using assistant: Assistant) async -> Repository? {
         guard !candidates.isEmpty else { return nil }
         return await assistant.answer(prompt(for: project, notes: notes, among: candidates), instructions: instructions, schema: schema)
             .flatMap { pick(from: $0, among: candidates) }
@@ -38,13 +32,11 @@ public enum Agent {
             """
     }
 
-    static func pick(from answer: Data, among candidates: [Repository]) -> RepositoryPick? {
+    static func pick(from answer: Data, among candidates: [Repository]) -> Repository? {
         struct Answer: Decodable {
             let slug: String?
-            let reason: String
         }
-        guard let answer = try? JSONDecoder().decode(Answer.self, from: answer), let slug = answer.slug,
-              let repository = candidates.first(where: { $0.slug.caseInsensitiveCompare(slug) == .orderedSame }) else { return nil }
-        return RepositoryPick(repository: repository, reason: answer.reason)
+        guard let slug = (try? JSONDecoder().decode(Answer.self, from: answer))?.slug else { return nil }
+        return candidates.first { $0.slug.caseInsensitiveCompare(slug) == .orderedSame }
     }
 }

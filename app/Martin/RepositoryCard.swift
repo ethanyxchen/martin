@@ -24,26 +24,11 @@ struct RepositoryCard: View {
                 }
             }
         case .unset:
-            switch app.suggestions[project.id] {
-            case .found(let pick?):
-                card(icon: "sparkles", tint: Theme.cobalt, title: pick.repository.slug, detail: pick.reason, tentative: true) {
-                    Button("Link") { app.link(project, to: .folder(pick.repository.folder)) }
-                        .buttonStyle(Chip())
-                        .help("Link \(pick.repository.folder.abbreviated) to \(project.name)")
-                    Menu("More", systemImage: "ellipsis") { LinkChoices(app: app, project: project) }
-                        .menuButton(RowAction())
-                }
-            case .thinking:
-                card(icon: "sparkles", tint: Theme.cobalt, title: "Looking for the repository…", detail: "\(app.assistant?.title ?? "The assistant") is reading your notes", tentative: true, pulsing: true) { linkMenu }
-            case .found(nil), nil:
-                card(icon: "link", tint: Theme.secondary, title: "Link a repository", detail: "Choose its folder on your Mac", tentative: true) { linkMenu }
+            card(icon: "link", tint: Theme.secondary, title: "Link a repository", detail: "Choose its folder on your Mac", tentative: true, busy: app.suggestions[project.id] == .thinking) {
+                Menu("Link…") { LinkChoices(app: app, project: project) }
+                    .menuButton(Chip())
             }
         }
-    }
-
-    private var linkMenu: some View {
-        Menu("Link…") { LinkChoices(app: app, project: project) }
-            .menuButton(Chip())
     }
 
     private func linkedMenu(_ repository: Repository?) -> some View {
@@ -59,13 +44,18 @@ struct RepositoryCard: View {
         .menuButton(RowAction())
     }
 
-    private func card(icon: String, tint: some ShapeStyle, title: String, detail: String, tentative: Bool = false, pulsing: Bool = false, @ViewBuilder actions: () -> some View) -> some View {
+    private func card(icon: String, tint: some ShapeStyle, title: String, detail: String, tentative: Bool = false, busy: Bool = false, @ViewBuilder actions: () -> some View) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(tint)
-                .symbolEffect(.pulse, isActive: pulsing)
-                .frame(width: 32, height: 32)
+            Group {
+                if busy {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Image(systemName: icon)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(tint)
+                }
+            }
+            .frame(width: 32, height: 32)
                 .background(tentative ? AnyShapeStyle(Theme.well) : AnyShapeStyle(Theme.paper), in: .rect(cornerRadius: 8, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -76,8 +66,8 @@ struct RepositoryCard: View {
                 Text(detail)
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.secondary)
-                    .lineLimit(tentative ? 2 : 1)
-                    .truncationMode(tentative ? .tail : .middle)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             HStack(spacing: 4) { actions() }

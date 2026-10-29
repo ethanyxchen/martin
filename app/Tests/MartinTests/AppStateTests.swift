@@ -186,7 +186,7 @@ final class AppStateTests {
     }
 
     @Test func theChosenAssistantIsRememberedAcrossLaunches() {
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, finder: finding(nil))
         #expect(app.assistant == nil)
         app.use(.codex)
         #expect(AppState(library: library, defaults: defaults).assistant == .codex)
@@ -194,18 +194,56 @@ final class AppStateTests {
         #expect(AppState(library: library, defaults: defaults).assistant == nil)
     }
 
-    @Test func aRepositoryIsSoughtOnlyWithAnAssistantForAProjectThatWantsOneButHasNone() async throws {
-        let app = AppState(library: library, defaults: defaults)
+    @Test func noRepositoryIsSoughtWithoutAnAssistantOrForALinkedProject() async throws {
+        let app = AppState(library: library, defaults: defaults, finder: finding(nil))
         app.file(try library.create(), inNewProjectNamed: "Martin")
-        app.link(try #require(app.projects.first), to: .unset)
-        await app.suggestRepository(for: try #require(app.projects.first))
-        #expect(app.suggestions.isEmpty)
-        app.assistant = .claude
-        app.link(try #require(app.projects.first), to: nil)
-        await app.suggestRepository(for: try #require(app.projects.first))
+        await app.suggestRepositories()
         #expect(app.suggestions.isEmpty)
         app.link(try #require(app.projects.first), to: .folder(URL(filePath: "/Users/ada/Developer/martin", directoryHint: .isDirectory)))
-        await app.suggestRepository(for: try #require(app.projects.first))
+        app.assistant = .claude
+        await app.suggestRepositories()
         #expect(app.suggestions.isEmpty)
+    }
+
+    private func clone(_ name: String) throws -> Repository {
+        let folder = library.root.appending(path: "clones/\(name)", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: folder.appending(path: ".git"), withIntermediateDirectories: true)
+        try "[remote \"origin\"]\n\turl = git@github.com:ethanyxchen/\(name).git\n".write(to: folder.appending(path: ".git/config"), atomically: true, encoding: .utf8)
+        return try #require(Repository(at: folder))
+    }
+
+    private func finding(_ repository: Repository?) -> RepositoryFinder {
+        RepositoryFinder(nearby: { _ in [] }, pick: { _, _, _, _ in repository })
+    }
+
+    @Test func aRepositoryFoundInTheBackgroundIsLinkedTheMomentItIsTurnedOn() async throws {
+        let martin = try clone("martin")
+        let app = AppState(library: library, defaults: defaults, finder: finding(martin))
+        app.file(try library.create(), inNewProjectNamed: "Martin")
+        app.assistant = .claude
+        await app.suggestRepositories()
+        #expect(app.projects.map(\.repository) == [nil])
+        app.addRepository(to: try #require(app.projects.first))
+        #expect(app.projects.map(\.repository) == [.folder(martin.folder)])
+    }
+
+    @Test func aRepositoryTurnedOnBeforeItIsFoundIsLinkedOnceItIs() async throws {
+        let martin = try clone("martin")
+        let app = AppState(library: library, defaults: defaults, finder: finding(martin))
+        app.file(try library.create(), inNewProjectNamed: "Martin")
+        app.assistant = .claude
+        app.addRepository(to: try #require(app.projects.first))
+        #expect(app.projects.map(\.repository) == [.unset])
+        await app.suggestRepository(for: try #require(app.projects.first))
+        #expect(app.projects.map(\.repository) == [.folder(martin.folder)])
+    }
+
+    @Test func withNothingFoundTurningItOnLeavesTheRepositoryToChoose() async throws {
+        let app = AppState(library: library, defaults: defaults, finder: finding(nil))
+        app.file(try library.create(), inNewProjectNamed: "Interviews")
+        app.assistant = .claude
+        await app.suggestRepositories()
+        app.addRepository(to: try #require(app.projects.first))
+        #expect(app.projects.map(\.repository) == [.unset])
     }
 }
