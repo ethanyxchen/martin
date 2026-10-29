@@ -248,4 +248,14 @@ struct ArchivedProjectNoteTests {
         try library.restore(note)
         #expect(try library.meetings().map(\.project) == [atlas.id])
     }
+
+    @Test func aProjectsLookupIsSavedUntilTheProjectIsDeleted() throws {
+        let kept = try library.createProject(named: "Martin"), deleted = try library.createProject(named: "Goodmeet")
+        #expect(try library.lookups().isEmpty)
+        let lookup = RepositoryLookup(fingerprint: "abc", matches: ["ethanyxchen/martin"])
+        try library.save(lookup, for: kept.id)
+        try library.save(RepositoryLookup(fingerprint: "def", matches: []), for: deleted.id)
+        try library.delete(deleted)
+        #expect(try library.lookups() == [kept.id: lookup])
+    }
 }

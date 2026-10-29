@@ -7,6 +7,10 @@ struct AgentTests {
 
     let goodmeet = Project(name: "Goodmeet"), interviews = Project(name: "Interviews")
 
+    private func picked(_ project: Project, _ answer: Data?, _ candidates: [Repository]) -> Repository? {
+        Agent.pick(for: project, matches: answer.flatMap(Agent.matches(in:)) ?? [], among: candidates)
+    }
+
     private func answer(_ slugs: String...) -> Data {
         Data(#"{"evidence":"","slugs":[\#(slugs.map { "\"\($0)\"" }.joined(separator: ","))]}"#.utf8)
     }
@@ -48,7 +52,7 @@ struct AgentTests {
         let overload = clones.repository("GoodnotesGlobal/ma-turbo-overload", in: "ma-turbo-overload")
         let platform = clones.repository("GoodnotesGlobal/data-platform", in: "data-platform")
         let martin = clones.repository("ethanyxchen/martin", in: "martin")
-        #expect(Agent.pick(for: goodmeet, from: answer("GoodnotesGlobal/data-platform", "goodnotesglobal/MA-turbo-overload"), among: [martin, overload, platform]) == overload)
+        #expect(picked(goodmeet, answer("GoodnotesGlobal/data-platform", "goodnotesglobal/MA-turbo-overload"), [martin, overload, platform]) == overload)
     }
 
     @Test func aRepositoryWhoseNameOrReadmeNamesTheProjectCountsEvenWhenTheAgentLeavesItOut() throws {
@@ -56,10 +60,10 @@ struct AgentTests {
         let overload = clones.repository("GoodnotesGlobal/ma-turbo-overload", in: "ma-turbo-overload")
         let agents = clones.repository("GoodnotesGlobal/infrastructure-goodmeet-agents", in: "infrastructure-goodmeet-agents")
         try "# Turbo Overload\nSet up **Goodmeet .env** first.".write(to: overload.folder.appending(path: "README.md"), atomically: true, encoding: .utf8)
-        #expect(Agent.pick(for: goodmeet, from: answer("GoodnotesGlobal/data-platform"), among: [overload, platform]) == overload)
-        #expect(Agent.pick(for: goodmeet, from: nil, among: [agents, overload]) == agents)
-        #expect(Agent.pick(for: Project(name: "Good"), from: nil, among: [agents, overload]) == nil)
-        #expect(Agent.pick(for: Project(name: "Overload"), from: nil, among: [platform, overload]) == overload)
+        #expect(picked(goodmeet, answer("GoodnotesGlobal/data-platform"), [overload, platform]) == overload)
+        #expect(picked(goodmeet, nil, [agents, overload]) == agents)
+        #expect(picked(Project(name: "Good"), nil, [agents, overload]) == nil)
+        #expect(picked(Project(name: "Overload"), nil, [platform, overload]) == overload)
     }
 
     @Test func aProjectNameTooShortToMeanAnythingNamesNoRepository() {
@@ -71,9 +75,28 @@ struct AgentTests {
 
     @Test func thereIsNoPickWhenTheAgentNamesNoneOnlyStrangersOrTooManyToBelieve() {
         let martin = clones.repository("ethanyxchen/martin", in: "martin")
-        #expect(Agent.pick(for: interviews, from: answer(), among: [martin]) == nil)
-        #expect(Agent.pick(for: interviews, from: answer("acme/atlas"), among: [martin]) == nil)
-        #expect(Agent.pick(for: interviews, from: answer("ethanyxchen/martin", "a/b", "c/d", "e/f"), among: [martin]) == nil)
-        #expect(Agent.pick(for: interviews, from: Data("Not logged in".utf8), among: [martin]) == nil)
+        #expect(picked(interviews, answer(), [martin]) == nil)
+        #expect(picked(interviews, answer("acme/atlas"), [martin]) == nil)
+        #expect(picked(interviews, answer("ethanyxchen/martin", "a/b", "c/d", "e/f"), [martin]) == nil)
+        #expect(picked(interviews, Data("Not logged in".utf8), [martin]) == nil)
+    }
+
+    @Test func theFingerprintChangesWithTheNotesNameOrClonesButNotTheirOrder() throws {
+        let overload = clones.repository("GoodnotesGlobal/ma-turbo-overload", in: "ma-turbo-overload")
+        let martin = clones.repository("ethanyxchen/martin", in: "martin")
+        let goodmeet = Project(id: "goodmeet", name: "Goodmeet")
+        let fingerprint = Agent.fingerprint(for: goodmeet, notes: ["# Tasks"], among: [overload, martin])
+        #expect(Agent.fingerprint(for: goodmeet, notes: ["# Tasks"], among: [martin, overload]) == fingerprint)
+        #expect(Agent.fingerprint(for: goodmeet, notes: ["# Tasks", "# Sync"], among: [overload, martin]) != fingerprint)
+        #expect(Agent.fingerprint(for: Project(id: "goodmeet", name: "GoodMeet"), notes: ["# Tasks"], among: [overload, martin]) != fingerprint)
+        #expect(Agent.fingerprint(for: goodmeet, notes: ["# Tasks"], among: [overload]) != fingerprint)
+        try "The Goodmeet app.".write(to: overload.folder.appending(path: "README.md"), atomically: true, encoding: .utf8)
+        #expect(Agent.fingerprint(for: goodmeet, notes: ["# Tasks"], among: [overload, martin]) != fingerprint)
+    }
+
+    @Test func anAnswerIsItsSlugsUnlessItCannotBeReadOrNamesTooMany() {
+        #expect(Agent.matches(in: answer("GoodnotesGlobal/MA-turbo-overload")) == ["goodnotesglobal/ma-turbo-overload"])
+        #expect(Agent.matches(in: answer("a/b", "c/d", "e/f", "g/h")) == [])
+        #expect(Agent.matches(in: Data("Not logged in".utf8)) == nil)
     }
 }

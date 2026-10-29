@@ -212,8 +212,11 @@ final class AppStateTests {
         return try #require(Repository(at: folder))
     }
 
-    private func finding(_ repository: Repository?) -> RepositoryFinder {
-        RepositoryFinder(nearby: { _ in [] }, pick: { _, _, _, _ in repository })
+    private func finding(_ repository: Repository?, asked: Asked = Asked(), failing: Bool = false) -> RepositoryFinder {
+        RepositoryFinder(nearby: { _ in repository.map { [$0] } ?? [] }, match: { _, _, _, _ in
+            await asked.count()
+            return failing ? nil : Set(repository.map { [$0.slug.lowercased()] } ?? [])
+        })
     }
 
     @Test func aRepositoryFoundInTheBackgroundIsLinkedTheMomentItIsTurnedOn() async throws {
@@ -266,5 +269,52 @@ final class AppStateTests {
         app.keepSecret(try #require(app.projects.first), false)
         #expect(app.shelves.map(\.id) == [.project(atlas.id), .unassigned])
         #expect(app.pinned.map(\.id) == [filed.id])
+    }
+
+    @Test func aLookupIsReusedAfterARelaunchUntilTheProjectsNotesChange() async throws {
+        let martin = try clone("martin")
+        let asked = Asked()
+        let meeting = try library.create(title: "Kickoff")
+        let app = AppState(library: library, defaults: defaults, finder: finding(martin, asked: asked))
+        app.file(meeting, inNewProjectNamed: "Notepad")
+        app.assistant = .claude
+        await app.suggestRepositories()
+        let relaunched = AppState(library: library, defaults: defaults, finder: finding(martin, asked: asked))
+        await relaunched.suggestRepositories()
+        #expect(await asked.times == 1)
+        #expect(relaunched.suggestions.values.map(\.self) == [.found(martin)])
+        relaunched.save("- ship the menu bar", for: try #require(relaunched.meeting(meeting.id)))
+        await AppState(library: library, defaults: defaults, finder: finding(martin, asked: asked)).suggestRepositories()
+        #expect(await asked.times == 2)
+    }
+
+    @Test func aFailedLookupIsNotSavedSoTheNextLaunchAsksAgain() async throws {
+        let martin = try clone("martin")
+        let asked = Asked()
+        let app = AppState(library: library, defaults: defaults, finder: finding(martin, asked: asked, failing: true))
+        app.file(try library.create(), inNewProjectNamed: "Notepad")
+        app.assistant = .claude
+        await app.suggestRepositories()
+        await AppState(library: library, defaults: defaults, finder: finding(martin, asked: asked)).suggestRepositories()
+        #expect(await asked.times == 2)
+        #expect(try library.lookups().values.map(\.matches) == [["ethanyxchen/martin"]])
+    }
+
+    @Test func aSecretProjectIsNotLookedUpInTheBackground() async throws {
+        let asked = Asked()
+        let app = AppState(library: library, defaults: defaults, finder: finding(try clone("martin"), asked: asked))
+        app.file(try library.create(), inNewProjectNamed: "Martin")
+        app.keepSecret(try #require(app.projects.first), true)
+        app.assistant = .claude
+        await app.suggestRepositories()
+        #expect(await asked.times == 0)
+    }
+}
+
+actor Asked {
+    private(set) var times = 0
+
+    func count() {
+        times += 1
     }
 }

@@ -310,7 +310,7 @@ final class AppState {
     }
 
     func suggestRepositories() async {
-        for project in projects {
+        for project in projects where !project.isSecret {
             await suggestRepository(for: project)
         }
     }
@@ -321,8 +321,15 @@ final class AppState {
         if scouting == nil { await scoutRepositories() }
         let candidates = await scouting?.value ?? []
         let notes = notes(in: project).prefix(Agent.noteLimit).map { "# \($0.displayTitle)\n\(library.note(of: $0) ?? "")" }
-        let repository = await finder.pick(project, notes, candidates, assistant)
+        let fingerprint = Agent.fingerprint(for: project, notes: notes, among: candidates)
+        let saved = (try? library.lookups())?[project.id]
+        var matches = saved?.fingerprint == fingerprint ? saved?.matches : nil
+        if matches == nil, let found = await finder.match(project, notes, candidates, assistant) {
+            try? library.save(RepositoryLookup(fingerprint: fingerprint, matches: found), for: project.id)
+            matches = found
+        }
         guard self.assistant == assistant else { return }
+        let repository = Agent.pick(for: project, matches: matches ?? [], among: candidates)
         suggestions[project.id] = .found(repository)
         if let repository, let waiting = allProjects.first(where: { $0.id == project.id && $0.repository == .unset }) {
             link(waiting, to: .folder(repository.folder))
@@ -492,7 +499,7 @@ extension Meeting {
 
 struct RepositoryFinder: Sendable {
     var nearby: @Sendable ([URL]) async -> [Repository] = Repository.nearby
-    var pick: @Sendable (Project, [String], [Repository], Assistant) async -> Repository? = Agent.pickRepository
+    var match: @Sendable (Project, [String], [Repository], Assistant) async -> Set<String>? = Agent.match
 }
 
 enum RepositorySuggestion: Equatable {
