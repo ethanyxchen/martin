@@ -21,6 +21,13 @@ struct RepositoryCard: View {
                     linkedMenu(nil)
                 }
             }
+        } else if app.assistant == nil {
+            card(icon: "sparkles", tint: Theme.cobalt, title: "Find this project’s repository", detail: "Set up Claude Code or Codex to suggest one from your notes", tentative: true) {
+                Button("Set Up…") { app.openAssistantSetup() }
+                    .buttonStyle(Chip())
+                Menu("Link Manually", systemImage: "ellipsis") { LinkChoices(app: app, project: project) }
+                    .menuButton(RowAction())
+            }
         } else {
             switch app.suggestions[project.id] {
             case .found(let pick?):
@@ -32,7 +39,7 @@ struct RepositoryCard: View {
                         .menuButton(RowAction())
                 }
             case .thinking:
-                card(icon: "sparkles", tint: Theme.cobalt, title: "Finding this project’s repository…", detail: "Claude is reading your notes and local clones", tentative: true, pulsing: true) { linkMenu }
+                card(icon: "sparkles", tint: Theme.cobalt, title: "Finding this project’s repository…", detail: "\(app.assistant?.title ?? "The assistant") is reading your notes and local clones", tentative: true, pulsing: true) { linkMenu }
             case .found(nil), nil:
                 card(icon: "link", tint: Theme.secondary, title: "Link a repository", detail: "Pick the clone of this project’s GitHub repo", tentative: true) { linkMenu }
             }

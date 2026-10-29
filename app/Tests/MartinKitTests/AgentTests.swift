@@ -5,9 +5,9 @@ import Testing
 struct AgentTests {
     let clones = RepositoryTests()
 
-    private func answer(_ slug: String?, reason: String = "Notes discuss the summary pipeline", error: Bool = false) -> String {
+    private func answer(_ slug: String?, reason: String = "Notes discuss the summary pipeline") -> Data {
         let slug = slug.map { "\"\($0)\"" } ?? "null"
-        return #"{"type":"result","is_error":\#(error),"result":"","structured_output":{"slug":\#(slug),"reason":"\#(reason)"}}"#
+        return Data(#"{"slug":\#(slug),"reason":"\#(reason)"}"#.utf8)
     }
 
     @Test func thePromptCarriesTheNotesAndEachCandidatesReadmeInRankedOrder() throws {
@@ -36,11 +36,10 @@ struct AgentTests {
         #expect(Agent.pick(from: answer("goodnotesglobal/MA-turbo-overload"), among: [martin, overload]) == RepositoryPick(repository: overload, reason: "Notes discuss the summary pipeline"))
     }
 
-    @Test func thereIsNoPickWhenTheAgentDeclinesFailsOrNamesAStranger() {
+    @Test func thereIsNoPickWhenTheAgentDeclinesOrNamesAStranger() {
         let martin = clones.repository("ethanyxchen/martin", in: "martin")
         #expect(Agent.pick(from: answer(nil), among: [martin]) == nil)
-        #expect(Agent.pick(from: answer("ethanyxchen/martin", error: true), among: [martin]) == nil)
         #expect(Agent.pick(from: answer("acme/atlas"), among: [martin]) == nil)
-        #expect(Agent.pick(from: "Not logged in", among: [martin]) == nil)
+        #expect(Agent.pick(from: Data("Not logged in".utf8), among: [martin]) == nil)
     }
 }

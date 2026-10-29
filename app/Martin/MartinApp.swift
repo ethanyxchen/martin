@@ -71,6 +71,7 @@ final class AppState {
     private static let pageKey = "page"
     private static let suggestionNotes = 12
     private static let hiddenPagesKey = "hiddenPages"
+    private static let assistantKey = "assistant"
     let library: MeetingLibrary
     private let defaults: UserDefaults
     private(set) var meetings: [Meeting] = []
@@ -85,6 +86,12 @@ final class AppState {
     var hiddenPages: Set<HomePage> {
         didSet { defaults.set(hiddenPages.map(\.rawValue).sorted(), forKey: Self.hiddenPagesKey) }
     }
+    var assistant: Assistant? {
+        didSet {
+            defaults.set(assistant?.rawValue, forKey: Self.assistantKey)
+            suggestions = [:]
+        }
+    }
     var selectedShelf: Shelf.ID?
     var hiddenCalendars: Set<EventCalendar.ID> {
         didSet { defaults.set(hiddenCalendars.sorted(), forKey: Self.hiddenCalendarsKey) }
@@ -97,6 +104,7 @@ final class AppState {
         self.defaults = defaults
         page = defaults.string(forKey: Self.pageKey).flatMap(HomePage.init) ?? .upcoming
         hiddenPages = Set((defaults.stringArray(forKey: Self.hiddenPagesKey) ?? []).compactMap(HomePage.init))
+        assistant = defaults.string(forKey: Self.assistantKey).flatMap(Assistant.init)
         hiddenCalendars = Set(defaults.stringArray(forKey: Self.hiddenCalendarsKey) ?? [])
         reload()
         observeWindows()
@@ -281,12 +289,34 @@ final class AppState {
     }
 
     func suggestRepository(for project: Project) async {
-        guard project.repository == nil, suggestions[project.id] == nil else { return }
+        guard let assistant, project.repository == nil, suggestions[project.id] == nil else { return }
         suggestions[project.id] = .thinking
         if scouting == nil { await scoutRepositories() }
         let candidates = await scouting?.value ?? []
         let notes = notes(in: project).prefix(Self.suggestionNotes).map { "# \($0.displayTitle)\n\(library.note(of: $0) ?? "")" }
-        suggestions[project.id] = .found(await Agent.pickRepository(for: project, notes: notes, among: candidates))
+        let pick = await Agent.pickRepository(for: project, notes: notes, among: candidates, using: assistant)
+        guard self.assistant == assistant else { return }
+        suggestions[project.id] = .found(pick)
+    }
+
+    func openAssistantSetup() {
+        show(windows["assistant"] ?? present(AssistantSetup(app: self), id: "assistant", title: "Set Up an Assistant", size: AssistantSetup.size))
+    }
+
+    func use(_ assistant: Assistant) {
+        self.assistant = assistant
+        closeAssistantSetup()
+    }
+
+    func closeAssistantSetup() {
+        windows["assistant"]?.close()
+    }
+
+    func runInTerminal(_ command: String, titled title: String) {
+        let script = FileManager.default.temporaryDirectory.appending(path: "\(title).command")
+        guard (try? "#!/bin/zsh -l\n\(command)\n".write(to: script, atomically: true, encoding: .utf8)) != nil,
+              (try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path(percentEncoded: false))) != nil else { return }
+        NSWorkspace.shared.open(script)
     }
 
     func archive(_ project: Project) {

@@ -181,4 +181,24 @@ final class AppStateTests {
         #expect(app.projects.isEmpty)
         #expect(app.archivedProjects.map(\.repository?.lastPathComponent) == ["martin"])
     }
+
+    @Test func theChosenAssistantIsRememberedAcrossLaunches() {
+        let app = AppState(library: library, defaults: defaults)
+        #expect(app.assistant == nil)
+        app.use(.codex)
+        #expect(AppState(library: library, defaults: defaults).assistant == .codex)
+        app.assistant = nil
+        #expect(AppState(library: library, defaults: defaults).assistant == nil)
+    }
+
+    @Test func noRepositoryIsSoughtWithoutAnAssistantOrForALinkedProject() async throws {
+        let app = AppState(library: library, defaults: defaults)
+        app.file(try library.create(), inNewProjectNamed: "Martin")
+        await app.suggestRepository(for: try #require(app.projects.first))
+        #expect(app.suggestions.isEmpty)
+        app.assistant = .claude
+        app.link(try #require(app.projects.first), to: URL(filePath: "/Users/ada/Developer/martin", directoryHint: .isDirectory))
+        await app.suggestRepository(for: try #require(app.projects.first))
+        #expect(app.suggestions.isEmpty)
+    }
 }

@@ -6,7 +6,6 @@ public struct RepositoryPick: Hashable, Sendable {
 }
 
 public enum Agent {
-    static let model = "sonnet"
     static let excerpt = 1_500
 
     static let instructions = """
@@ -20,11 +19,9 @@ public enum Agent {
         {"type":"object","properties":{"slug":{"type":["string","null"]},"reason":{"type":"string"}},"required":["slug","reason"],"additionalProperties":false}
         """
 
-    public static func pickRepository(for project: Project, notes: [String], among candidates: [Repository]) async -> RepositoryPick? {
+    public static func pickRepository(for project: Project, notes: [String], among candidates: [Repository], using assistant: Assistant) async -> RepositoryPick? {
         guard !candidates.isEmpty else { return nil }
-        let arguments = ["-p", "--model", model, "--tools", "", "--setting-sources", "", "--no-session-persistence",
-                         "--system-prompt", instructions, "--output-format", "json", "--json-schema", schema]
-        return await Command.run("claude", arguments, input: prompt(for: project, notes: notes, among: candidates))
+        return await assistant.answer(prompt(for: project, notes: notes, among: candidates), instructions: instructions, schema: schema)
             .flatMap { pick(from: $0, among: candidates) }
     }
 
@@ -41,19 +38,12 @@ public enum Agent {
             """
     }
 
-    static func pick(from output: String, among candidates: [Repository]) -> RepositoryPick? {
-        struct Envelope: Decodable {
-            struct Answer: Decodable {
-                let slug: String?
-                let reason: String
-            }
-            let isError: Bool
-            let structuredOutput: Answer?
+    static func pick(from answer: Data, among candidates: [Repository]) -> RepositoryPick? {
+        struct Answer: Decodable {
+            let slug: String?
+            let reason: String
         }
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        guard let envelope = try? decoder.decode(Envelope.self, from: Data(output.utf8)), !envelope.isError,
-              let answer = envelope.structuredOutput, let slug = answer.slug,
+        guard let answer = try? JSONDecoder().decode(Answer.self, from: answer), let slug = answer.slug,
               let repository = candidates.first(where: { $0.slug.caseInsensitiveCompare(slug) == .orderedSame }) else { return nil }
         return RepositoryPick(repository: repository, reason: answer.reason)
     }
