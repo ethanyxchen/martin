@@ -13,6 +13,18 @@ struct SettingsView: View {
                     NavigationToggles(hidden: $app.hiddenPages)
                         .flush()
                 }
+                SettingsSection(title: "Assistant", detail: "Reads your notes to keep your projects up to date.") {
+                    HStack(spacing: 10) {
+                        Text(app.assistant?.title ?? "None")
+                            .font(.system(size: 13))
+                            .foregroundStyle(app.assistant == nil ? Theme.tertiary : Theme.ink)
+                        Button(app.assistant == nil ? "Set Up…" : "Change…") { app.openAssistantSetup() }
+                        if app.assistant != nil {
+                            Button("Turn Off") { app.assistant = nil }
+                        }
+                    }
+                    .flush()
+                }
                 SettingsSection(title: "Calendars", detail: "Martin shows events and takes notes for the calendars you tick.") {
                     CalendarFeed(query: true, promise: "you can choose which of them Martin follows") { _ in
                         CalendarLookup.accounts()

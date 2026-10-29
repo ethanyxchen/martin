@@ -248,4 +248,23 @@ struct ArchivedProjectNoteTests {
         try library.restore(note)
         #expect(try library.meetings().map(\.project) == [atlas.id])
     }
+
+    @Test func aProjectsLookupIsSavedUntilTheProjectIsDeleted() throws {
+        let kept = try library.createProject(named: "Martin"), deleted = try library.createProject(named: "Goodmeet")
+        #expect(try library.lookups().isEmpty)
+        let lookup = RepositoryLookup(folder: URL(filePath: "/Users/ada/Developer/martin", directoryHint: .isDirectory))
+        try library.save(lookup, for: kept.id)
+        try library.save(RepositoryLookup(folder: nil), for: deleted.id)
+        try library.delete(deleted)
+        #expect(try library.lookups() == [kept.id: lookup])
+    }
+
+    @Test func aDamagedLookupFileCountsAsNoLookupsAndDoesNotStopADeletion() throws {
+        let project = try library.createProject(named: "Martin")
+        try "{ truncated".write(to: library.root.appending(path: "lookups.json"), atomically: true, encoding: .utf8)
+        #expect(try library.lookups().isEmpty)
+        try library.delete(project)
+        try library.save(RepositoryLookup(folder: nil), for: "other")
+        #expect(try library.lookups().keys.sorted() == ["other"])
+    }
 }

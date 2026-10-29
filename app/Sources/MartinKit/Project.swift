@@ -6,14 +6,25 @@ public struct Project: Identifiable, Hashable, Codable, Sendable {
     public var series: [String]
     public var archivedAt: Date?
     public var secretAt: Date?
+    public var repository: RepositoryLink?
 
-    public init(id: String = UUID().uuidString, name: String, series: [String] = []) {
+    public init(id: String = UUID().uuidString, name: String, series: [String] = [], repository: RepositoryLink? = nil) {
         self.id = id
         self.name = name
         self.series = series
+        self.repository = repository
     }
 
     public var isSecret: Bool { secretAt != nil }
+}
+
+public enum RepositoryLink: Codable, Hashable, Sendable {
+    case unset
+    case folder(URL)
+
+    public var folder: URL? {
+        if case .folder(let folder) = self { folder } else { nil }
+    }
 }
 
 public struct Shelf: Identifiable, Hashable, Sendable {

@@ -91,6 +91,7 @@ struct ProjectsView: View {
         }
         .onExitCommand { select(nil, animated: false) }
         .onDisappear { select(nil) }
+        .task { await app.scoutRepositories() }
     }
 
     private func select(_ id: Shelf.ID?, animated: Bool = true) {
@@ -159,7 +160,7 @@ private struct NoteRow: View {
     }
 }
 
-private struct RowAction: ButtonStyle {
+struct RowAction: ButtonStyle {
     static let size: CGFloat = 26
     static let glyph: CGFloat = 14
 
@@ -258,6 +259,13 @@ struct ProjectActions: View {
     let placement: ActionPlacement
 
     var body: some View {
+        if placement != .row, project?.archivedAt == nil {
+            Toggle("GitHub Repository", systemImage: "chevron.left.forwardslash.chevron.right", isOn: Binding { project?.repository != nil } set: { on in
+                project.map { on ? app.addRepository(to: $0) : app.link($0, to: nil) }
+            })
+            .disabled(project == nil)
+            Divider()
+        }
         if project?.archivedAt == nil {
             let secret = project?.isSecret == true
             Button(secret ? "Make Not Secret" : "Make Secret", systemImage: secret ? "eye" : "eye.slash") { project.map { app.keepSecret($0, !secret) } }
@@ -347,6 +355,7 @@ private struct ShelfView: View {
             }
             .flush()
         } content: {
+            if let project = shelf.project, let repository = project.repository { RepositoryCard(app: app, project: project, repository: repository) }
             NoteList(app: app, meetings: shelf.meetings, now: now) { app.previews[$0.id] }
         }
     }
@@ -385,7 +394,7 @@ struct Rows<Item: Identifiable, Row: View>: View {
         .padding(.bottom, 20)
     }
 
-    static func divides(_ item: Item.ID, below previous: Item.ID, lit: Set<Item.ID?>) -> Bool {
+    nonisolated static func divides(_ item: Item.ID, below previous: Item.ID, lit: Set<Item.ID?>) -> Bool {
         lit.isDisjoint(with: [item, previous])
     }
 }

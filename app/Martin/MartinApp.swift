@@ -58,6 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         app.reopen()
+        Task { await app.suggestRepositories() }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
@@ -73,16 +74,29 @@ final class AppState {
     private static let hiddenCalendarsKey = "hiddenCalendars"
     private static let pageKey = "page"
     private static let hiddenPagesKey = "hiddenPages"
+    private static let assistantKey = "assistant"
     let library: MeetingLibrary
     private let defaults: UserDefaults
+    private let finder: RepositoryFinder
     private(set) var meetings: [Meeting] = []
     private(set) var allProjects: [Project] = []
     private(set) var previews: [Meeting.ID: String] = [:]
+    private(set) var clones: [Repository] = []
+    private(set) var suggestions: [Project.ID: RepositorySuggestion] = [:]
+    @ObservationIgnored private var scouting: Task<[Repository], Never>?
+    @ObservationIgnored private var lookupRound = 0
     var page: HomePage {
         didSet { defaults.set(page.rawValue, forKey: Self.pageKey) }
     }
     var hiddenPages: Set<HomePage> {
         didSet { defaults.set(hiddenPages.map(\.rawValue).sorted(), forKey: Self.hiddenPagesKey) }
+    }
+    var assistant: Assistant? {
+        didSet {
+            defaults.set(assistant?.rawValue, forKey: Self.assistantKey)
+            suggestions = [:]
+            lookupRound += 1
+        }
     }
     var selectedShelf: Shelf.ID?
     var showsSecrets = false
@@ -92,11 +106,13 @@ final class AppState {
     private var keyWindow: String?
     @ObservationIgnored private var windows: [String: NSWindow] = [:]
 
-    init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = .standard) {
+    init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = .standard, finder: RepositoryFinder = RepositoryFinder()) {
         self.library = library
         self.defaults = defaults
+        self.finder = finder
         page = defaults.string(forKey: Self.pageKey).flatMap(HomePage.init) ?? .upcoming
         hiddenPages = Set((defaults.stringArray(forKey: Self.hiddenPagesKey) ?? []).compactMap(HomePage.init))
+        assistant = defaults.string(forKey: Self.assistantKey).flatMap(Assistant.init)
         hiddenCalendars = Set(defaults.stringArray(forKey: Self.hiddenCalendarsKey) ?? [])
         reload()
         observeWindows()
@@ -262,6 +278,88 @@ final class AppState {
         reload()
     }
 
+    func link(_ project: Project, to repository: RepositoryLink?) {
+        guard var linked = allProjects.first(where: { $0.id == project.id }), linked.repository != repository else { return }
+        linked.repository = repository
+        try? library.save(linked)
+        if let folder = repository?.folder {
+            try? library.save(RepositoryLookup(folder: folder), for: project.id)
+            suggestions[project.id] = .found(Repository(at: folder))
+        }
+        reload()
+    }
+
+    func chooseRepository(for project: Project) {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.prompt = "Link"
+        panel.message = "Choose the repository folder for \(project.name)."
+        panel.directoryURL = project.repository?.folder ?? Repository.roots.first
+        guard panel.runModal() == .OK, let folder = panel.url else { return }
+        guard Repository(at: folder) != nil else {
+            return inform("“\(folder.lastPathComponent)” isn’t a GitHub repository", "Choose a folder cloned from GitHub.")
+        }
+        link(project, to: .folder(folder))
+    }
+
+    func scoutRepositories() async {
+        let folders = allProjects.compactMap { $0.repository?.folder?.deletingLastPathComponent() }
+        let scouting = Task { [finder] in await finder.nearby(folders) }
+        self.scouting = scouting
+        clones = await scouting.value
+    }
+
+    func addRepository(to project: Project) {
+        guard case .found(let repository?) = suggestions[project.id] else { return link(project, to: .unset) }
+        link(project, to: .folder(repository.folder))
+    }
+
+    func suggestRepositories() async {
+        for project in projects where !project.isSecret {
+            await suggestRepository(for: project)
+        }
+    }
+
+    func suggestRepository(for project: Project) async {
+        guard project.repository?.folder == nil, suggestions[project.id] == nil else { return }
+        if let saved = (try? library.lookups())?[project.id] {
+            return found(saved.folder.flatMap(Repository.init(at:)), for: project)
+        }
+        guard let assistant else { return }
+        suggestions[project.id] = .thinking
+        let round = lookupRound
+        if scouting == nil { await scoutRepositories() }
+        let candidates = await scouting?.value ?? []
+        let notes = notes(in: project).prefix(Agent.noteLimit).map { "# \($0.displayTitle)\n\(library.note(of: $0) ?? "")" }
+        let matches = await finder.match(project, notes, candidates, assistant)
+        let repository = await Task.detached { Agent.pick(for: project, matches: matches ?? [], among: candidates) }.value
+        guard round == lookupRound, allProjects.contains(where: { $0.id == project.id }) else { return }
+        if matches != nil { try? library.save(RepositoryLookup(folder: repository?.folder), for: project.id) }
+        found(repository, for: project)
+    }
+
+    private func found(_ repository: Repository?, for project: Project) {
+        suggestions[project.id] = .found(repository)
+        if let repository, let waiting = allProjects.first(where: { $0.id == project.id && $0.repository == .unset }) {
+            link(waiting, to: .folder(repository.folder))
+        }
+    }
+
+    func openAssistantSetup() {
+        show(windows["assistant"] ?? present(AssistantSetup(app: self), id: "assistant", title: "Choose an Assistant", size: AssistantSetup.size))
+    }
+
+    func use(_ assistant: Assistant) {
+        self.assistant = assistant
+        closeAssistantSetup()
+        Task { await suggestRepositories() }
+    }
+
+    func closeAssistantSetup() {
+        windows["assistant"]?.close()
+    }
+
     func keepSecret(_ project: Project, _ secret: Bool) {
         guard var changed = allProjects.first(where: { $0.id == project.id }) else { return }
         changed.secretAt = secret ? .now : nil
@@ -283,6 +381,7 @@ final class AppState {
 
     func delete(_ project: Project) {
         notes(in: project).forEach { windows[$0.id]?.close() }
+        suggestions[project.id] = nil
         try? library.delete(project)
         reload()
     }
@@ -392,10 +491,14 @@ final class AppState {
     }
 
     private func explain(_ error: Error) {
+        inform("Martin can't start the note", error.localizedDescription)
+    }
+
+    private func inform(_ message: String, _ detail: String) {
         NSApp.activate()
         let alert = NSAlert()
-        alert.messageText = "Martin can't start the note"
-        alert.informativeText = error.localizedDescription
+        alert.messageText = message
+        alert.informativeText = detail
         alert.runModal()
     }
 }
@@ -403,4 +506,14 @@ final class AppState {
 extension Meeting {
     var displayTitle: String { title ?? untitled }
     var untitled: String { occurrence == nil ? "Quick note" : "Meeting" }
+}
+
+struct RepositoryFinder: Sendable {
+    var nearby: @Sendable ([URL]) async -> [Repository] = Repository.nearby
+    var match: @Sendable (Project, [String], [Repository], Assistant) async -> Set<String>? = Agent.match
+}
+
+enum RepositorySuggestion: Equatable {
+    case thinking
+    case found(Repository?)
 }

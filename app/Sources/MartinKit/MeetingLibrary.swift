@@ -13,6 +13,7 @@ public struct MeetingLibrary: Sendable {
 
     private var meetingsFolder: URL { root.appending(path: "meetings", directoryHint: .isDirectory) }
     private var projectsFile: URL { root.appending(path: "projects.json") }
+    private var lookupsFile: URL { root.appending(path: "lookups.json") }
 
     public func meetings() throws -> [Meeting] {
         guard FileManager.default.fileExists(atPath: meetingsFolder.path) else { return [] }
@@ -122,6 +123,23 @@ public struct MeetingLibrary: Sendable {
             try delete(meeting)
         }
         try save(projects().filter { $0.id != project.id })
+        if var lookups = try? lookups(), lookups.removeValue(forKey: project.id) != nil { try save(lookups) }
+    }
+
+    public func lookups() throws -> [Project.ID: RepositoryLookup] {
+        guard FileManager.default.fileExists(atPath: lookupsFile.path) else { return [:] }
+        return (try? Self.decoder.decode([Project.ID: RepositoryLookup].self, from: Data(contentsOf: lookupsFile))) ?? [:]
+    }
+
+    public func save(_ lookup: RepositoryLookup, for project: Project.ID) throws {
+        var lookups = try lookups()
+        lookups[project] = lookup
+        try save(lookups)
+    }
+
+    private func save(_ lookups: [Project.ID: RepositoryLookup]) throws {
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try Self.encoder.encode(lookups).write(to: lookupsFile, options: .atomic)
     }
 
     private func project(following occurrence: Occurrence) throws -> Project.ID? {
