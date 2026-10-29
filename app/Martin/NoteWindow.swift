@@ -52,6 +52,7 @@ struct NoteView: View {
                     .font(Theme.title)
                     .foregroundStyle(Theme.ink)
                     .focused($editingTitle)
+                    .pageTitle()
                     .onSubmit { editingTitle = false }
                 HStack(spacing: 8) {
                     ProjectChip(app: app, meeting: current)
