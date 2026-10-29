@@ -69,6 +69,7 @@ final class AppState {
     private static let windowSize = NSSize(width: 520, height: 640)
     private static let hiddenCalendarsKey = "hiddenCalendars"
     private static let pageKey = "page"
+    private static let suggestionNotes = 12
     private static let hiddenPagesKey = "hiddenPages"
     let library: MeetingLibrary
     private let defaults: UserDefaults
@@ -76,6 +77,8 @@ final class AppState {
     private(set) var allProjects: [Project] = []
     private(set) var previews: [Meeting.ID: String] = [:]
     private(set) var clones: [Repository] = []
+    private(set) var suggestions: [Project.ID: RepositorySuggestion] = [:]
+    @ObservationIgnored private var scouting: Task<[Repository], Never>?
     var page: HomePage {
         didSet { defaults.set(page.rawValue, forKey: Self.pageKey) }
     }
@@ -271,7 +274,19 @@ final class AppState {
     }
 
     func scoutRepositories() async {
-        clones = await Repository.nearby(allProjects.compactMap { $0.repository?.deletingLastPathComponent() })
+        let folders = allProjects.compactMap { $0.repository?.deletingLastPathComponent() }
+        let scouting = Task { await Repository.nearby(folders) }
+        self.scouting = scouting
+        clones = await scouting.value
+    }
+
+    func suggestRepository(for project: Project) async {
+        guard project.repository == nil, suggestions[project.id] == nil else { return }
+        suggestions[project.id] = .thinking
+        if scouting == nil { await scoutRepositories() }
+        let candidates = await scouting?.value ?? []
+        let notes = notes(in: project).prefix(Self.suggestionNotes).map { "# \($0.displayTitle)\n\(library.note(of: $0) ?? "")" }
+        suggestions[project.id] = .found(await Agent.pickRepository(for: project, notes: notes, among: candidates))
     }
 
     func archive(_ project: Project) {
@@ -411,4 +426,9 @@ final class AppState {
 extension Meeting {
     var displayTitle: String { title ?? untitled }
     var untitled: String { occurrence == nil ? "Quick note" : "Meeting" }
+}
+
+enum RepositorySuggestion {
+    case thinking
+    case found(RepositoryPick?)
 }

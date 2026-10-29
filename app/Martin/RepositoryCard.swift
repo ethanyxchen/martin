@@ -7,6 +7,10 @@ struct RepositoryCard: View {
     let project: Project
 
     var body: some View {
+        content.task(id: project.id) { await app.suggestRepository(for: project) }
+    }
+
+    @ViewBuilder private var content: some View {
         if let folder = project.repository {
             if let repository = Repository(at: folder) {
                 card(icon: "chevron.left.forwardslash.chevron.right", tint: Theme.ink, title: repository.slug, detail: [folder.abbreviated, repository.branch].compactMap(\.self).joined(separator: " · ")) {
@@ -17,20 +21,27 @@ struct RepositoryCard: View {
                     linkedMenu(nil)
                 }
             }
-        } else if let suggestion = app.clones.suggestion(for: project) {
-            card(icon: "sparkles", tint: Theme.cobalt, title: suggestion.slug, detail: "Suggested · \(suggestion.folder.abbreviated)", tentative: true) {
-                Button("Link") { app.link(project, to: suggestion.folder) }
-                    .buttonStyle(Chip())
-                    .help("Link \(suggestion.slug) to \(project.name)")
-                Menu("Other Repositories", systemImage: "ellipsis") { LinkChoices(app: app, project: project) }
-                    .menuButton(RowAction())
-            }
         } else {
-            card(icon: "link", tint: Theme.secondary, title: "Link a repository", detail: "Pick the clone of this project’s GitHub repo", tentative: true) {
-                Menu("Link…") { LinkChoices(app: app, project: project) }
-                    .menuButton(Chip())
+            switch app.suggestions[project.id] {
+            case .found(let pick?):
+                card(icon: "sparkles", tint: Theme.cobalt, title: pick.repository.slug, detail: pick.reason, tentative: true) {
+                    Button("Link") { app.link(project, to: pick.repository.folder) }
+                        .buttonStyle(Chip())
+                        .help("Link \(pick.repository.folder.abbreviated) to \(project.name)")
+                    Menu("Other Repositories", systemImage: "ellipsis") { LinkChoices(app: app, project: project) }
+                        .menuButton(RowAction())
+                }
+            case .thinking:
+                card(icon: "sparkles", tint: Theme.cobalt, title: "Finding this project’s repository…", detail: "Claude is reading your notes and local clones", tentative: true, pulsing: true) { linkMenu }
+            case .found(nil), nil:
+                card(icon: "link", tint: Theme.secondary, title: "Link a repository", detail: "Pick the clone of this project’s GitHub repo", tentative: true) { linkMenu }
             }
         }
+    }
+
+    private var linkMenu: some View {
+        Menu("Link…") { LinkChoices(app: app, project: project) }
+            .menuButton(Chip())
     }
 
     private func linkedMenu(_ repository: Repository?) -> some View {
@@ -46,23 +57,25 @@ struct RepositoryCard: View {
         .menuButton(RowAction())
     }
 
-    private func card(icon: String, tint: some ShapeStyle, title: String, detail: String, tentative: Bool = false, @ViewBuilder actions: () -> some View) -> some View {
+    private func card(icon: String, tint: some ShapeStyle, title: String, detail: String, tentative: Bool = false, pulsing: Bool = false, @ViewBuilder actions: () -> some View) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(tint)
+                .symbolEffect(.pulse, isActive: pulsing)
                 .frame(width: 32, height: 32)
                 .background(tentative ? AnyShapeStyle(Theme.well) : AnyShapeStyle(Theme.paper), in: .rect(cornerRadius: 8, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.ink)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
                 Text(detail)
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.secondary)
+                    .lineLimit(2)
             }
-            .lineLimit(1)
-            .truncationMode(.middle)
             .frame(maxWidth: .infinity, alignment: .leading)
             HStack(spacing: 4) { actions() }
         }

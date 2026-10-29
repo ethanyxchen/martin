@@ -20,7 +20,7 @@ final class RepositoryTests {
         return folder
     }
 
-    private func repository(_ slug: String, in folder: String) -> Repository {
+    func repository(_ slug: String, in folder: String) -> Repository {
         try! clone(folder, origin: "git@github.com:\(slug).git")
         return Repository(at: root.appending(path: folder, directoryHint: .isDirectory))!
     }
@@ -39,6 +39,9 @@ final class RepositoryTests {
         #expect(repository.name == "martin")
         #expect(repository.branch == "ethanc/repos")
         #expect(repository.web == URL(string: "https://github.com/ethanyxchen/martin"))
+        #expect(repository.readme == nil)
+        try "# Martin\nA menu bar notepad".write(to: folder.appending(path: "README.md"), atomically: true, encoding: .utf8)
+        #expect(repository.readme == "# Martin\nA menu bar notepad")
     }
 
     @Test func aFolderWithoutAGitHubOriginIsNotARepository() throws {
@@ -76,17 +79,5 @@ final class RepositoryTests {
         let atlas = repository("acme/atlas", in: "atlas")
         let activity = ["GoodnotesGlobal/ma-turbo-overload", "ethanyxchen/Martin", "ethanyxchen/martin"]
         #expect([atlas, copy, martin, overload].ranked(by: activity) == [overload, martin, atlas])
-    }
-
-    @Test func theSuggestionIsTheFirstRepositorySharingAWordWithTheProject() {
-        let agents = repository("GoodnotesGlobal/infrastructure-goodmeet-agents", in: "infrastructure-goodmeet-agents")
-        let martin = repository("ethanyxchen/martin", in: "martin")
-        let app = repository("acme/app", in: "app")
-        let repositories = [martin, app, agents]
-        #expect(repositories.suggestion(for: Project(name: "Goodmeet")) == agents)
-        #expect(repositories.suggestion(for: Project(name: "Martin.app")) == martin)
-        #expect([app, martin].suggestion(for: Project(name: "Martin.app")) == app)
-        #expect(repositories.suggestion(for: Project(name: "Interviews")) == nil)
-        #expect(repositories.suggestion(for: Project(name: "QA")) == nil)
     }
 }

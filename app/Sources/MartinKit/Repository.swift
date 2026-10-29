@@ -21,6 +21,10 @@ public struct Repository: Hashable, Sendable {
 
     public var web: URL { URL(string: "https://github.com/\(slug)")! }
 
+    public var readme: String? {
+        ["README.md", "readme.md", "README"].lazy.compactMap { try? String(contentsOf: folder.appending(path: $0), encoding: .utf8) }.first
+    }
+
     public var branch: String? {
         (try? String(contentsOf: gitDirectory.appending(path: "HEAD"), encoding: .utf8))?
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -82,11 +86,6 @@ public extension [Repository] {
         return sorted { order($0) < order($1) }
             .filter { seen.insert($0.slug.lowercased()).inserted }
     }
-
-    func suggestion(for project: Project) -> Repository? {
-        let words = project.name.words
-        return first { !words.isDisjoint(with: $0.name.words) }
-    }
 }
 
 enum GitHub {
@@ -96,28 +95,6 @@ enum GitHub {
     }
 
     private static func gh(_ arguments: [String]) async -> [String] {
-        await withCheckedContinuation { continuation in
-            DispatchQueue.global().async {
-                let process = Process()
-                let output = Pipe()
-                process.executableURL = URL(filePath: "/usr/bin/env")
-                process.arguments = ["gh"] + arguments
-                var environment = ProcessInfo.processInfo.environment
-                environment["PATH"] = [environment["PATH"], "/opt/homebrew/bin", "/usr/local/bin"].compactMap(\.self).joined(separator: ":")
-                process.environment = environment
-                process.standardOutput = output
-                process.standardError = FileHandle.nullDevice
-                guard (try? process.run()) != nil else { return continuation.resume(returning: []) }
-                let data = output.fileHandleForReading.readDataToEndOfFile()
-                process.waitUntilExit()
-                continuation.resume(returning: process.terminationStatus == 0 ? String(decoding: data, as: UTF8.self).split(whereSeparator: \.isNewline).map(String.init) : [])
-            }
-        }
-    }
-}
-
-private extension String {
-    var words: Set<String> {
-        Set(lowercased().split { !$0.isLetter && !$0.isNumber }.filter { $0.count >= 3 }.map(String.init))
+        (await Command.run("gh", arguments) ?? "").split(whereSeparator: \.isNewline).map(String.init)
     }
 }
