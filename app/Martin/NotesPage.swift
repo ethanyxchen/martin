@@ -394,7 +394,7 @@ struct Rows<Item: Identifiable, Row: View>: View {
         .padding(.bottom, 20)
     }
 
-    static func divides(_ item: Item.ID, below previous: Item.ID, lit: Set<Item.ID?>) -> Bool {
+    nonisolated static func divides(_ item: Item.ID, below previous: Item.ID, lit: Set<Item.ID?>) -> Bool {
         lit.isDisjoint(with: [item, previous])
     }
 }
