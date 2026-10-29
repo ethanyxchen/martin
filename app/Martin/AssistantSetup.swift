@@ -21,11 +21,11 @@ struct AssistantSetup: View {
                 .frame(width: 44, height: 44)
                 .background(Theme.cobalt, in: .rect(cornerRadius: 11, style: .continuous))
                 .padding(.bottom, 16)
-            Text("Set up an assistant")
+            Text("Choose an assistant")
                 .font(Theme.title)
                 .foregroundStyle(Theme.ink)
                 .padding(.bottom, 6)
-            Text("Martin asks an AI coding assistant on your Mac to read a project’s notes and find the repository that holds its code. It uses your own subscription and sends notes only to the assistant you pick.")
+            Text("Martin uses it to find each project’s repository. Your notes go only to the assistant you choose.")
                 .font(.system(size: 12.5))
                 .foregroundStyle(Theme.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -88,7 +88,7 @@ private struct AssistantOption: View {
                 Text(assistant.title)
                     .font(.system(size: 13.5, weight: .semibold))
                     .foregroundStyle(Theme.ink)
-                Text("\(assistant.maker) · uses your \(assistant.account) account")
+                Text("Uses your \(assistant.account) account")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.secondary)
             }
@@ -115,7 +115,7 @@ private struct StatusLabel: View {
             switch status {
             case nil: ProgressView().controlSize(.small)
             case .ready: Label("Ready", systemImage: "checkmark.circle.fill").foregroundStyle(Theme.cobalt)
-            case .signedOut: Label("Sign in needed", systemImage: "person.crop.circle.badge.exclamationmark").foregroundStyle(Theme.secondary)
+            case .signedOut: Label("Not signed in", systemImage: "person.crop.circle.badge.exclamationmark").foregroundStyle(Theme.secondary)
             case .missing: Label("Not installed", systemImage: "arrow.down.circle").foregroundStyle(Theme.tertiary)
             }
         }
@@ -133,16 +133,13 @@ private struct AssistantStep: View {
         VStack(alignment: .leading, spacing: 10) {
             switch status {
             case .ready:
-                Text("\(assistant.title) is installed and signed in.")
+                Text("\(assistant.title) is ready.")
                     .font(Theme.heading)
                     .foregroundStyle(Theme.ink)
-                Text("Martin will ask it whenever you open a project without a repository.")
-                    .font(Theme.meta)
-                    .foregroundStyle(Theme.secondary)
             case .missing:
                 instructions(title: "Install \(assistant.title)", command: assistant.install)
             case .signedOut:
-                instructions(title: "Sign in to \(assistant.title) with your \(assistant.account) account", command: assistant.signIn)
+                instructions(title: "Sign in to \(assistant.title)", command: assistant.signIn)
             }
         }
     }
@@ -151,7 +148,7 @@ private struct AssistantStep: View {
         Text(title)
             .font(Theme.heading)
             .foregroundStyle(Theme.ink)
-        Text("Run this in Terminal. Martin checks again when you come back.")
+        Text("Run this in Terminal, then come back.")
             .font(Theme.meta)
             .foregroundStyle(Theme.secondary)
         HStack(spacing: 8) {

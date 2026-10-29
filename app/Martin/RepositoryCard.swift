@@ -17,12 +17,12 @@ struct RepositoryCard: View {
                     linkedMenu(repository)
                 }
             } else {
-                card(icon: "exclamationmark.triangle", tint: Theme.secondary, title: folder.lastPathComponent, detail: "No GitHub repository at \(folder.abbreviated)") {
+                card(icon: "exclamationmark.triangle", tint: Theme.secondary, title: folder.lastPathComponent, detail: "Not found at \(folder.abbreviated)") {
                     linkedMenu(nil)
                 }
             }
         } else if app.assistant == nil {
-            card(icon: "sparkles", tint: Theme.cobalt, title: "Find this project’s repository", detail: "Set up Claude Code or Codex to suggest one from your notes", tentative: true) {
+            card(icon: "sparkles", tint: Theme.cobalt, title: "Find this project’s repository", detail: "Set up an assistant to suggest one", tentative: true) {
                 Button("Set Up…") { app.openAssistantSetup() }
                     .buttonStyle(Chip())
                 Menu("Link Manually", systemImage: "ellipsis") { LinkChoices(app: app, project: project) }
@@ -35,13 +35,13 @@ struct RepositoryCard: View {
                     Button("Link") { app.link(project, to: pick.repository.folder) }
                         .buttonStyle(Chip())
                         .help("Link \(pick.repository.folder.abbreviated) to \(project.name)")
-                    Menu("Other Repositories", systemImage: "ellipsis") { LinkChoices(app: app, project: project) }
+                    Menu("More", systemImage: "ellipsis") { LinkChoices(app: app, project: project) }
                         .menuButton(RowAction())
                 }
             case .thinking:
-                card(icon: "sparkles", tint: Theme.cobalt, title: "Finding this project’s repository…", detail: "\(app.assistant?.title ?? "The assistant") is reading your notes and local clones", tentative: true, pulsing: true) { linkMenu }
+                card(icon: "sparkles", tint: Theme.cobalt, title: "Looking for the repository…", detail: "\(app.assistant?.title ?? "The assistant") is reading your notes", tentative: true, pulsing: true) { linkMenu }
             case .found(nil), nil:
-                card(icon: "link", tint: Theme.secondary, title: "Link a repository", detail: "Pick the clone of this project’s GitHub repo", tentative: true) { linkMenu }
+                card(icon: "link", tint: Theme.secondary, title: "Link a repository", detail: "Choose its folder on your Mac", tentative: true) { linkMenu }
             }
         }
     }

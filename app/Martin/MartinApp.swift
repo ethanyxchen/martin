@@ -272,11 +272,11 @@ final class AppState {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.prompt = "Link"
-        panel.message = "Choose the folder where you cloned \(project.name)’s GitHub repository."
+        panel.message = "Choose the repository folder for \(project.name)."
         panel.directoryURL = project.repository ?? Repository.roots.first
         guard panel.runModal() == .OK, let folder = panel.url else { return }
         guard Repository(at: folder) != nil else {
-            return inform("“\(folder.lastPathComponent)” isn’t a GitHub repository", "Choose the top folder of a clone whose origin remote is on GitHub.")
+            return inform("“\(folder.lastPathComponent)” isn’t a GitHub repository", "Choose a folder cloned from GitHub.")
         }
         link(project, to: folder)
     }
@@ -300,7 +300,7 @@ final class AppState {
     }
 
     func openAssistantSetup() {
-        show(windows["assistant"] ?? present(AssistantSetup(app: self), id: "assistant", title: "Set Up an Assistant", size: AssistantSetup.size))
+        show(windows["assistant"] ?? present(AssistantSetup(app: self), id: "assistant", title: "Choose an Assistant", size: AssistantSetup.size))
     }
 
     func use(_ assistant: Assistant) {

@@ -19,13 +19,6 @@ public enum Assistant: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    public var maker: String {
-        switch self {
-        case .claude: "Anthropic"
-        case .codex: "OpenAI"
-        }
-    }
-
     public var account: String {
         switch self {
         case .claude: "Claude"
