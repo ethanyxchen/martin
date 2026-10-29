@@ -71,6 +71,22 @@ final class NoteWindowTests {
         NotificationCenter.default.post(name: NSWindow.didResignKeyNotification, object: window)
         #expect(app.focusedProject == nil)
     }
+
+    @Test func makingAProjectSecretClosesItsNoteWindowsUnlessSecretsAreShown() throws {
+        let app = AppState(library: library, defaults: defaults)
+        let meeting = try library.create()
+        app.file(meeting, inNewProjectNamed: "Atlas")
+        let atlas = try #require(app.projects.first)
+        let window = app.present(NoteView(app: app, meeting: meeting), id: meeting.id, title: meeting.displayTitle, size: NSSize(width: 520, height: 640))
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: window)
+        app.showsSecrets = true
+        app.keepSecret(atlas, true)
+        #expect(app.focusedNote?.id == meeting.id)
+        app.keepSecret(atlas, false)
+        app.showsSecrets = false
+        app.keepSecret(atlas, true)
+        #expect(app.focusedNote == nil)
+    }
 }
 
 private extension NSView {

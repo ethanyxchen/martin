@@ -28,6 +28,9 @@ struct MartinApp: App {
             }
             CommandMenu("Project") {
                 ProjectActions(app: delegate.app, project: delegate.app.focusedProject, placement: .menu)
+                Divider()
+                Toggle("Show Secret Projects", isOn: Bindable(delegate.app).showsSecrets)
+                    .keyboardShortcut(SecretsToggle.shortcut)
             }
             CommandGroup(before: .windowList) {
                 ForEach(HomePage.shown(hiding: delegate.app.hiddenPages), id: \.self) { page in
@@ -82,6 +85,7 @@ final class AppState {
         didSet { defaults.set(hiddenPages.map(\.rawValue).sorted(), forKey: Self.hiddenPagesKey) }
     }
     var selectedShelf: Shelf.ID?
+    var showsSecrets = false
     var hiddenCalendars: Set<EventCalendar.ID> {
         didSet { defaults.set(hiddenCalendars.sorted(), forKey: Self.hiddenCalendarsKey) }
     }
@@ -112,15 +116,25 @@ final class AppState {
     }
 
     var notes: [Meeting] {
-        meetings.filter { $0.archivedAt == nil }
+        revealed.filter { $0.archivedAt == nil }
     }
 
     var pinned: [Meeting] {
-        meetings.filter(\.isPinned).sorted { $0.pinnedAt! > $1.pinnedAt! }
+        revealed.filter(\.isPinned).sorted { $0.pinnedAt! > $1.pinnedAt! }
     }
 
     var unpinned: [Meeting] {
         notes.filter { !$0.isPinned }
+    }
+
+    var shelves: [Shelf] {
+        notes.shelved(in: projects.filter { showsSecrets || !$0.isSecret })
+    }
+
+    private var revealed: [Meeting] {
+        guard !showsSecrets else { return meetings }
+        let secrets = Set(allProjects.filter(\.isSecret).map(\.id))
+        return meetings.filter { $0.project.map(secrets.contains) != true }
     }
 
     var archive: [Meeting] {
@@ -245,6 +259,14 @@ final class AppState {
         guard var renamed = allProjects.first(where: { $0.id == project.id }), !name.isEmpty, renamed.name != name else { return }
         renamed.name = name
         try? library.save(renamed)
+        reload()
+    }
+
+    func keepSecret(_ project: Project, _ secret: Bool) {
+        guard var changed = allProjects.first(where: { $0.id == project.id }) else { return }
+        changed.secretAt = secret ? .now : nil
+        if secret, !showsSecrets { notes(in: project).forEach { windows[$0.id]?.close() } }
+        try? library.save(changed)
         reload()
     }
 

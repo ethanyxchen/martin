@@ -77,9 +77,9 @@ final class AppStateTests {
         let atlas = try #require(app.projects.first)
         #expect(atlas.name == "Atlas")
         #expect(app.project(of: try #require(app.meeting(meeting.id))) == atlas)
-        #expect(app.notes.shelved(in: app.projects).map(\.id) == [.project(atlas.id)])
+        #expect(app.shelves.map(\.id) == [.project(atlas.id)])
         app.file(meeting, in: nil)
-        #expect(app.notes.shelved(in: app.projects).map(\.id) == [.project(atlas.id), .unassigned])
+        #expect(app.shelves.map(\.id) == [.project(atlas.id), .unassigned])
     }
 
     @Test func aNoteIsLabelledWithItsProjectEvenOnceTheProjectIsArchived() throws {
@@ -160,5 +160,26 @@ final class AppStateTests {
         app.delete(try #require(app.projects.first))
         #expect(app.allProjects.isEmpty)
         #expect(app.meetings.map(\.id) == [kept.id])
+    }
+
+    @Test func aSecretProjectAndItsNotesStayOutOfSightUntilSecretsAreShown() throws {
+        let app = AppState(library: library, defaults: defaults)
+        let loose = try library.create(startedAt: .distantPast)
+        let filed = try library.create()
+        app.file(filed, inNewProjectNamed: "Atlas")
+        app.pin(try #require(app.meeting(filed.id)), true)
+        let atlas = try #require(app.projects.first)
+        app.keepSecret(atlas, true)
+        #expect(app.shelves.map(\.id) == [.unassigned])
+        #expect(app.pinned.isEmpty)
+        #expect(app.unpinned.map(\.id) == [loose.id])
+        #expect(AppState(library: library, defaults: defaults).shelves.map(\.id) == [.unassigned])
+        app.showsSecrets = true
+        #expect(app.shelves.map(\.id) == [.project(atlas.id), .unassigned])
+        #expect(app.pinned.map(\.id) == [filed.id])
+        app.showsSecrets = false
+        app.keepSecret(try #require(app.projects.first), false)
+        #expect(app.shelves.map(\.id) == [.project(atlas.id), .unassigned])
+        #expect(app.pinned.map(\.id) == [filed.id])
     }
 }
