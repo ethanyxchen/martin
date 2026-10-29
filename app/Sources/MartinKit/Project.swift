@@ -5,6 +5,7 @@ public struct Project: Identifiable, Hashable, Codable, Sendable {
     public var name: String
     public var series: [String]
     public var archivedAt: Date?
+    public var secretAt: Date?
     public var repository: RepositoryLink?
 
     public init(id: String = UUID().uuidString, name: String, series: [String] = [], repository: RepositoryLink? = nil) {
@@ -13,6 +14,8 @@ public struct Project: Identifiable, Hashable, Codable, Sendable {
         self.series = series
         self.repository = repository
     }
+
+    public var isSecret: Bool { secretAt != nil }
 }
 
 public enum RepositoryLink: Codable, Hashable, Sendable {

@@ -33,15 +33,31 @@ struct QuickNoteTests {
 
 @MainActor
 struct ActionShortcutTests {
-    @Test func onlyTheMenuBarCarriesTheArchiveAndDeleteShortcuts() {
+    @Test func onlyTheMenuBarCarriesTheArchiveSecretAndDeleteShortcuts() {
         #expect(ActionPlacement.menu.archive(enabled: true) == KeyboardShortcut("a", modifiers: [.command, .control]))
+        #expect(ActionPlacement.menu.secret(enabled: true) == KeyboardShortcut("s", modifiers: [.command, .control]))
         #expect(ActionPlacement.menu.delete(enabled: true) == KeyboardShortcut(.delete, modifiers: [.command, .option]))
         #expect(ActionPlacement.contextMenu.archive(enabled: true) == nil)
         #expect(ActionPlacement.row.delete(enabled: true) == nil)
+        #expect(ActionPlacement.contextMenu.secret(enabled: true) == nil)
     }
 
     @Test func aMenuWithNothingToActOnLeavesTheShortcutsToTheOther() {
         #expect(ActionPlacement.menu.archive(enabled: false) == nil)
         #expect(ActionPlacement.menu.delete(enabled: false) == nil)
+        #expect(ActionPlacement.menu.secret(enabled: false) == nil)
+    }
+}
+
+struct RowsTests {
+    private struct Item: Identifiable { let id: Int }
+
+    @Test func theDividerHidesBesideALitRow() {
+        typealias List = Rows<Item, EmptyView>
+        #expect(List.divides(2, below: 1, lit: [nil, nil]))
+        #expect(List.divides(3, below: 2, lit: [1, nil]))
+        #expect(!List.divides(2, below: 1, lit: [nil, 1]))
+        #expect(!List.divides(2, below: 1, lit: [nil, 2]))
+        #expect(!List.divides(2, below: 1, lit: [1, nil]))
     }
 }

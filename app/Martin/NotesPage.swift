@@ -33,6 +33,18 @@ private struct ArchiveButton: ToolbarContent {
     }
 }
 
+struct SecretsToggle: ToolbarContent {
+    static let shortcut = KeyboardShortcut("s", modifiers: [.command, .shift])
+    @Bindable var app: AppState
+
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .primaryAction) {
+            Toggle("Secret Projects", systemImage: "eye", isOn: $app.showsSecrets)
+                .help(app.showsSecrets ? "Keep Secret Projects Secret (⇧⌘S)" : "Show Secret Projects (⇧⌘S)")
+        }
+    }
+}
+
 struct ProjectsView: View {
     private static let wide: CGFloat = 860
     private static let sidebar: CGFloat = 280
@@ -42,14 +54,14 @@ struct ProjectsView: View {
     @State private var grown: CGFloat = 0
 
     var body: some View {
-        let shelves = app.notes.shelved(in: app.projects)
+        let shelves = app.shelves
         let open = shelves.first { $0.id == app.selectedShelf }
         TimelineView(.everyMinute) { context in
             HStack(spacing: 0) {
                 Page {
                     PageHeading(title: "Projects")
                 } content: {
-                    Rows(items: shelves, indent: ChatRow.avatarIndent) { shelf in
+                    Rows(items: shelves, indent: ChatRow.avatarIndent, selected: app.selectedShelf) { shelf in
                         let latest = shelf.meetings.first
                         Button { select(shelf.id == app.selectedShelf ? nil : shelf.id) } label: {
                             ChatRow(avatar: Avatar(title: shelf.project?.name, square: true), title: shelf.title, stamp: latest?.date.stamp(at: context.date), preview: latest.flatMap { app.previews[$0.id] }, count: shelf.meetings.count, selected: shelf.id == app.selectedShelf)
@@ -60,7 +72,7 @@ struct ProjectsView: View {
                     }
                     .padding(.horizontal, Theme.edge - ChatRow.inset)
                 }
-                .frame(width: open == nil ? (width > 0 ? width : nil) : Self.sidebar)
+                .frame(minWidth: open == nil ? 0 : Self.sidebar, maxWidth: open == nil ? max(width, Self.sidebar) : Self.sidebar)
                 if let open {
                     Divider()
                     ShelfView(app: app, shelf: open, now: context.date)
@@ -69,7 +81,10 @@ struct ProjectsView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .toolbar { ArchiveButton(app: app) }
+        .toolbar {
+            SecretsToggle(app: app)
+            ArchiveButton(app: app)
+        }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .onChange(of: open?.id) { _, id in
             if id == nil, app.selectedShelf != nil { select(nil, animated: false) }
@@ -185,6 +200,10 @@ enum ActionPlacement {
         shortcut("a", modifiers: [.command, .control], enabled: enabled)
     }
 
+    func secret(enabled: Bool) -> KeyboardShortcut? {
+        shortcut("s", modifiers: [.command, .control], enabled: enabled)
+    }
+
     func delete(enabled: Bool) -> KeyboardShortcut? {
         shortcut(.delete, modifiers: [.command, .option], enabled: enabled)
     }
@@ -246,6 +265,13 @@ struct ProjectActions: View {
             })
             .disabled(project == nil)
             Divider()
+        }
+        if project?.archivedAt == nil {
+            let secret = project?.isSecret == true
+            Button(secret ? "Make Not Secret" : "Make Secret", systemImage: secret ? "eye" : "eye.slash") { project.map { app.keepSecret($0, !secret) } }
+                .help(placement.tooltip(secret ? "Make Not Secret" : "Make Secret"))
+                .keyboardShortcut(placement.secret(enabled: project != nil))
+                .disabled(project == nil)
         }
         Group {
             if project?.archivedAt == nil {
@@ -335,9 +361,10 @@ private struct ShelfView: View {
     }
 }
 
-private struct Rows<Item: Identifiable, Row: View>: View {
+struct Rows<Item: Identifiable, Row: View>: View {
     let items: [Item]
     var indent: CGFloat = 0
+    var selected: Item.ID?
     @ViewBuilder let row: (Item) -> Row
     @State private var hovered: Item.ID?
 
@@ -358,13 +385,17 @@ private struct Rows<Item: Identifiable, Row: View>: View {
                                 .frame(height: 1)
                                 .padding(.leading, ChatRow.inset + indent)
                                 .padding(.trailing, ChatRow.inset)
-                                .opacity(hovered == item.id || hovered == previous ? 0 : 1)
+                                .opacity(Self.divides(item.id, below: previous, lit: [hovered, selected]) ? 1 : 0)
                         }
                     }
             }
         }
         .animation(.easeOut(duration: 0.12), value: hovered)
         .padding(.bottom, 20)
+    }
+
+    static func divides(_ item: Item.ID, below previous: Item.ID, lit: Set<Item.ID?>) -> Bool {
+        lit.isDisjoint(with: [item, previous])
     }
 }
 
