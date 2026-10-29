@@ -29,14 +29,14 @@ public enum Assistant: String, CaseIterable, Identifiable, Sendable {
     private var tool: String { rawValue }
 
     public func status() async -> Status {
-        guard await Command.run(tool, ["--version"]) != nil else { return .missing }
+        guard await Command.run(tool, ["--version"], timeout: 10) != nil else { return .missing }
         switch self {
         case .claude:
             struct Auth: Decodable { let loggedIn: Bool }
-            let auth = await Command.run(tool, ["auth", "status"]).flatMap { try? JSONDecoder().decode(Auth.self, from: Data($0.utf8)) }
+            let auth = await Command.run(tool, ["auth", "status"], timeout: 10).flatMap { try? JSONDecoder().decode(Auth.self, from: Data($0.utf8)) }
             return auth?.loggedIn == true ? .ready : .signedOut
         case .codex:
-            return await Command.run(tool, ["login", "status"]) == nil ? .signedOut : .ready
+            return await Command.run(tool, ["login", "status"], timeout: 10) == nil ? .signedOut : .ready
         }
     }
 
@@ -45,7 +45,7 @@ public enum Assistant: String, CaseIterable, Identifiable, Sendable {
         case .claude:
             let arguments = ["-p", "--model", "haiku", "--tools", "", "--setting-sources", "", "--no-session-persistence",
                              "--system-prompt", instructions, "--output-format", "json", "--json-schema", schema]
-            return await Command.run(tool, arguments, input: prompt).flatMap(structuredOutput(of:))
+            return await Command.run(tool, arguments, input: prompt, timeout: 120).flatMap(structuredOutput(of:))
         case .codex:
             let scratch = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory)
             defer { try? FileManager.default.removeItem(at: scratch) }
@@ -54,7 +54,7 @@ public enum Assistant: String, CaseIterable, Identifiable, Sendable {
                   (try? schema.write(to: schemaFile, atomically: true, encoding: .utf8)) != nil else { return nil }
             let arguments = ["exec", "--ephemeral", "--skip-git-repo-check", "--ignore-user-config", "--ignore-rules", "--sandbox", "read-only",
                              "--color", "never", "--model", "gpt-6-luna", "--config", "model_reasoning_effort=\"low\"", "--cd", scratch.path(percentEncoded: false), "--output-schema", schemaFile.path(percentEncoded: false), "-"]
-            return await Command.run(tool, arguments, input: "\(instructions)\n\n\(prompt)").flatMap(structuredOutput(of:))
+            return await Command.run(tool, arguments, input: "\(instructions)\n\n\(prompt)", timeout: 120).flatMap(structuredOutput(of:))
         }
     }
 

@@ -125,6 +125,6 @@ enum GitHub {
     }
 
     private static func gh(_ arguments: [String]) async -> [String] {
-        (await Command.run("gh", arguments) ?? "").split(whereSeparator: \.isNewline).map(String.init)
+        (await Command.run("gh", arguments, timeout: 30) ?? "").split(whereSeparator: \.isNewline).map(String.init)
     }
 }
