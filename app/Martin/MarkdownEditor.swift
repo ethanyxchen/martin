@@ -51,7 +51,7 @@ struct MarkdownEditor: NSViewRepresentable {
         func textView(_ textView: NSTextView, willChangeSelectionFromCharacterRanges old: [NSValue], toCharacterRanges new: [NSValue]) -> [NSValue] {
             guard let textView = textView as? NoteTextView else { return new }
             let from = old.first?.rangeValue.location ?? 0
-            return new.map { NSValue(range: textView.skippingImages(textView.skippingMentions($0.rangeValue, from: from))) }
+            return new.map { NSValue(range: textView.skippingImages(textView.skippingListPrefixes(textView.skippingMentions($0.rangeValue, from: from), from: from))) }
         }
 
         func textView(_ textView: NSTextView, doCommandBy selector: Selector) -> Bool {
@@ -280,6 +280,19 @@ final class NoteTextView: NSTextView {
         }
         let location = start?.location ?? range.location
         return NSRange(location: location, length: (end.map(NSMaxRange) ?? NSMaxRange(range)) - location)
+    }
+
+    func skippingListPrefixes(_ range: NSRange, from origin: Int) -> NSRange {
+        guard range.length == 0 else { return range }
+        let (contents, line) = style.line(at: range.location, in: string as NSString)
+        switch line.block {
+        case .list, .task: break
+        default: return range
+        }
+        let marker = NSRange(location: contents.location, length: line.prefix)
+        guard NSLocationInRange(range.location, marker) else { return range }
+        if origin == NSMaxRange(marker), range.location == origin - 1, contents.location > 0 { return NSRange(location: contents.location - 1, length: 0) }
+        return NSRange(location: NSMaxRange(marker), length: 0)
     }
 
     @objc func toggleBold(_ sender: Any?) {
