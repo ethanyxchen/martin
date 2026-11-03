@@ -81,7 +81,7 @@ public enum Markdown {
             if let checkbox = spans.first(where: { $0.role == .checkbox }) {
                 prefix.replaceCharacters(in: checkbox.range, with: "[ ]")
             }
-            if let marker = spans.first(where: { $0.role == .marker }), let number = Int(prefix.substring(with: marker.range).dropLast()) {
+            if let marker = spans.first, marker.role == .marker, let number = Int(prefix.substring(with: marker.range).dropLast()) {
                 prefix.replaceCharacters(in: NSRange(location: marker.range.location, length: marker.range.length - 1), with: String(number + 1))
             }
             return prefix as String

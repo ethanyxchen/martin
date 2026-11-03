@@ -148,6 +148,13 @@ struct MarkdownTests {
         #expect(Line("- not a list", code: true).continuation(in: "- not a list") == nil)
     }
 
+    @Test func continuationIgnoresInlineMarkersInTheItem() {
+        #expect(Self.continuation("-  Key **agent** workflow") == "-  ")
+        #expect(Self.continuation("- [ ] ship `v2`") == "- [ ] ")
+        #expect(Self.continuation("> a *quoted* line") == "> ")
+        #expect(Self.continuation("3. **bold** step") == "4. ")
+    }
+
     @Test func markerBeforeTheContentIsDeletedWholeKeepingTheIndent() {
         #expect(Line("- ").marker(before: 2) == NSRange(location: 0, length: 2))
         #expect(Line("\t- [ ] ").marker(before: 7) == NSRange(location: 1, length: 6))
