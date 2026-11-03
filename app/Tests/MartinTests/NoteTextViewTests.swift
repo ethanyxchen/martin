@@ -15,6 +15,39 @@ struct NoteTextViewTests {
         #expect(textView.selectedRange() == NSRange(location: (note as NSString).length, length: 0))
     }
 
+    @Test func aCaretInsideAListItemsPrefixMovesToItsText() {
+        let textView = NoteTextView.make()
+        textView.load("Notes:\n- Very\n  - [ ] Nested\n  1. Ordered")
+        func caret(_ location: Int, from origin: Int = 0) -> Int {
+            textView.skippingListPrefixes(NSRange(location: location, length: 0), from: origin).location
+        }
+        #expect(caret(7) == 9)
+        #expect(caret(8) == 9)
+        #expect(caret(9) == 9)
+        #expect(caret(8, from: 9) == 6)
+        #expect(caret(7, from: 9) == 9)
+        #expect(caret(14) == 22)
+        #expect(caret(18) == 22)
+        #expect(caret(21, from: 22) == 13)
+        #expect(caret(29) == 34)
+        #expect(caret(31) == 34)
+        #expect(caret(33, from: 34) == 28)
+        #expect(caret(0) == 0)
+        #expect(textView.skippingListPrefixes(NSRange(location: 7, length: 4), from: 0) == NSRange(location: 7, length: 4))
+    }
+
+    @Test func typingAtTheStartOfAListLineKeepsItsBullet() {
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 640), styleMask: .titled, backing: .buffered, defer: true)
+        let textView = NoteTextView.make()
+        let coordinator = MarkdownEditor.Coordinator(text: .constant(""))
+        textView.delegate = coordinator
+        textView.load("Notes:\n- Very")
+        window.contentView = textView
+        textView.setSelectedRange(NSRange(location: 7, length: 0))
+        textView.insertText("A", replacementRange: textView.selectedRange())
+        #expect(textView.string == "Notes:\n- AVery")
+    }
+
     @Test(arguments: [
         ("- **bold** item", "- **bold** item\n- ", "- **bold** item\n"),
         ("  - nested", "  - nested\n  - ", "  - nested\n"),
