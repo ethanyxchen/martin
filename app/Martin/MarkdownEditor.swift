@@ -325,8 +325,10 @@ final class NoteTextView: NSTextView {
         let text = string as NSString
         let (range, line) = style.line(at: caret.location, in: text)
         guard caret.location >= range.location + line.prefix, let next = line.continuation(in: text.substring(with: range)) else { return false }
-        if line.prefix == range.length {
-            apply(Markdown.Edit(range: range, replacement: "", selection: NSRange(location: range.location, length: 0)))
+        if line.prefix == range.length, let innermost = line.marker(before: line.prefix) {
+            let enclosing = text.substring(with: NSRange(location: range.location, length: innermost.location))
+            let start = range.location + (enclosing.allSatisfy(\.isWhitespace) ? 0 : innermost.location)
+            apply(Markdown.Edit(range: NSRange(location: start, length: NSMaxRange(range) - start), replacement: "", selection: NSRange(location: start, length: 0)))
         } else {
             apply(Markdown.Edit(range: caret, replacement: "\n" + next, selection: NSRange(location: caret.location + 1 + (next as NSString).length, length: 0)))
         }

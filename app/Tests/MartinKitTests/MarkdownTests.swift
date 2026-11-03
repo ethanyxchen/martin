@@ -32,6 +32,8 @@ struct MarkdownTests {
             ("* [x] done", .task(done: true), 6),
             ("> quoted", .quote, 2),
             ("> > nested", .quote, 4),
+            ("> - quoted item", .quote, 4),
+            ("> 3) [ ] quoted task", .quote, 9),
             ("---", .rule, 0),
             ("* * *", .rule, 0),
             ("```swift", .fence, 0),
@@ -148,11 +150,38 @@ struct MarkdownTests {
         #expect(Line("- not a list", code: true).continuation(in: "- not a list") == nil)
     }
 
+    @Test func continuationIgnoresInlineMarkersInTheItem() {
+        #expect(Self.continuation("-  Key **agent** workflow") == "-  ")
+        #expect(Self.continuation("- [ ] ship `v2`") == "- [ ] ")
+        #expect(Self.continuation("* see [docs](https://example.com)") == "* ")
+        #expect(Self.continuation("+ ask @{Ada <ada@example.com>} ~~now~~") == "+ ")
+        #expect(Self.continuation("- 42 is _the_ answer") == "- ")
+        #expect(Self.continuation("> a *quoted* line") == "> ")
+        #expect(Self.continuation("3. **bold** step") == "4. ")
+    }
+
+    @Test func continuationRepeatsAListInsideAQuote() {
+        #expect(Self.continuation("> 1. first") == "> 2. ")
+        #expect(Self.continuation("> - item") == "> - ")
+        #expect(Self.continuation("> > * [x] done") == "> > * [ ] ")
+    }
+
+    @Test func aQuotedItemMarkerIsPlainQuotedText() {
+        #expect(Self.spans("> - [x] done") == ["marker > ", "marker - [x]"])
+        #expect(Line("> - [x] ").marker(before: 8) == NSRange(location: 2, length: 6))
+    }
+
+    @Test func continuationStopsCountingAtTheLargestListNumber() {
+        #expect(Self.continuation("999999999. last") == "999999999. ")
+        #expect(Line("999999999. last").block == .list)
+    }
+
     @Test func markerBeforeTheContentIsDeletedWholeKeepingTheIndent() {
         #expect(Line("- ").marker(before: 2) == NSRange(location: 0, length: 2))
         #expect(Line("\t- [ ] ").marker(before: 7) == NSRange(location: 1, length: 6))
         #expect(Line("  12) twelve").marker(before: 6) == NSRange(location: 2, length: 4))
         #expect(Line("   > said").marker(before: 5) == NSRange(location: 3, length: 2))
+        #expect(Line("> - ").marker(before: 4) == NSRange(location: 2, length: 2))
         #expect(Line("- item").marker(before: 3) == nil)
         #expect(Line("# Heading").marker(before: 2) == nil)
         #expect(Line("  text").marker(before: 2) == nil)

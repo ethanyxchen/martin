@@ -71,18 +71,17 @@ public enum Markdown {
         }
 
         public func marker(before caret: Int) -> NSRange? {
-            guard continues, caret == prefix, let start = spans.first?.range.location else { return nil }
-            return NSRange(location: start, length: prefix - start)
+            guard continues, caret == prefix, let innermost = spans.last(where: { $0.range.location < prefix && $0.role != .checkbox }) else { return nil }
+            return NSRange(location: innermost.range.location, length: prefix - innermost.range.location)
         }
 
         public func continuation(in text: String) -> String? {
             guard continues else { return nil }
             let prefix = NSMutableString(string: (text as NSString).substring(to: self.prefix))
-            if let checkbox = spans.first(where: { $0.role == .checkbox }) {
-                prefix.replaceCharacters(in: checkbox.range, with: "[ ]")
-            }
-            if let marker = spans.first(where: { $0.role == .marker }), let number = Int(prefix.substring(with: marker.range).dropLast()) {
-                prefix.replaceCharacters(in: NSRange(location: marker.range.location, length: marker.range.length - 1), with: String(number + 1))
+            Pattern.checked.replaceMatches(in: prefix, range: NSRange(location: 0, length: prefix.length), withTemplate: "[ ]")
+            if let ordinal = Pattern.ordinal.firstMatch(in: prefix as String, range: NSRange(location: 0, length: prefix.length))?.range,
+               let number = Int(prefix.substring(with: ordinal)) {
+                prefix.replaceCharacters(in: ordinal, with: String(min(number + 1, Pattern.largestOrdinal)))
             }
             return prefix as String
         }
@@ -99,26 +98,31 @@ public enum Markdown {
         }
 
         private static func block(of text: String, in whole: NSRange, indent: Int) -> (Block, Int, [Span]) {
-            func match(_ pattern: NSRegularExpression) -> NSTextCheckingResult? {
-                pattern.firstMatch(in: text, options: .anchored, range: whole)
+            func match(_ pattern: NSRegularExpression, from start: Int = 0) -> NSTextCheckingResult? {
+                pattern.firstMatch(in: text, options: .anchored, range: NSRange(location: start, length: whole.length - start))
+            }
+            func item(from start: Int) -> (Block, Int, [Span])? {
+                func marker(_ range: NSRange) -> Span {
+                    Span(range.length == 1 ? .bullet : .marker, range)
+                }
+                if let task = match(Pattern.task, from: start) {
+                    let done = (text as NSString).substring(with: task.range(at: 3)) != "[ ]"
+                    return (.task(done: done), NSMaxRange(task.range), [marker(task.range(at: 2)), Span(.checkbox, task.range(at: 3))])
+                }
+                if let list = match(Pattern.list, from: start) {
+                    return (.list, NSMaxRange(list.range), [marker(list.range(at: 2))])
+                }
+                return nil
             }
             if let heading = match(Pattern.heading) {
                 return (.heading, heading.range.length, [Span(.marker, heading.range(at: 1))])
             }
             if let quote = match(Pattern.quote) {
-                return (.quote, quote.range.length, [Span(.marker, quote.range(at: 1))])
+                let marker = Span(.marker, quote.range(at: 1))
+                guard case let (_, prefix, markers)? = item(from: quote.range.length) else { return (.quote, quote.range.length, [marker]) }
+                return (.quote, prefix, [marker, Span(.marker, NSUnionRange(markers[0].range, markers[markers.count - 1].range))])
             }
-            func marker(_ range: NSRange) -> Span {
-                Span(range.length == 1 ? .bullet : .marker, range)
-            }
-            if let task = match(Pattern.task) {
-                let done = (text as NSString).substring(with: task.range(at: 3)) != "[ ]"
-                return (.task(done: done), task.range.length, [marker(task.range(at: 2)), Span(.checkbox, task.range(at: 3))])
-            }
-            if let list = match(Pattern.list) {
-                return (.list, list.range.length, [marker(list.range(at: 2))])
-            }
-            return (.text, indent, [])
+            return item(from: 0) ?? (.text, indent, [])
         }
 
         private static func inline(_ text: String, in content: NSRange, references: [String: String]) -> [Span] {
@@ -379,8 +383,12 @@ private enum Pattern {
     static let heading = regex(#" {0,3}(#{1,6})(?:[ \t]+|$)"#)
     static let rule = regex(#" {0,3}([-*_])[ \t]*(?:\1[ \t]*){2,}$"#)
     static let quote = regex(#" {0,3}((?:>[ \t]?)+)"#)
-    static let task = regex(#"([ \t]*)([-*+]|\d{1,9}[.)])[ \t]+(\[[ xX]\])(?:[ \t]+|$)"#)
-    static let list = regex(#"([ \t]*)([-*+]|\d{1,9}[.)])(?:[ \t]+|$)"#)
+    static let ordinalDigits = 9
+    static let largestOrdinal = Int(String(repeating: "9", count: ordinalDigits))!
+    static let task = regex(#"([ \t]*)([-*+]|\d{1,\#(ordinalDigits)}[.)])[ \t]+(\[[ xX]\])(?:[ \t]+|$)"#)
+    static let list = regex(#"([ \t]*)([-*+]|\d{1,\#(ordinalDigits)}[.)])(?:[ \t]+|$)"#)
+    static let checked = regex(#"\[[xX]\]"#)
+    static let ordinal = regex(#"\d+(?=[.)])"#)
     static let code = regex(#"(`+)(?!`)(.+?)(?<!`)\1(?!`)"#)
     static let link = regex(#"(!?\[)([^\[\]\n]*)(\]\()([^)\s]*)((?:[ \t]+"[^"\n]*")?\))"#)
     static let definition = regex(#" {0,3}(\[([^\]\n]+)\]:)[ \t]*(\S+)(?:[ \t]+"[^"\n]*")?[ \t]*$"#)
