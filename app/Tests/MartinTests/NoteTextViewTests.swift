@@ -15,6 +15,23 @@ struct NoteTextViewTests {
         #expect(textView.selectedRange() == NSRange(location: (note as NSString).length, length: 0))
     }
 
+    @Test(arguments: [
+        ("- **bold** item", "- **bold** item\n- ", "- **bold** item\n"),
+        ("  - nested", "  - nested\n  - ", "  - nested\n"),
+        ("> 1. first", "> 1. first\n> 2. ", "> 1. first\n> "),
+        ("> said", "> said\n> ", "> said\n"),
+    ])
+    func returnContinuesAListAndAnEmptyItemEndsIt(note: String, continued: String, ended: String) {
+        let textView = NoteTextView.make()
+        textView.load(note)
+        textView.setSelectedRange(NSRange(location: (note as NSString).length, length: 0))
+        #expect(textView.continueList())
+        #expect(textView.string == continued)
+        #expect(textView.continueList())
+        #expect(textView.string == ended)
+        #expect(textView.selectedRange() == NSRange(location: (ended as NSString).length, length: 0))
+    }
+
     @Test func theCursorBecomesAPointingHandOverACheckbox() throws {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 640), styleMask: .titled, backing: .buffered, defer: false)
         let textView = NoteTextView.make()
