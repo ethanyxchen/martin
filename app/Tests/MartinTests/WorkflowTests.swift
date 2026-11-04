@@ -13,7 +13,7 @@ final class WorkflowTests: Sandbox {
         for _ in 0..<100 where editor(in: window) == nil {
             try await Task.sleep(for: .milliseconds(20))
         }
-        let editor = try #require(editor(in: window))
+        let editor = try #require(self.editor(in: window))
         window.makeFirstResponder(editor)
         return (window, editor)
     }

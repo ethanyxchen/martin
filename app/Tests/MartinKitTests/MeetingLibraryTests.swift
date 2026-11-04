@@ -26,8 +26,10 @@ final class MeetingLibraryTests: LibrarySandbox {
     @Test func meetingsStartedInTheSameSecondDoNotOverwriteEachOther() throws {
         let startedAt = Date(timeIntervalSince1970: 1_750_000_000)
         let first = try library.create(startedAt: startedAt, title: "Standup")
-        #expect(throws: (any Error).self) { try library.create(startedAt: startedAt.addingTimeInterval(0.5), title: "Retro") }
-        #expect(try library.meetings() == [first])
+        let second = try library.create(startedAt: startedAt.addingTimeInterval(0.5), title: "Retro")
+        let third = try library.create(startedAt: startedAt, title: "Review")
+        #expect(Set([first.id, second.id, third.id]).count == 3)
+        #expect(Set(try library.meetings()) == [first, second, third])
     }
 
     @Test func meetingForEventIsDatedByTheEventAndFollowsItsReschedule() throws {
