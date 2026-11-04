@@ -356,8 +356,9 @@ public enum Markdown {
             text.getParagraphStart(nil, end: &end, contentsEnd: &contentsEnd, for: NSRange(location: location, length: 0))
             let line = text.substring(with: NSRange(location: location, length: contentsEnd - location))
             if let match = sibling.firstMatch(in: line, options: .anchored, range: NSRange(location: 0, length: (line as NSString).length)) {
-                number = min(number + 1, Pattern.largestOrdinal)
                 let digits = match.range(at: 1)
+                guard Int((line as NSString).substring(with: digits)) == number, number < Pattern.largestOrdinal else { break }
+                number += 1
                 siblings.append((NSRange(location: location + digits.location, length: digits.length), number))
             } else if !line.allSatisfy({ $0.isWhitespace || $0 == ">" }), !(line.hasPrefix(lead) && line.dropFirst(lead.count).first?.isWhitespace == true) {
                 break

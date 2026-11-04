@@ -146,6 +146,9 @@ struct MarkdownTests {
         ("1. a\n2) b", 4, "2. ", "1. a\n2. \n2) b"),
         ("1. ab\n2. c", 4, "2. ", "1. a\n2. b\n3. c"),
         ("- a\n- b", 3, "- ", "- a\n- \n- b"),
+        ("1. a\n1. b\n1. c", 4, "2. ", "1. a\n2. \n1. b\n1. c"),
+        ("1. a\n2. b\n\n> 1. c", 4, "2. ", "1. a\n2. \n3. b\n\n> 1. c"),
+        ("1. a\n2. b\n5. c", 4, "2. ", "1. a\n2. \n3. b\n5. c"),
     ])
     func insertingAnItemRenumbersTheOrderedItemsAfterIt(text: String, caret: Int, item: String, expected: String) {
         let edit = Markdown.insert(item, at: caret, in: text)
