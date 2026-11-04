@@ -24,7 +24,7 @@ struct Page<Header: View, Content: View>: View {
             .frame(minHeight: viewport, alignment: .top)
         }
         .coordinateSpace(name: "pageScroll")
-        .scrollEdgeEffectStyle(.soft, for: .top)
+        .scrollEdgeEffectStyle(.hard, for: .top)
         .onScrollGeometryChange(for: CGFloat.self) { $0.containerSize.height - $0.contentInsets.top - $0.contentInsets.bottom } action: { viewport = $1 }
         .onScrollGeometryChange(for: CGFloat.self) { $0.contentInsets.top } action: { toolbar = $1 }
         .background(Theme.paper)
