@@ -63,6 +63,17 @@ final class NoteWindowTests: Sandbox {
         #expect(app.focusedProject == nil)
     }
 
+    @Test func aQuickNoteLandsInTheProjectOpenInTheKeyHomeWindow() throws {
+        let app = AppState(library: library, defaults: defaults)
+        app.file(try library.create(startedAt: .distantPast), inNewProjectNamed: "Atlas")
+        let atlas = try #require(app.projects.first)
+        let window = app.present(HomeView(app: app), id: "home", title: "Martin", size: NSSize(width: 520, height: 640))
+        app.page = .projects
+        app.selectedShelf = .project(atlas.id)
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: window)
+        #expect(try app.newQuickNote().project == atlas.id)
+    }
+
     @Test func makingAProjectSecretClosesItsNoteWindowsUnlessSecretsAreShown() throws {
         let app = AppState(library: library, defaults: defaults)
         let meeting = try library.create()

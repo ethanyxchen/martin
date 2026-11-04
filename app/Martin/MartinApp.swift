@@ -201,8 +201,12 @@ final class AppState {
         begin { try library.meeting(for: event) }
     }
 
-    func quickNote(in project: Project.ID? = nil) {
-        begin { try library.create(project: project) }
+    func quickNote() {
+        begin(newQuickNote)
+    }
+
+    func newQuickNote() throws -> Meeting {
+        try library.create(project: focusedProject?.id)
     }
 
     private func begin(_ make: () throws -> Meeting) {

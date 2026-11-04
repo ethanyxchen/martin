@@ -342,7 +342,7 @@ private struct ShelfView: View {
                         .foregroundStyle(Theme.secondary)
                 }
                 Spacer(minLength: 0)
-                Button("New Note", systemImage: "square.and.pencil") { app.quickNote(in: shelf.project?.id) }
+                Button("New Note", systemImage: "square.and.pencil") { app.quickNote() }
                     .labelStyle(.iconOnly)
                     .buttonStyle(RowAction())
                     .help("New note in \(shelf.title)")
