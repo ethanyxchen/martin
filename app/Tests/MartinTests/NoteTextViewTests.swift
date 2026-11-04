@@ -65,6 +65,15 @@ struct NoteTextViewTests {
         #expect(textView.selectedRange() == NSRange(location: (ended as NSString).length, length: 0))
     }
 
+    @Test func returnInsideANumberedListRenumbersTheItemsBelow() {
+        let textView = NoteTextView.make()
+        textView.load("4. Define success\n5. Validate")
+        textView.setSelectedRange(NSRange(location: 17, length: 0))
+        #expect(textView.continueList())
+        #expect(textView.string == "4. Define success\n5. \n6. Validate")
+        #expect(textView.selectedRange() == NSRange(location: 21, length: 0))
+    }
+
     @Test func theCursorBecomesAPointingHandOverACheckbox() throws {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 640), styleMask: .titled, backing: .buffered, defer: false)
         let textView = NoteTextView.make()

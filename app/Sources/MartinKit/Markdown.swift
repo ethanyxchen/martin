@@ -331,6 +331,43 @@ public enum Markdown {
         return Edit(range: range, replacement: rewritten.map { $0.text as String }.joined(separator: "\n"), selection: NSRange(location: start, length: moved(NSMaxRange(selection)) - start))
     }
 
+    public static func insert(_ item: String, at caret: Int, in text: String) -> Edit {
+        let inserted = "\n" + item
+        let renumbered = following(item, after: caret, in: text as NSString)
+        let range = NSRange(location: caret, length: renumbered.last.map { NSMaxRange($0.range) - caret } ?? 0)
+        let rewritten = NSMutableString(string: (text as NSString).substring(with: range))
+        for (ordinal, number) in renumbered.reversed() {
+            rewritten.replaceCharacters(in: NSRange(location: ordinal.location - caret, length: ordinal.length), with: String(number))
+        }
+        return Edit(range: range, replacement: inserted + (rewritten as String), selection: NSRange(location: caret + (inserted as NSString).length, length: 0))
+    }
+
+    private static func following(_ item: String, after caret: Int, in text: NSString) -> [(range: NSRange, number: Int)] {
+        let marker = item as NSString
+        guard let ordinal = Pattern.ordinal.firstMatch(in: item, range: NSRange(location: 0, length: marker.length))?.range,
+              var number = Int(marker.substring(with: ordinal)) else { return [] }
+        let lead = marker.substring(to: ordinal.location)
+        let delimiter = marker.substring(with: NSRange(location: NSMaxRange(ordinal), length: 1))
+        let sibling = try! NSRegularExpression(pattern: NSRegularExpression.escapedPattern(for: lead) + #"(\d+)"# + NSRegularExpression.escapedPattern(for: delimiter) + #"(?:[ \t]|$)"#)
+        var siblings: [(range: NSRange, number: Int)] = []
+        var location = NSMaxRange(text.lineRange(for: NSRange(location: caret, length: 0)))
+        while location < text.length {
+            var end = 0, contentsEnd = 0
+            text.getParagraphStart(nil, end: &end, contentsEnd: &contentsEnd, for: NSRange(location: location, length: 0))
+            let line = text.substring(with: NSRange(location: location, length: contentsEnd - location))
+            if let match = sibling.firstMatch(in: line, options: .anchored, range: NSRange(location: 0, length: (line as NSString).length)) {
+                let digits = match.range(at: 1)
+                guard Int((line as NSString).substring(with: digits)) == number, number < Pattern.largestOrdinal else { break }
+                number += 1
+                siblings.append((NSRange(location: location + digits.location, length: digits.length), number))
+            } else if !line.allSatisfy({ $0.isWhitespace || $0 == ">" }), !(line.hasPrefix(lead) && line.dropFirst(lead.count).first?.isWhitespace == true) {
+                break
+            }
+            location = end
+        }
+        return siblings
+    }
+
     public static func link(in text: String, selection: NSRange) -> Edit {
         let label = (text as NSString).substring(with: selection)
         let caret = selection.length == 0 ? selection.location + 1 : NSMaxRange(selection) + 3

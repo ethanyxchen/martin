@@ -138,6 +138,25 @@ struct MarkdownTests {
         #expect(Markdown.codeBlocks(in: "~~~\n```\n").map(\.length) == [8])
     }
 
+    @Test(arguments: [
+        ("1. a\n2. b\n3. c", 4, "2. ", "1. a\n2. \n3. b\n4. c"),
+        ("1. a\n\t- nested\n\n2. b\nText\n3. other", 4, "2. ", "1. a\n2. \n\t- nested\n\n3. b\nText\n3. other"),
+        ("1. a\n\t1. x\n\t2. y\n2. b", 10, "\t2. ", "1. a\n\t1. x\n\t2. \n\t3. y\n2. b"),
+        ("> 1. a\n> 2. b", 6, "> 2. ", "> 1. a\n> 2. \n> 3. b"),
+        ("1. a\n2) b", 4, "2. ", "1. a\n2. \n2) b"),
+        ("1. ab\n2. c", 4, "2. ", "1. a\n2. b\n3. c"),
+        ("- a\n- b", 3, "- ", "- a\n- \n- b"),
+        ("1. a\n1. b\n1. c", 4, "2. ", "1. a\n2. \n1. b\n1. c"),
+        ("1. a\n2. b\n\n> 1. c", 4, "2. ", "1. a\n2. \n3. b\n\n> 1. c"),
+        ("1. a\n2. b\n5. c", 4, "2. ", "1. a\n2. \n3. b\n5. c"),
+    ])
+    func insertingAnItemRenumbersTheOrderedItemsAfterIt(text: String, caret: Int, item: String, expected: String) {
+        let edit = Markdown.insert(item, at: caret, in: text)
+        let result = (text as NSString).replacingCharacters(in: edit.range, with: edit.replacement)
+        #expect(result == expected)
+        #expect(edit.selection == NSRange(location: caret + 1 + (item as NSString).length, length: 0))
+    }
+
     @Test func continuationRepeatsListMarkers() {
         #expect(Self.continuation("- item") == "- ")
         #expect(Self.continuation("  * deep") == "  * ")
