@@ -4,16 +4,7 @@ import Testing
 @testable import Martin
 
 @MainActor
-final class AppStateTests {
-    let library = MeetingLibrary(root: FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory))
-    let suite = UUID().uuidString
-    lazy var defaults = UserDefaults(suiteName: suite)!
-
-    deinit {
-        UserDefaults.standard.removePersistentDomain(forName: suite)
-        try? FileManager.default.removeItem(at: library.root)
-    }
-
+final class AppStateTests: Sandbox {
     @Test func pageAndHiddenPagesAreRememberedAcrossLaunches() {
         let app = AppState(library: library, defaults: defaults)
         app.page = .projects
