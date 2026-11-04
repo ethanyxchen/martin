@@ -5,16 +5,7 @@ import Testing
 @testable import Martin
 
 @MainActor
-final class ProjectsViewTests {
-    let library = MeetingLibrary(root: FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory))
-    let suite = UUID().uuidString
-    lazy var defaults = UserDefaults(suiteName: suite)!
-
-    deinit {
-        UserDefaults.standard.removePersistentDomain(forName: suite)
-        try? FileManager.default.removeItem(at: library.root)
-    }
-
+final class ProjectsViewTests: Sandbox {
     @Test func closingAProjectLetsTheWindowNarrowAgain() async throws {
         let meeting = try library.create(title: "Kickoff")
         let app = AppState(library: library, defaults: defaults)

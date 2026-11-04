@@ -4,10 +4,9 @@ import Testing
 @testable import Martin
 
 @MainActor
-struct AssistantSetupTests {
+final class AssistantSetupTests: Sandbox {
     @Test func theSetupWindowKeepsItsSizeInsteadOfGrowingToFitItsContent() async throws {
-        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory)
-        let app = AppState(library: MeetingLibrary(root: root), defaults: try #require(UserDefaults(suiteName: UUID().uuidString)))
+        let app = AppState(library: library, defaults: defaults)
         let window = app.present(AssistantSetup(app: app), id: "assistant", title: "Set Up an Assistant", size: AssistantSetup.size)
         try await Task.sleep(for: .seconds(1))
         #expect(window.contentLayoutRect.size == AssistantSetup.size)

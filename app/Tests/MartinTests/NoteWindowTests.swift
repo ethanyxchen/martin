@@ -6,16 +6,7 @@ import Testing
 @testable import Martin
 
 @MainActor
-final class NoteWindowTests {
-    let library = MeetingLibrary(root: FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory))
-    let suite = UUID().uuidString
-    lazy var defaults = UserDefaults(suiteName: suite)!
-
-    deinit {
-        UserDefaults.standard.removePersistentDomain(forName: suite)
-        try? FileManager.default.removeItem(at: library.root)
-    }
-
+final class NoteWindowTests: Sandbox {
     @Test func theNoteMenuSitsAtTheTrailingEdgeOfTheToolbar() async throws {
         let meeting = try library.create(title: "Standup")
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 640), styleMask: [.titled, .fullSizeContentView], backing: .buffered, defer: false)
@@ -87,8 +78,4 @@ final class NoteWindowTests {
         app.keepSecret(atlas, true)
         #expect(app.focusedNote == nil)
     }
-}
-
-private extension NSView {
-    var descendants: [NSView] { subviews + subviews.flatMap(\.descendants) }
 }

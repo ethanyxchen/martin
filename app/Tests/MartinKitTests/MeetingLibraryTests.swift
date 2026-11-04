@@ -2,9 +2,7 @@ import Foundation
 import Testing
 @testable import MartinKit
 
-struct MeetingLibraryTests {
-    let library = MeetingLibrary(root: FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory))
-
+final class MeetingLibraryTests: LibrarySandbox {
     @Test func createdMeetingKeepsCalendarDetails() throws {
         let occurrence = Occurrence(series: "standup@example.com", start: Date(timeIntervalSince1970: 1_750_000_000))
         let meeting = try library.create(startedAt: Date(timeIntervalSince1970: 1_749_999_000), occurrence: occurrence, title: "Standup")
@@ -110,8 +108,7 @@ struct MeetingLibraryTests {
     }
 }
 
-struct ProjectFilingTests {
-    let library = MeetingLibrary(root: FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory))
+final class ProjectFilingTests: LibrarySandbox {
     let sync = "sync@example.com"
 
     private func start(on day: Int) -> Date {
@@ -162,9 +159,7 @@ struct ProjectFilingTests {
     }
 }
 
-struct ProjectLifecycleTests {
-    let library = MeetingLibrary(root: FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory))
-
+final class ProjectLifecycleTests: LibrarySandbox {
     private func note(_ seconds: TimeInterval, in project: Project.ID?) throws -> Meeting {
         try library.create(startedAt: Date(timeIntervalSince1970: seconds), project: project)
     }
@@ -219,9 +214,7 @@ struct ProjectLifecycleTests {
     }
 }
 
-struct ArchivedProjectNoteTests {
-    let library = MeetingLibrary(root: FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory))
-
+final class ArchivedProjectNoteTests: LibrarySandbox {
     @Test func aNoteRestoredOnItsOwnLeavesItsArchivedProjectAndSurvivesItsDeletion() throws {
         let atlas = try library.createProject(named: "Atlas")
         let note = try library.create(startedAt: Date(timeIntervalSince1970: 1_700_000_000), project: atlas.id)
