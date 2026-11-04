@@ -54,4 +54,11 @@ Run the tests with `swift test --package-path app`.
 
 ## Releasing
 
-Push a version tag such as `v0.1.0`. The Release workflow builds Martin, signs it with Developer ID, notarizes the app and the DMG, signs the update for Sparkle and publishes `Martin-<version>.dmg` and `appcast.xml` to a GitHub release. Installed copies find the update through the appcast of the latest release.
+Tag `main` with the next version and push the tag. Each release raises the last number of the latest version tag by 2, so `v1.1.0` is followed by `v1.1.2`, then `v1.1.4`.
+
+```sh
+git tag -a v1.1.2 -m v1.1.2
+git push origin v1.1.2
+```
+
+The Release workflow builds Martin, signs it with Developer ID, notarizes the app and the DMG, signs the update for Sparkle and publishes `Martin-<version>.dmg` and `appcast.xml` to a GitHub release. Installed copies find the update through the appcast of the latest release.
