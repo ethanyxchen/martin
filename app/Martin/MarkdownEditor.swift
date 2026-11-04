@@ -330,7 +330,7 @@ final class NoteTextView: NSTextView {
             let start = range.location + (enclosing.allSatisfy(\.isWhitespace) ? 0 : innermost.location)
             apply(Markdown.Edit(range: NSRange(location: start, length: NSMaxRange(range) - start), replacement: "", selection: NSRange(location: start, length: 0)))
         } else {
-            apply(Markdown.Edit(range: caret, replacement: "\n" + next, selection: NSRange(location: caret.location + 1 + (next as NSString).length, length: 0)))
+            apply(Markdown.insert(next, at: caret.location, in: string))
         }
         return true
     }
