@@ -49,11 +49,21 @@ public struct MeetingLibrary: Sendable {
 
     public func create(startedAt: Date = .now, occurrence: Occurrence? = nil, title: String? = nil, project: Project.ID? = nil) throws -> Meeting {
         let startedAt = Date(timeIntervalSince1970: startedAt.timeIntervalSince1970.rounded(.down))
-        let meeting = Meeting(id: Self.folderName.string(from: startedAt), startedAt: startedAt, occurrence: occurrence, title: title, project: project)
-        try FileManager.default.createDirectory(at: meetingsFolder, withIntermediateDirectories: true)
-        try FileManager.default.createDirectory(at: folder(of: meeting), withIntermediateDirectories: false)
+        let meeting = Meeting(id: unusedID(at: startedAt), startedAt: startedAt, occurrence: occurrence, title: title, project: project)
+        try FileManager.default.createDirectory(at: folder(of: meeting), withIntermediateDirectories: true)
         try save(meeting)
         return meeting
+    }
+
+    private func unusedID(at startedAt: Date) -> Meeting.ID {
+        let stamp = Self.folderName.string(from: startedAt)
+        var id = stamp
+        var copy = 1
+        while FileManager.default.fileExists(atPath: meetingsFolder.appending(path: id).path) {
+            copy += 1
+            id = "\(stamp)-\(copy)"
+        }
+        return id
     }
 
     public func save(_ meeting: Meeting) throws {

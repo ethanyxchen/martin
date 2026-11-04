@@ -65,7 +65,7 @@ final class NoteWindowTests: Sandbox {
 
     @Test func aQuickNoteLandsInTheProjectOpenInTheKeyHomeWindow() throws {
         let app = AppState(library: library, defaults: defaults)
-        app.file(try library.create(startedAt: .distantPast), inNewProjectNamed: "Atlas")
+        app.file(try library.create(), inNewProjectNamed: "Atlas")
         let atlas = try #require(app.projects.first)
         let window = app.present(HomeView(app: app), id: "home", title: "Martin", size: NSSize(width: 520, height: 640))
         app.page = .projects
