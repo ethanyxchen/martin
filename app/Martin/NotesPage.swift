@@ -51,7 +51,6 @@ struct ProjectsView: View {
     private static let slide: TimeInterval = 0.3
     let app: AppState
     @State private var width: CGFloat = 0
-    @State private var grown: CGFloat = 0
 
     var body: some View {
         let shelves = app.shelves
@@ -90,18 +89,18 @@ struct ProjectsView: View {
             if id == nil, app.selectedShelf != nil { select(nil, animated: false) }
         }
         .onExitCommand { select(nil, animated: false) }
-        .onDisappear { select(nil) }
+        .onDisappear {
+            if app.page != .projects { select(nil) }
+        }
         .task { await app.scoutRepositories() }
     }
 
     private func select(_ id: Shelf.ID?, animated: Bool = true) {
         let duration = animated ? Self.slide : 0
         if app.selectedShelf == nil, id != nil {
-            grown = max(0, Self.wide - width)
-            app.widenHome(by: grown, over: duration)
+            app.widen(to: Self.wide, over: duration)
         } else if app.selectedShelf != nil, id == nil {
-            app.widenHome(by: -grown, over: duration)
-            grown = 0
+            app.narrow(over: duration)
         }
         withAnimation(animated ? .drawer(duration) : nil) { app.selectedShelf = id }
     }

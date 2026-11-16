@@ -39,9 +39,9 @@ struct HomeView: View {
         ZStack {
             view(of: app.page)
                 .id(app.page)
-                .transition(transition)
+                .transition(.turn { .replace })
         }
-        .animation(.default, value: app.page)
+        .animation(reduceMotion ? nil : .default, value: app.page)
         .toolbar {
             ToolbarItem(placement: .principal) {
                 PageTabs(pages: app.pages, page: $app.page, shortcut: app.shortcut(of:), animation: reduceMotion ? nil : .spring(duration: 0.3, bounce: 0))
@@ -56,15 +56,6 @@ struct HomeView: View {
         case .projects: ProjectsView(app: app)
         case .settings: SettingsView(app: app)
         }
-    }
-
-    private var transition: AnyTransition {
-        guard !reduceMotion else { return .opacity }
-        let settle = AnyTransition.scale(scale: 0.985).combined(with: .opacity)
-        return .asymmetric(
-            insertion: settle.animation(.drawer(0.25)),
-            removal: settle.animation(.drawer(0.2))
-        )
     }
 }
 

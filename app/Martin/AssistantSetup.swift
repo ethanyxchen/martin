@@ -3,7 +3,6 @@ import MartinKit
 import SwiftUI
 
 struct AssistantSetup: View {
-    static let size = NSSize(width: 480, height: 460)
     let app: AppState
     @State private var choice: Assistant
     @State private var statuses: [Assistant: Assistant.Status] = [:]
@@ -41,7 +40,7 @@ struct AssistantSetup: View {
             Spacer(minLength: 22)
             HStack {
                 Spacer()
-                Button("Not Now") { app.closeAssistantSetup() }
+                Button("Not Now", action: app.back)
                     .keyboardShortcut(.cancelAction)
                 Button("Use \(choice.title)") { app.use(choice) }
                     .buttonStyle(.borderedProminent)
@@ -51,7 +50,8 @@ struct AssistantSetup: View {
             .controlSize(.large)
         }
         .padding(28)
-        .frame(width: Self.size.width, height: Self.size.height, alignment: .topLeading)
+        .frame(maxWidth: 480, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity)
         .background(Theme.paper)
         .animation(.easeOut(duration: 0.15), value: choice)
         .animation(.easeOut(duration: 0.15), value: statuses)

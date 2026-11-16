@@ -8,7 +8,10 @@ struct MenuBar: View {
     var body: some View {
         QuickNoteButton(app: app)
 
-        Button("Upcoming Meetings…") { app.openHome(on: .upcoming) }
+        Button("Upcoming Meetings…") {
+            app.openHome(on: .upcoming)
+            app.show()
+        }
 
         NoteSection(app: app, title: "Pinned", meetings: app.pinned)
         NoteSection(app: app, title: "Recent", meetings: Array(app.unpinned.prefix(3)))
@@ -29,7 +32,10 @@ private struct NoteSection: View {
         if !meetings.isEmpty {
             Section(title) {
                 ForEach(meetings) { meeting in
-                    Button { app.open(meeting) } label: {
+                    Button {
+                        app.open(meeting)
+                        app.show()
+                    } label: {
                         Text(meeting.displayTitle)
                         Text(meeting.date.formatted(.relative(presentation: .named)))
                     }
@@ -44,7 +50,10 @@ struct QuickNoteButton: View {
     let app: AppState
 
     var body: some View {
-        Button("New Quick Note") { app.quickNote() }
+        Button("New Quick Note") {
+            app.quickNote()
+            app.show()
+        }
             .keyboardShortcut(Self.shortcut)
     }
 }
@@ -53,7 +62,10 @@ struct SettingsButton: View {
     let app: AppState
 
     var body: some View {
-        Button("Settings…") { app.openHome(on: .settings) }
+        Button("Settings…") {
+            app.openHome(on: .settings)
+            app.show()
+        }
             .keyboardShortcut(",")
     }
 }

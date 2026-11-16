@@ -9,7 +9,8 @@ final class WorkflowTests: Sandbox {
 
     private func open(_ meeting: Meeting, in app: AppState? = nil) async throws -> (NSWindow, NoteTextView) {
         let app = app ?? self.app
-        let window = app.present(NoteView(app: app, meeting: meeting), id: meeting.id, title: meeting.displayTitle, size: NSSize(width: 520, height: 640))
+        let window = app.window
+        app.open(meeting)
         for _ in 0..<100 where editor(in: window) == nil {
             try await Task.sleep(for: .milliseconds(20))
         }
@@ -38,32 +39,32 @@ final class WorkflowTests: Sandbox {
 
     @Test func whatIsTypedIsSavedPreviewedAndThereOnReopening() async throws {
         let meeting = try library.create()
-        let (window, editor) = try await open(meeting)
+        let (_, editor) = try await open(meeting)
         type("# Standup\nTasks:\n- shipped icons\n\n", into: editor)
         #expect(editor.string == "# Standup\nTasks:\n- shipped icons\n")
         #expect(try await saved(meeting, as: "# Standup\nTasks:\n- shipped icons\n"))
         #expect(app.previews[meeting.id] == "Standup")
-        window.close()
+        app.back()
         let relaunched = AppState(library: library, defaults: defaults)
         let (reopened, again) = try await open(meeting, in: relaunched)
         #expect(again.string == "# Standup\nTasks:\n- shipped icons\n")
-        reopened.close()
+        #expect(reopened === relaunched.window)
     }
 
-    @Test func closingANoteSavesWhatWasJustTyped() async throws {
+    @Test func goingBackFromANoteSavesWhatWasJustTyped() async throws {
         let meeting = try library.create()
-        let (window, editor) = try await open(meeting)
+        let (_, editor) = try await open(meeting)
         type("last words", into: editor)
-        window.close()
+        app.back()
         #expect(try await saved(meeting, as: "last words"))
     }
 
-    @Test func archivingAnOpenNoteClosesItAndKeepsWhatWasJustTyped() async throws {
+    @Test func archivingAnOpenNoteLeavesItAndKeepsWhatWasJustTyped() async throws {
         let meeting = try library.create()
-        let (window, editor) = try await open(meeting)
+        let (_, editor) = try await open(meeting)
         type("keep this", into: editor)
         app.archive(meeting)
-        #expect(!window.isVisible)
+        #expect(app.path.isEmpty)
         #expect(app.archive.map(\.id) == [meeting.id])
         #expect(try await saved(meeting, as: "keep this"))
     }
@@ -81,13 +82,12 @@ final class WorkflowTests: Sandbox {
     @Test func formattingASelectionIsSavedAndUndoneInOneStep() async throws {
         let meeting = try library.create()
         try library.saveNote("say word", for: meeting)
-        let (window, editor) = try await open(meeting)
+        let (_, editor) = try await open(meeting)
         editor.setSelectedRange(NSRange(location: 4, length: 4))
         editor.toggleBold(nil)
         #expect(try await saved(meeting, as: "say **word**"))
         editor.undoManager?.undo()
         #expect(try await saved(meeting, as: "say word"))
-        window.close()
     }
 
     @Test func clickingACheckboxTicksItAndSavesTheNote() async throws {
@@ -98,25 +98,23 @@ final class WorkflowTests: Sandbox {
         let click = try #require(NSEvent.mouseEvent(with: .leftMouseDown, location: NSPoint(x: box.midX, y: box.midY), modifierFlags: [], timestamp: 0, windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
         editor.mouseDown(with: click)
         #expect(try await saved(meeting, as: "- [x] milk"))
-        window.close()
     }
 
     @Test func backspacingIntoAMentionRemovesTheWholeMention() async throws {
         let meeting = try library.create()
         try library.saveNote("ask @{Kim K <kim.k@example.com>}", for: meeting)
-        let (window, editor) = try await open(meeting)
+        let (_, editor) = try await open(meeting)
         editor.deleteBackward(nil)
         #expect(try await saved(meeting, as: "ask "))
-        window.close()
     }
 
-    @Test func archivingAProjectClosesItsOpenNotesAndKeepsWhatWasJustTyped() async throws {
+    @Test func archivingAProjectLeavesItsOpenNoteAndKeepsWhatWasJustTyped() async throws {
         let meeting = try library.create(title: "Kickoff")
         app.file(meeting, inNewProjectNamed: "Atlas")
-        let (window, editor) = try await open(try #require(app.meeting(meeting.id)))
+        let (_, editor) = try await open(try #require(app.meeting(meeting.id)))
         type("- scope the redesign", into: editor)
         app.archive(try #require(app.projects.first))
-        #expect(!window.isVisible)
+        #expect(app.path.isEmpty)
         #expect(app.notes.isEmpty)
         #expect(app.archivedProjects.map(\.name) == ["Atlas"])
         #expect(try await saved(meeting, as: "- scope the redesign"))
