@@ -36,12 +36,7 @@ struct HomeView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        ZStack {
-            view(of: app.page)
-                .id(app.page)
-                .transition(.turn { .replace })
-        }
-        .animation(reduceMotion ? nil : .default, value: app.page)
+        Turnstile(value: app.page, motion: { .replace }) { view(of: app.page) }
         .toolbar {
             ToolbarItem(placement: .principal) {
                 PageTabs(pages: app.pages, page: $app.page, shortcut: app.shortcut(of:), animation: reduceMotion ? nil : .spring(duration: 0.3, bounce: 0))

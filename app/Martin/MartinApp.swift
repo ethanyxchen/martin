@@ -94,10 +94,7 @@ final class AppState {
     @ObservationIgnored private var scouting: Task<[Repository], Never>?
     @ObservationIgnored private var lookupRound = 0
     var page: HomePage {
-        didSet {
-            defaults.set(page.rawValue, forKey: Self.pageKey)
-            if page != .projects { closeShelf() }
-        }
+        didSet { defaults.set(page.rawValue, forKey: Self.pageKey) }
     }
     var hiddenPages: Set<HomePage> {
         didSet { defaults.set(hiddenPages.map(\.rawValue).sorted(), forKey: Self.hiddenPagesKey) }
@@ -423,7 +420,9 @@ final class AppState {
     }
 
     func openHome(on page: HomePage) {
+        let projectsHidden = !path.isEmpty
         navigate(to: [])
+        if page != .projects, projectsHidden { closeShelf() }
         self.page = page
     }
 
@@ -455,15 +454,11 @@ final class AppState {
         resize(by: grown, over: duration)
     }
 
-    private func closeShelf() {
+    func closeShelf(over duration: TimeInterval = 0) {
         guard selectedShelf != nil else { return }
-        selectedShelf = nil
-        narrow(over: ProjectsView.slide)
-    }
-
-    func narrow(over duration: TimeInterval) {
         resize(by: -grown, over: duration)
         grown = 0
+        selectedShelf = nil
     }
 
     private func resize(by width: CGFloat, over duration: TimeInterval) {

@@ -23,23 +23,17 @@ enum Motion {
 
 struct Navigator: View {
     let app: AppState
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        ZStack {
-            screen
-                .id(app.path.last)
-                .transition(.turn { reduceMotion ? .replace : app.motion })
-        }
-        .animation(reduceMotion ? nil : .default, value: app.path.last)
-        .toolbar {
-            if !app.path.isEmpty {
-                ToolbarItem(placement: .navigation) {
-                    Button("Back", systemImage: "chevron.left", action: app.back)
-                        .help("Back (⌘[)")
+        Turnstile(value: app.path.last, motion: { app.motion }) { screen }
+            .toolbar {
+                if !app.path.isEmpty {
+                    ToolbarItem(placement: .navigation) {
+                        Button("Back", systemImage: "chevron.left", action: app.back)
+                            .help("Back (⌘[)")
+                    }
                 }
             }
-        }
     }
 
     @ViewBuilder private var screen: some View {
@@ -62,12 +56,22 @@ struct BackButton: View {
     }
 }
 
-extension AnyTransition {
-    static func turn(_ motion: @escaping @MainActor () -> Motion) -> AnyTransition {
-        .asymmetric(
-            insertion: AnyTransition(Turn(motion: motion)).animation(.drawer(0.4).delay(0.07)),
-            removal: AnyTransition(Turn(motion: motion)).animation(.drawer(0.3))
-        )
+struct Turnstile<Value: Hashable, Content: View>: View {
+    let value: Value
+    let motion: @MainActor () -> Motion
+    @ViewBuilder let content: Content
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ZStack {
+            content
+                .id(value)
+                .transition(reduceMotion ? .identity : .asymmetric(
+                    insertion: AnyTransition(Turn(motion: motion)).animation(.drawer(0.4).delay(0.07)),
+                    removal: AnyTransition(Turn(motion: motion)).animation(.drawer(0.3))
+                ))
+        }
+        .animation(reduceMotion ? nil : .default, value: value)
     }
 }
 

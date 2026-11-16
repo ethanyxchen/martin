@@ -40,11 +40,9 @@ struct NoteView: View {
             try? await Task.sleep(for: .milliseconds(600))
             save()
         }
-        .onDisappear {
-            save()
-            app.rename(current, to: title)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in save() }
+        .onDisappear(perform: keep)
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { _ in keep() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in keep() }
     }
 
     private var header: some View {
@@ -74,6 +72,11 @@ struct NoteView: View {
     private var year: String? {
         let start = current.date
         return Calendar.current.isDate(start, equalTo: .now, toGranularity: .year) ? nil : start.formatted(.dateTime.year())
+    }
+
+    private func keep() {
+        save()
+        app.rename(current, to: title)
     }
 
     private func save() {

@@ -48,7 +48,7 @@ struct SecretsToggle: ToolbarContent {
 struct ProjectsView: View {
     private static let wide: CGFloat = 860
     private static let sidebar: CGFloat = 280
-    static let slide: TimeInterval = 0.3
+    private static let slide: TimeInterval = 0.3
     let app: AppState
     @State private var width: CGFloat = 0
 
@@ -85,21 +85,23 @@ struct ProjectsView: View {
             ArchiveButton(app: app)
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
-        .onChange(of: open?.id) { _, id in
+        .onChange(of: open?.id, initial: true) { _, id in
             if id == nil, app.selectedShelf != nil { select(nil, animated: false) }
         }
         .onExitCommand { select(nil, animated: false) }
+        .onDisappear {
+            if app.page != .projects { app.closeShelf() }
+        }
         .task { await app.scoutRepositories() }
     }
 
     private func select(_ id: Shelf.ID?, animated: Bool = true) {
         let duration = animated ? Self.slide : 0
-        if app.selectedShelf == nil, id != nil {
-            app.widen(to: Self.wide, over: duration)
-        } else if app.selectedShelf != nil, id == nil {
-            app.narrow(over: duration)
+        withAnimation(animated ? .drawer(duration) : nil) {
+            guard let id else { return app.closeShelf(over: duration) }
+            if app.selectedShelf == nil { app.widen(to: Self.wide, over: duration) }
+            app.selectedShelf = id
         }
-        withAnimation(animated ? .drawer(duration) : nil) { app.selectedShelf = id }
     }
 }
 

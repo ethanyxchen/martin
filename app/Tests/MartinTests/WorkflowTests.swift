@@ -72,6 +72,17 @@ final class WorkflowTests: Sandbox {
         #expect(app.meeting(meeting.id)?.title == "Retro")
     }
 
+    @Test(arguments: [NSApplication.willTerminateNotification, NSWindow.willCloseNotification])
+    func quittingOrClosingWhileEditingTheTitleKeepsTheNewTitle(_ leaving: Notification.Name) async throws {
+        let meeting = try library.create()
+        let (window, _) = try await open(meeting)
+        let field = try #require(window.contentView?.descendants.lazy.compactMap { $0 as? NSTextField }.first { $0.isEditable })
+        window.makeFirstResponder(field)
+        field.currentEditor()?.insertText("Retro")
+        NotificationCenter.default.post(name: leaving, object: leaving == NSWindow.willCloseNotification ? window : nil)
+        #expect(app.meeting(meeting.id)?.title == "Retro")
+    }
+
     @Test func archivingAnOpenNoteLeavesItAndKeepsWhatWasJustTyped() async throws {
         let meeting = try library.create()
         let (_, editor) = try await open(meeting)
