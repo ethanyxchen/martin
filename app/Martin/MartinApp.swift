@@ -33,13 +33,21 @@ struct MartinApp: App {
                     .keyboardShortcut(SecretsToggle.shortcut)
             }
             CommandGroup(before: .windowList) {
+                BackButton(app: delegate.app)
+                Divider()
                 ForEach(HomePage.shown(hiding: delegate.app.hiddenPages), id: \.self) { page in
-                    Button(page.title) { delegate.app.openHome(on: page) }
-                        .keyboardShortcut(delegate.app.shortcut(of: page).map { KeyboardShortcut(KeyEquivalent(Character(String($0)))) })
+                    Button(page.title) {
+                        delegate.app.openHome(on: page)
+                        delegate.app.show()
+                    }
+                    .keyboardShortcut(delegate.app.shortcut(of: page).map { KeyboardShortcut(KeyEquivalent(Character(String($0)))) })
                 }
                 Divider()
-                Button("Archive") { delegate.app.openArchive() }
-                    .keyboardShortcut("a", modifiers: [.command, .shift])
+                Button("Archive") {
+                    delegate.app.openArchive()
+                    delegate.app.show()
+                }
+                .keyboardShortcut("a", modifiers: [.command, .shift])
             }
             CommandMenu("Format") {
                 ForEach(NoteTextView.formats, id: \.title) { format in
@@ -57,12 +65,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let updater = Updater()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        app.reopen()
+        app.show()
         Task { await app.suggestRepositories() }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
-        app.reopen()
+        app.show()
         return true
     }
 }
@@ -98,13 +106,15 @@ final class AppState {
             lookupRound += 1
         }
     }
+    private(set) var path: [Screen] = []
+    private(set) var motion = Motion.push
     var selectedShelf: Shelf.ID?
     var showsSecrets = false
     var hiddenCalendars: Set<EventCalendar.ID> {
         didSet { defaults.set(hiddenCalendars.sorted(), forKey: Self.hiddenCalendarsKey) }
     }
-    private var keyWindow: String?
-    @ObservationIgnored private var windows: [String: NSWindow] = [:]
+    @ObservationIgnored private var grown: CGFloat = 0
+    @ObservationIgnored private(set) lazy var window = makeWindow()
 
     init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = .standard, finder: RepositoryFinder = RepositoryFinder()) {
         self.library = library
@@ -115,7 +125,6 @@ final class AppState {
         assistant = defaults.string(forKey: Self.assistantKey).flatMap(Assistant.init)
         hiddenCalendars = Set(defaults.stringArray(forKey: Self.hiddenCalendarsKey) ?? [])
         reload()
-        observeWindows()
     }
 
     func meeting(_ id: Meeting.ID) -> Meeting? {
@@ -123,11 +132,12 @@ final class AppState {
     }
 
     var focusedNote: Meeting? {
-        keyWindow.flatMap(meeting)
+        guard case .note(let id) = path.last else { return nil }
+        return meeting(id)
     }
 
     var focusedProject: Project? {
-        guard keyWindow == "home", page == .projects, case .project(let id) = selectedShelf else { return nil }
+        guard path.isEmpty, page == .projects, case .project(let id) = selectedShelf else { return nil }
         return projects.first { $0.id == id }
     }
 
@@ -240,7 +250,6 @@ final class AppState {
         guard renamed != meeting else { return }
         try? library.save(renamed)
         reload()
-        windows[meeting.id]?.title = renamed.displayTitle
     }
 
     func pin(_ meeting: Meeting, _ pinned: Bool) {
@@ -251,7 +260,7 @@ final class AppState {
     }
 
     func archive(_ meeting: Meeting) {
-        windows[meeting.id]?.close()
+        dismiss([meeting])
         var archived = self.meeting(meeting.id) ?? meeting
         archived.archivedAt = .now
         try? library.save(archived)
@@ -264,7 +273,7 @@ final class AppState {
     }
 
     func delete(_ meeting: Meeting) {
-        windows[meeting.id]?.close()
+        dismiss([meeting])
         try? library.delete(meeting)
         reload()
     }
@@ -351,29 +360,25 @@ final class AppState {
     }
 
     func openAssistantSetup() {
-        show(windows["assistant"] ?? present(AssistantSetup(app: self), id: "assistant", title: "Choose an Assistant", size: AssistantSetup.size))
+        push(.assistant)
     }
 
     func use(_ assistant: Assistant) {
         self.assistant = assistant
-        closeAssistantSetup()
+        navigate(to: path.filter { $0 != .assistant })
         Task { await suggestRepositories() }
-    }
-
-    func closeAssistantSetup() {
-        windows["assistant"]?.close()
     }
 
     func keepSecret(_ project: Project, _ secret: Bool) {
         guard var changed = allProjects.first(where: { $0.id == project.id }) else { return }
         changed.secretAt = secret ? .now : nil
-        if secret, !showsSecrets { notes(in: project).forEach { windows[$0.id]?.close() } }
+        if secret, !showsSecrets { dismiss(notes(in: project)) }
         try? library.save(changed)
         reload()
     }
 
     func archive(_ project: Project) {
-        notes(in: project).forEach { windows[$0.id]?.close() }
+        dismiss(notes(in: project))
         try? library.archive(project)
         reload()
     }
@@ -384,7 +389,7 @@ final class AppState {
     }
 
     func delete(_ project: Project) {
-        notes(in: project).forEach { windows[$0.id]?.close() }
+        dismiss(notes(in: project))
         suggestions[project.id] = nil
         try? library.delete(project)
         reload()
@@ -411,24 +416,53 @@ final class AppState {
     }
 
     func open(_ meeting: Meeting) {
-        show(windows[meeting.id] ?? present(NoteView(app: self, meeting: meeting), id: meeting.id, title: meeting.displayTitle, size: Self.windowSize))
-    }
-
-    func reopen() {
-        if windows.isEmpty { openHome(on: page) }
+        push(.note(meeting.id))
     }
 
     func openHome(on page: HomePage) {
+        let projectsHidden = !path.isEmpty
+        navigate(to: [])
+        if page != .projects, projectsHidden { closeShelf() }
         self.page = page
-        show(windows["home"] ?? present(HomeView(app: self), id: "home", title: "Martin", size: Self.windowSize))
     }
 
     func openArchive() {
-        show(windows["archive"] ?? present(ArchiveView(app: self), id: "archive", title: "Archive", size: Self.windowSize))
+        push(.archive)
     }
 
-    func widenHome(by width: CGFloat, over duration: TimeInterval) {
-        guard let window = windows["home"], !window.styleMask.contains(.fullScreen) else { return }
+    func back() {
+        navigate(to: path.dropLast())
+    }
+
+    private func push(_ screen: Screen) {
+        navigate(to: path.firstIndex(of: screen).map { Array(path[...$0]) } ?? path + [screen])
+    }
+
+    private func dismiss(_ meetings: [Meeting]) {
+        let notes = Set(meetings.map { Screen.note($0.id) })
+        navigate(to: path.filter { !notes.contains($0) })
+    }
+
+    private func navigate(to path: [Screen]) {
+        guard path != self.path else { return }
+        motion = path.count > self.path.count ? .push : .pop
+        self.path = path
+    }
+
+    func widen(to width: CGFloat, over duration: TimeInterval) {
+        grown = max(0, width - window.frame.width)
+        resize(by: grown, over: duration)
+    }
+
+    func closeShelf(over duration: TimeInterval = 0) {
+        guard selectedShelf != nil else { return }
+        resize(by: -grown, over: duration)
+        grown = 0
+        selectedShelf = nil
+    }
+
+    private func resize(by width: CGFloat, over duration: TimeInterval) {
+        guard !window.styleMask.contains(.fullScreen) else { return }
         var frame = window.frame
         frame.size.width += width
         if let visible = window.screen?.visibleFrame {
@@ -441,57 +475,35 @@ final class AppState {
         }
     }
 
-    private func show(_ window: NSWindow) {
+    func show() {
         window.orderFrontRegardless()
         window.makeKey()
         NSApp.activate()
     }
 
-    func present(_ view: some View, id: String, title: String, size: NSSize) -> NSWindow {
+    private func makeWindow() -> NSWindow {
         let window = NSWindow(
-            contentRect: NSRect(origin: .zero, size: size),
+            contentRect: NSRect(origin: .zero, size: Self.windowSize),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
-        window.title = title
+        window.title = "Martin"
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isReleasedWhenClosed = false
         window.backgroundColor = Theme.paper.ns
         window.contentMinSize = NSSize(width: 420, height: 420)
-        window.contentView = NSHostingView(rootView: view)
-        window.setContentSize(size)
-        if let front = NSApp.orderedWindows.first(where: windows.values.contains) {
-            window.cascadeTopLeft(from: front.cascadeTopLeft(from: .zero))
-        } else {
-            window.center()
-        }
-        windows[id] = window
-        return window
-    }
-
-    private func observeWindows() {
-        observe(NSWindow.willCloseNotification) { app, id in
-            app.windows[id] = nil
-            app.resign(id)
-        }
-        observe(NSWindow.didBecomeKeyNotification) { app, id in app.keyWindow = id }
-        observe(NSWindow.didResignKeyNotification) { app, id in app.resign(id) }
-    }
-
-    private func observe(_ name: Notification.Name, _ handle: @escaping @MainActor (AppState, String) -> Void) {
-        NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] notification in
-            guard let window = (notification.object as? NSWindow).map(ObjectIdentifier.init) else { return }
+        window.contentView = NSHostingView(rootView: Navigator(app: self))
+        window.setContentSize(Self.windowSize)
+        window.center()
+        NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self, let id = self.windows.first(where: { ObjectIdentifier($0.value) == window })?.key else { return }
-                handle(self, id)
+                self?.navigate(to: [])
+                self?.closeShelf()
             }
         }
-    }
-
-    private func resign(_ id: String) {
-        if keyWindow == id { keyWindow = nil }
+        return window
     }
 
     private func explain(_ error: Error) {

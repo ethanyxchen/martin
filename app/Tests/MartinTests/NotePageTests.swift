@@ -6,7 +6,7 @@ import Testing
 @testable import Martin
 
 @MainActor
-final class NoteWindowTests: Sandbox {
+final class NotePageTests: Sandbox {
     @Test func theNoteMenuSitsAtTheTrailingEdgeOfTheToolbar() async throws {
         let meeting = try library.create(title: "Standup")
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 640), styleMask: [.titled, .fullSizeContentView], backing: .buffered, defer: false)
@@ -21,37 +21,25 @@ final class NoteWindowTests: Sandbox {
         #expect(trailing > window.frame.width - 10)
     }
 
-    @Test func theNoteMenuActsOnTheKeyNoteWindow() throws {
+    @Test func theNoteMenuActsOnTheNoteOnScreen() throws {
         let meeting = try library.create(title: "Standup")
         let app = AppState(library: library, defaults: defaults)
-        let window = app.present(NoteView(app: app, meeting: meeting), id: meeting.id, title: meeting.displayTitle, size: NSSize(width: 520, height: 640))
         #expect(app.focusedNote == nil)
-        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: window)
+        app.open(meeting)
         #expect(app.focusedNote == meeting)
-        NotificationCenter.default.post(name: NSWindow.didResignKeyNotification, object: window)
+        app.openArchive()
+        #expect(app.focusedNote == nil)
+        app.back()
+        app.back()
         #expect(app.focusedNote == nil)
     }
 
-    @Test func closingTheKeyNoteWindowLeavesNoNoteFocused() throws {
-        let meeting = try library.create(title: "Standup")
-        let app = AppState(library: library, defaults: defaults)
-        let window = app.present(NoteView(app: app, meeting: meeting), id: meeting.id, title: meeting.displayTitle, size: NSSize(width: 520, height: 640))
-        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: window)
-        NotificationCenter.default.post(name: NSWindow.willCloseNotification, object: window)
-        #expect(app.focusedNote == nil)
-        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: window)
-        #expect(app.focusedNote == nil)
-    }
-
-    @Test func theProjectMenuActsOnTheProjectOpenInTheKeyHomeWindow() throws {
+    @Test func theProjectMenuActsOnTheProjectOpenOnHome() throws {
         let app = AppState(library: library, defaults: defaults)
         app.file(try library.create(), inNewProjectNamed: "Atlas")
         let atlas = try #require(app.projects.first)
-        let window = app.present(HomeView(app: app), id: "home", title: "Martin", size: NSSize(width: 520, height: 640))
         app.page = .projects
         app.selectedShelf = .project(atlas.id)
-        #expect(app.focusedProject == nil)
-        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: window)
         #expect(app.focusedProject == atlas)
         app.selectedShelf = .unassigned
         #expect(app.focusedProject == nil)
@@ -59,28 +47,28 @@ final class NoteWindowTests: Sandbox {
         app.page = .notes
         #expect(app.focusedProject == nil)
         app.page = .projects
-        NotificationCenter.default.post(name: NSWindow.didResignKeyNotification, object: window)
+        app.selectedShelf = .project(atlas.id)
+        app.open(try #require(app.meetings.first))
         #expect(app.focusedProject == nil)
+        app.back()
+        #expect(app.focusedProject == atlas)
     }
 
-    @Test func aQuickNoteLandsInTheProjectOpenInTheKeyHomeWindow() throws {
+    @Test func aQuickNoteLandsInTheProjectOpenOnHome() throws {
         let app = AppState(library: library, defaults: defaults)
         app.file(try library.create(), inNewProjectNamed: "Atlas")
         let atlas = try #require(app.projects.first)
-        let window = app.present(HomeView(app: app), id: "home", title: "Martin", size: NSSize(width: 520, height: 640))
         app.page = .projects
         app.selectedShelf = .project(atlas.id)
-        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: window)
         #expect(try app.newQuickNote().project == atlas.id)
     }
 
-    @Test func makingAProjectSecretClosesItsNoteWindowsUnlessSecretsAreShown() throws {
+    @Test func makingAProjectSecretLeavesItsNotesUnlessSecretsAreShown() throws {
         let app = AppState(library: library, defaults: defaults)
         let meeting = try library.create()
         app.file(meeting, inNewProjectNamed: "Atlas")
         let atlas = try #require(app.projects.first)
-        let window = app.present(NoteView(app: app, meeting: meeting), id: meeting.id, title: meeting.displayTitle, size: NSSize(width: 520, height: 640))
-        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: window)
+        app.open(meeting)
         app.showsSecrets = true
         app.keepSecret(atlas, true)
         #expect(app.focusedNote?.id == meeting.id)
