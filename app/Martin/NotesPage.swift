@@ -90,7 +90,7 @@ struct ProjectsView: View {
         }
         .onExitCommand { select(nil, animated: false) }
         .onDisappear {
-            if app.page != .projects { app.closeShelf() }
+            if app.page != .projects { app.closeShelf(over: Self.slide) }
         }
         .task { await app.scoutRepositories() }
     }

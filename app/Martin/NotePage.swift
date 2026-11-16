@@ -41,7 +41,7 @@ struct NoteView: View {
             save()
         }
         .onDisappear(perform: keep)
-        .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { _ in keep() }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification).filter { [app] in $0.object as? NSWindow === app.window }) { _ in keep() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in keep() }
     }
 

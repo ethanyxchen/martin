@@ -33,6 +33,7 @@ final class ProjectsViewTests: Sandbox {
         let app = AppState(library: library, defaults: defaults)
         app.file(meeting, inNewProjectNamed: "Atlas")
         let atlas = try #require(app.projects.first)
+        app.page = .projects
         app.selectedShelf = .project(atlas.id)
         app.keepSecret(atlas, true)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 860, height: 600), styleMask: [.titled, .fullSizeContentView], backing: .buffered, defer: false)
