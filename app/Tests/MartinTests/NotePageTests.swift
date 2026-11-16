@@ -47,6 +47,7 @@ final class NotePageTests: Sandbox {
         app.page = .notes
         #expect(app.focusedProject == nil)
         app.page = .projects
+        app.selectedShelf = .project(atlas.id)
         app.open(try #require(app.meetings.first))
         #expect(app.focusedProject == nil)
         app.back()

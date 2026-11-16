@@ -94,7 +94,10 @@ final class AppState {
     @ObservationIgnored private var scouting: Task<[Repository], Never>?
     @ObservationIgnored private var lookupRound = 0
     var page: HomePage {
-        didSet { defaults.set(page.rawValue, forKey: Self.pageKey) }
+        didSet {
+            defaults.set(page.rawValue, forKey: Self.pageKey)
+            if page != .projects { closeShelf() }
+        }
     }
     var hiddenPages: Set<HomePage> {
         didSet { defaults.set(hiddenPages.map(\.rawValue).sorted(), forKey: Self.hiddenPagesKey) }
@@ -452,6 +455,12 @@ final class AppState {
         resize(by: grown, over: duration)
     }
 
+    private func closeShelf() {
+        guard selectedShelf != nil else { return }
+        selectedShelf = nil
+        narrow(over: ProjectsView.slide)
+    }
+
     func narrow(over duration: TimeInterval) {
         resize(by: -grown, over: duration)
         grown = 0
@@ -493,6 +502,12 @@ final class AppState {
         window.contentView = NSHostingView(rootView: Navigator(app: self))
         window.setContentSize(Self.windowSize)
         window.center()
+        NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.navigate(to: [])
+                self?.closeShelf()
+            }
+        }
         return window
     }
 

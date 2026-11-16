@@ -59,6 +59,19 @@ final class WorkflowTests: Sandbox {
         #expect(try await saved(meeting, as: "last words"))
     }
 
+    @Test func goingBackWhileEditingTheTitleKeepsTheNewTitle() async throws {
+        let meeting = try library.create()
+        let (window, _) = try await open(meeting)
+        let field = try #require(window.contentView?.descendants.lazy.compactMap { $0 as? NSTextField }.first { $0.isEditable })
+        window.makeFirstResponder(field)
+        field.currentEditor()?.insertText("Retro")
+        app.back()
+        for _ in 0..<100 where app.meeting(meeting.id)?.title != "Retro" {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(app.meeting(meeting.id)?.title == "Retro")
+    }
+
     @Test func archivingAnOpenNoteLeavesItAndKeepsWhatWasJustTyped() async throws {
         let meeting = try library.create()
         let (_, editor) = try await open(meeting)

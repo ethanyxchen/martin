@@ -29,7 +29,7 @@ struct Navigator: View {
         ZStack {
             screen
                 .id(app.path.last)
-                .transition(.turn { app.motion })
+                .transition(.turn { reduceMotion ? .replace : app.motion })
         }
         .animation(reduceMotion ? nil : .default, value: app.path.last)
         .toolbar {

@@ -40,7 +40,10 @@ struct NoteView: View {
             try? await Task.sleep(for: .milliseconds(600))
             save()
         }
-        .onDisappear(perform: save)
+        .onDisappear {
+            save()
+            app.rename(current, to: title)
+        }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in save() }
     }
 

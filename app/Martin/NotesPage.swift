@@ -48,7 +48,7 @@ struct SecretsToggle: ToolbarContent {
 struct ProjectsView: View {
     private static let wide: CGFloat = 860
     private static let sidebar: CGFloat = 280
-    private static let slide: TimeInterval = 0.3
+    static let slide: TimeInterval = 0.3
     let app: AppState
     @State private var width: CGFloat = 0
 
@@ -89,9 +89,6 @@ struct ProjectsView: View {
             if id == nil, app.selectedShelf != nil { select(nil, animated: false) }
         }
         .onExitCommand { select(nil, animated: false) }
-        .onDisappear {
-            if app.page != .projects { select(nil) }
-        }
         .task { await app.scoutRepositories() }
     }
 

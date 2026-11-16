@@ -77,3 +77,30 @@ final class NavigatorTests: Sandbox {
         #expect(try await back() == nil)
     }
 }
+
+@MainActor
+final class ClosingTheWindowTests: Sandbox {
+    @Test func closingTheWindowLeavesNothingForTheMenusToActOn() throws {
+        let app = AppState(library: library, defaults: defaults)
+        let meeting = try library.create()
+        app.file(meeting, inNewProjectNamed: "Atlas")
+        app.page = .projects
+        app.selectedShelf = .project(try #require(app.projects.first).id)
+        app.open(try #require(app.meeting(meeting.id)))
+        NotificationCenter.default.post(name: NSWindow.willCloseNotification, object: app.window)
+        #expect(app.focusedNote == nil)
+        #expect(app.focusedProject == nil)
+        #expect(try app.newQuickNote().project == nil)
+    }
+
+    @Test func leavingProjectsClosesTheOpenProjectEvenFromAnotherScreen() throws {
+        let app = AppState(library: library, defaults: defaults)
+        let meeting = try library.create()
+        app.file(meeting, inNewProjectNamed: "Atlas")
+        app.page = .projects
+        app.selectedShelf = .project(try #require(app.projects.first).id)
+        app.open(try #require(app.meeting(meeting.id)))
+        app.openHome(on: .notes)
+        #expect(app.selectedShelf == nil)
+    }
+}
