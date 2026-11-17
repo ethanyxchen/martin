@@ -47,7 +47,8 @@ The agent also treats notes as the source of truth and the repository as backgro
   - A large PR: one big enough to be a piece of work by itself. In Martin the median PR changes 67 lines, the top tenth change 850 or more, and #8, #51, #39, #33, #7 and #40 change 850–2,400 lines each. A large PR can stand alone or anchor a theme; small PRs are grouped and never listed on their own.
   - The agent judges size from the lines added and removed, the files changed and the commit count. It isn't given a fixed threshold, and the rubric only uses clear-cut cases.
   - A task is in Now while its branches or PRs keep moving.
-  - It's done when its work has merged and nothing has moved since, or when a note says it's done.
+  - It's done when all its work has merged and it has been idle for 2 days (weekend days count half), or when a note says it's done. Recently merged work stays in Now briefly, because PRs merge within hours as parts of a longer theme.
+  - A stale branch whose work was superseded by merged work belongs to that theme, not to Shelved. For example, `textkit2-notes-editor` folds into the editor theme because #7 rebuilt the editor on TextKit 2 a day later.
 - **A stale branch means shelved.** When an unmerged branch has been idle for 2 days before the cutoff, its task moves to Shelved. This replaces the rule that nothing is shelved without being told.
   - Weekend days count as half a day. Days are calendar days in the cutoff's local time zone, measured from the branch's last commit.
   - Examples: a branch last touched Friday at 18:00 becomes stale on Monday at 18:00 (0.25 + 0.5 + 0.5 + 0.75). One touched Tuesday at 18:00 becomes stale on Thursday at 18:00.
