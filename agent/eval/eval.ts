@@ -7,7 +7,7 @@ import { provider } from "../src/providers"
 import type { Effort, Outcome, Usage } from "../src/providers/provider"
 import { runJob } from "../src/run"
 import type { Overview, OverviewResult, ProviderName } from "../src/schema"
-import { invariants, judge, judgeModel, type Kind, material, type Verdict } from "./judge"
+import { invariants, judge, judgeModel, type Kind, material, scored, type Verdict } from "./judge"
 import { cost, priced } from "./prices"
 import { connect, type Project, projects, type Stage } from "./scenario"
 
@@ -108,16 +108,17 @@ function line(run: Run): string {
     `in ${thousands(total.input + total.cacheRead + total.cacheWrite)}`,
     `out ${thousands(total.output)}`,
     `${run.calls.length} calls`,
-    `${passed(run.verdicts)}/${run.verdicts.length}`,
+    `${passed(scored(run.verdicts))}/${scored(run.verdicts).length}`,
     run.error ?? "",
   ].filter(Boolean).join("  ")
 }
 
 function report(runs: Run[]) {
-  const verdicts = runs.flatMap(run => run.verdicts)
-  const kinds: Kind[] = ["section", "caption", "date", "order", "precision", "invariant"]
+  const all = runs.flatMap(run => run.verdicts)
+  const verdicts = scored(all)
+  const kinds: Kind[] = ["section", "caption", "date", "order", "precision"]
   const projectsLine = [...new Set(runs.map(run => run.project))].map(project => {
-    const group = runs.filter(run => run.project === project).flatMap(run => run.verdicts)
+    const group = scored(runs.filter(run => run.project === project).flatMap(run => run.verdicts))
     return `${project} ${passed(group)}/${group.length}`
   })
   const kindsLine = kinds.flatMap(kind => {
@@ -131,7 +132,9 @@ function report(runs: Run[]) {
   const judgeCost = runs.reduce((total, run) => total + (run.judge?.cost ?? 0), 0)
   const calls = runs.reduce((total, run) => total + run.calls.length, 0)
   console.log(`\n${passed(verdicts)}/${verdicts.length} passed · ${projectsLine.join(" · ")}`)
+  const held = all.filter(verdict => verdict.kind === "invariant")
   console.log(kindsLine.join(" · "))
+  console.log(`invariants ${passed(held)}/${held.length} held, not scored`)
   console.log(`${seconds.toFixed(0)}s · in ${thousands(tokens.input + tokens.cacheRead + tokens.cacheWrite)} out ${thousands(tokens.output)} · agent $${agentCost.toFixed(4)} · judge $${judgeCost.toFixed(4)} · ${calls} tool calls · ${out}`)
   const problems = runs.flatMap(run => [
     ...(run.error ? [`${run.project} ${run.label} ${run.stage}: ${run.error}`] : []),

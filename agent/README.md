@@ -45,6 +45,6 @@ A rubric lists the expected tasks, each with a theme id, its section (`now`, `ne
 
 Claude Sonnet 5.5 (`claude-sonnet-5-5`, pinned in `eval/judge.ts`) judges each run in one request, from the rubric, the overview and the stage's notes and repository state. It returns pass or fail with a one-line reason for every task's section, caption and date, for the order of Now, and for precision, which fails on an extra the stage doesn't tolerate or on two tasks covering the same theme. Verdicts are cached in `eval/cache/` by a hash of the rubric, the overview and the judge model, so re-scoring a run is free. The judge needs `ANTHROPIC_API_KEY` whichever provider is benchmarked.
 
-Code checks the section limits, that dates are valid days up to the cutoff, and that no task mentions a pull request number, commit hash or file name.
+Code checks the section limits, that dates are valid days up to the cutoff, and that no task mentions a pull request number, commit hash or file name. These invariants are a safety net, not a measure of quality: they're reported on their own line and left out of every score, and a broken one still fails the run.
 
 The report gives pass counts per project and per kind of item, and the time, tokens, agent cost, judge cost and tool calls.

@@ -7,7 +7,7 @@ import { serve } from "../src/main"
 import { fake } from "../src/providers/fake"
 import type { Provider } from "../src/providers/provider"
 import type { OverviewResult } from "../src/schema"
-import { invariants, items, judge, material } from "../eval/judge"
+import { invariants, items, judge, material, scored } from "../eval/judge"
 import { record } from "../eval/record"
 import type { Commit } from "../src/schema"
 import { connect, load, projects, type PullRequest, type Rubric, state } from "../eval/scenario"
@@ -188,6 +188,12 @@ describe("judge", () => {
 })
 
 describe("invariants", () => {
+  test("are left out of the score", () => {
+    const verdict = (kind: "section" | "invariant", pass: boolean) => ({ item: kind, kind, pass, reason: "" })
+    const verdicts = [verdict("section", true), verdict("section", false), verdict("invariant", true), verdict("invariant", true)]
+    expect(scored(verdicts).map(item => [item.kind, item.pass])).toEqual([["section", true], ["section", false]])
+  })
+
   test("pass a clean overview", () => {
     expect(invariants(result, "2026-10-08T18:00:00-07:00").every(verdict => verdict.pass)).toBe(true)
   })
