@@ -1,0 +1,6 @@
+- [x] action items: assignee picker
+- [x] action items: due dates
+- [ ] action items: reminders
+- [ ] calendar reconnect (google tokens expiring for ppl)
+- [ ] 2.4 release testing
+- [ ] notion export (from the LHF list), after 2.4

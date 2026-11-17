@@ -1,0 +1,5 @@
+- Arcadia: system design done, decision by fri
+- Brightwave: passed take-home, onsite wed nov 18
+- Copperleaf: withdrew. they want 5 days in office
+- Driftwood: offer, negotiating
+- maybe apply to Halcyon? Mei says the team is great

@@ -72,17 +72,22 @@ describe("fixture state", () => {
   })
 })
 
+test("every project's notes exist and no commit comes from a checkpoint ref", async () => {
+  for (const project of await projects(fixtures)) {
+    for (const stage of project.stages) for (const note of stage.notes) expect(await Bun.file(note.path).exists()).toBe(true)
+    expect(project.scenario.commits.filter(commit => commit.branch.startsWith("refs/"))).toEqual([])
+  }
+})
+
 describe("Lumen", () => {
-  test("every stage's notes exist and the completion update sits past the first page", async () => {
-    const lumen = await load(join(fixtures, "lumen"))
-    for (const stage of lumen.stages) for (const note of stage.notes) expect(await Bun.file(note.path).exists()).toBe(true)
+  test("the shelving update sits past the first page", async () => {
     const retro = await Bun.file(join(fixtures, "lumen", "notes", "retro.md")).text()
-    expect(Array.from(retro).join("").indexOf("Onboarding redesign shipped")).toBeGreaterThan(4000)
+    expect(Array.from(retro).join("").indexOf("The home screen widget: I'm pausing")).toBeGreaterThan(4000)
   })
 
   test("is found by folder or project name", async () => {
     expect((await projects(fixtures, "Lumen")).map(project => project.id)).toEqual(["lumen"])
-    expect((await projects(fixtures)).map(project => project.id)).toEqual(["lumen"])
+    expect((await projects(fixtures)).map(project => project.id).toSorted()).toEqual(["interviews", "lumen", "martin", "tandem"])
   })
 
   test("recorded activity follows each stage's window", async () => {
@@ -93,16 +98,16 @@ describe("Lumen", () => {
     const activity = overview(job, connect(lumen.scenario)).tools.find(tool => tool.name === "repo_activity")!
     const commits = await activity.run({ source: "commits", cursor: null })
     expect(commits).toContain("Prototype album invite links")
-    expect(commits).not.toContain("Ship the new photo permissions prompt")
+    expect(commits).not.toContain("Album feed")
   })
 
   test("the judge's material has the notes and the state at the cutoff", async () => {
     const lumen = await load(join(fixtures, "lumen"))
     const text = await material(lumen, lumen.stages[1]!)
-    expect(text).toContain("I started on shared albums.")
-    expect(text).toContain("open by me")
+    expect(text).toContain("Shared albums: invite links first, then the album feed.")
+    expect(text).toContain("open by nbrennan")
     expect(text).toContain("shared-albums: last commit 2026-10-08T14:00:00-07:00, 1 ahead of main, not merged")
-    expect(text).not.toContain("Album feed and invite acceptance")
+    expect(text).not.toContain("Accept an album invite")
   })
 })
 
@@ -205,9 +210,12 @@ test("record reads branches, remotes and tags, names each commit's branch and sk
   await git("reset", "-q", "--hard", "HEAD~1")
   const pulls = [{
     title: "Feature", author: { login: "ada" }, headRefName: "ada/feature", createdAt: "2026-11-01T10:00:00Z", mergedAt: null, closedAt: null,
-    additions: 5, deletions: 1, changedFiles: 2, commits: [{ oid: pushed }],
+    additions: 5, deletions: 1, changedFiles: 2, commits: 1, oids: [pushed],
+  }, {
+    title: "Later", author: { login: "ada" }, headRefName: "ada/later", createdAt: new Date(Date.now() + 3_600_000).toISOString(), mergedAt: null, closedAt: null,
+    additions: 1, deletions: 0, changedFiles: 1, commits: 1, oids: [],
   }]
-  const run = async (argv: string[]) => argv[0] === "gh" ? JSON.stringify(pulls) : execute(argv)
+  const run = async (argv: string[]) => argv[0] === "gh" ? pulls.map(pull => JSON.stringify(pull)).join("\n") : execute(argv)
   const recorded = await record(repo, "a/b", new Date("2000-01-01T00:00:00Z"), new Date(Date.now() + 60_000), run)
   expect(recorded.commits.map(commit => [commit.subject, commit.branch, commit.author, commit.email]).toSorted()).toEqual([
     ["Feature work", "ada/feature", "Ada", "ada@example.com"],

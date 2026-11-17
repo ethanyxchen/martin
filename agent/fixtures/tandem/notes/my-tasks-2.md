@@ -1,0 +1,5 @@
+- [x] action items: assignee picker
+- [ ] action items: due dates
+- [ ] action items: reminders
+- [ ] calendar reconnect (google tokens expiring for ppl)
+- [ ] 2.4 release testing
