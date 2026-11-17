@@ -1,5 +1,6 @@
 import Foundation
 import PostHog
+import RegexBuilder
 
 enum Telemetry {
     static func config(in bundle: Bundle = .main) -> PostHogConfig? {
@@ -28,14 +29,18 @@ enum Telemetry {
     }
 
     static func scrubbingHome<Value>(_ value: Value, home: String = NSHomeDirectory()) -> Value {
-        scrubbing(value, home: home) as? Value ?? value
+        let path = Regex {
+            home
+            NegativeLookahead { CharacterClass(.word, .anyOf(".-")) }
+        }
+        return scrubbing(value, path: path) as? Value ?? value
     }
 
-    private static func scrubbing(_ value: Any, home: String) -> Any {
+    private static func scrubbing(_ value: Any, path: some RegexComponent) -> Any {
         switch value {
-        case let string as String: string.replacingOccurrences(of: home, with: "~")
-        case let dictionary as [String: Any]: dictionary.mapValues { scrubbing($0, home: home) }
-        case let array as [Any]: array.map { scrubbing($0, home: home) }
+        case let string as String: string.replacing(path, with: "~")
+        case let dictionary as [String: Any]: dictionary.mapValues { scrubbing($0, path: path) }
+        case let array as [Any]: array.map { scrubbing($0, path: path) }
         default: value
         }
     }

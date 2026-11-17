@@ -30,17 +30,22 @@ struct TelemetryTests {
         let properties: [String: Any] = [
             "$exception_list": [[
                 "value": "Couldn't open /Users/ada/Notes/plan.md",
-                "stacktrace": ["frames": [["filename": "/Users/ada/Developer/martin/Editor.swift", "lineno": 12]]],
+                "stacktrace": ["frames": [["package": "/Users/ada/Applications/Martin.app/Contents/MacOS/Martin", "instruction_addr": "0x10"]]],
             ]],
+            "$debug_images": [["code_file": "/Users/ada/Applications/Martin.app/Contents/MacOS/Martin"]],
             "source": "/Users/ada",
+            "neighbour": "/Users/adam/Notes and /Users/ada.old",
         ]
         let scrubbed = Telemetry.scrubbingHome(properties, home: "/Users/ada")
         let exception = (scrubbed["$exception_list"] as? [[String: Any]])?.first
         let frame = ((exception?["stacktrace"] as? [String: Any])?["frames"] as? [[String: Any]])?.first
         #expect(exception?["value"] as? String == "Couldn't open ~/Notes/plan.md")
-        #expect(frame?["filename"] as? String == "~/Developer/martin/Editor.swift")
-        #expect(frame?["lineno"] as? Int == 12)
+        let image = (scrubbed["$debug_images"] as? [[String: Any]])?.first
+        #expect(frame?["package"] as? String == "~/Applications/Martin.app/Contents/MacOS/Martin")
+        #expect(frame?["instruction_addr"] as? String == "0x10")
+        #expect(image?["code_file"] as? String == "~/Applications/Martin.app/Contents/MacOS/Martin")
         #expect(scrubbed["source"] as? String == "~")
+        #expect(scrubbed["neighbour"] as? String == "/Users/adam/Notes and /Users/ada.old")
     }
 
     private static func config(of info: [String: String]) throws -> PostHogConfig? {
