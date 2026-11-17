@@ -1,0 +1,2714 @@
+{
+  "project": "Martin",
+  "owner": {
+    "name": "Ethan Chen",
+    "emails": [
+      "ethan.c@goodnotes.com",
+      "ethanyxchen456@gmail.com",
+      "ethanyxchen@berkeley.edu"
+    ],
+    "login": "ethanyxchen"
+  },
+  "repository": {
+    "folder": ".",
+    "slug": "ethanyxchen/martin"
+  },
+  "commits": [
+    {
+      "date": "2026-10-19T12:21:15+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Scaffold MartinKit contracts and Xcode project",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-19T12:27:42+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Add analyzer that turns a transcript into a personal note via MCP connectors",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-19T12:30:41+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Capture mic audio, stream to Deepgram and look up the current calendar event",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-19T12:39:35+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Add Supaterm worktree config",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-19T12:40:52+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Add menu bar app with recording pill, note editor and connector settings",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-19T13:41:43+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Build as a signed Swift package app like Hammertime and connect GitHub through GitHub CLI",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-19T14:01:25+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Read work context through GitHub CLI and Claude connectors with a read-only gate",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-19T14:01:40+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Drop unused MCP SDK dependency",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-20T10:11:09+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Mix system audio into the recording through a Core Audio process tap",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-20T10:20:22+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Read the system audio sample rate from the device and rebuild when it changes",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-20T12:09:25+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Brief recent pull requests and jot live bullets that concern you during the meeting",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-20T12:26:00+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Follow the default microphone and speakers through mid-recording device changes",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-20T14:39:56+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Keep the caret where it was when ticking a checkbox",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-20T14:40:02+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Log audio devices, transcription and assistant failures to the unified log",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-20T14:46:39+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Show the next few days of meetings in an Upcoming window",
+      "branch": "ethanc/calendar-events"
+    },
+    {
+      "date": "2026-10-20T14:51:04+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "List only meetings under clear day headings in the Upcoming window",
+      "branch": "ethanc/calendar-events"
+    },
+    {
+      "date": "2026-10-20T15:04:20+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Record a meeting by clicking it in the Upcoming window, and bring windows to the front",
+      "branch": "ethanc/calendar-events"
+    },
+    {
+      "date": "2026-10-20T15:07:08+01:00",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #1 from ethanyxchen/ethanc/calendar-events",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-20T15:38:32+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Highlight the meeting under the pointer in the Upcoming window",
+      "branch": "ethanc/upcoming-pointer"
+    },
+    {
+      "date": "2026-10-20T15:39:42+01:00",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #2 from ethanyxchen/ethanc/upcoming-pointer",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-21T09:33:22+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Sum up each pull request in one line on the meeting page",
+      "branch": "ethanc/pr-one-liners"
+    },
+    {
+      "date": "2026-10-21T09:59:12+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Lead the meeting page with two or three talking points over a timeline of your work",
+      "branch": "ethanc/pr-one-liners"
+    },
+    {
+      "date": "2026-10-21T10:18:00+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Show only the talking points on the Work page",
+      "branch": "ethanc/pr-one-liners"
+    },
+    {
+      "date": "2026-10-21T10:38:56+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Keep the talking points inside the page's text column",
+      "branch": "ethanc/pr-one-liners"
+    },
+    {
+      "date": "2026-10-21T16:54:08+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Opt out of the Deepgram Model Improvement Program",
+      "branch": "ethanc/deepgram-mip-opt-out"
+    },
+    {
+      "date": "2026-10-21T16:55:08+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Rebuild the notes editor on TextKit 2",
+      "branch": "ethanc/textkit2-notes-editor"
+    },
+    {
+      "date": "2026-10-21T16:56:59+01:00",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #3 from ethanyxchen/ethanc/deepgram-mip-opt-out",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-22T10:38:42+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Show Martin in the Dock and open Upcoming when its icon is clicked",
+      "branch": "ethanc/dock-icon"
+    },
+    {
+      "date": "2026-10-22T10:52:56+01:00",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #4 from ethanyxchen/ethanc/dock-icon",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-22T10:57:29+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Drag windows by their header so they cross displays cleanly",
+      "branch": "ethanc/window-drag-across-displays"
+    },
+    {
+      "date": "2026-10-22T10:59:56+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Give Settings a draggable header",
+      "branch": "ethanc/window-drag-across-displays"
+    },
+    {
+      "date": "2026-10-22T11:09:48+01:00",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #5 from ethanyxchen/ethanc/window-drag-across-displays",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-22T11:13:28+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Edit notes as source Markdown on TextKit 2",
+      "branch": "ethanc/native-markdown-editor"
+    },
+    {
+      "date": "2026-10-22T11:23:07+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Quiet the note editor and resolve reference-style links",
+      "branch": "ethanc/native-markdown-editor"
+    },
+    {
+      "date": "2026-10-22T11:24:05+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Render every Markdown heading at one size below the title",
+      "branch": "ethanc/native-markdown-editor"
+    },
+    {
+      "date": "2026-10-22T11:38:33+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Show one hash per heading, keep the caret's height on blank lines, and align notes with the title",
+      "branch": "ethanc/native-markdown-editor"
+    },
+    {
+      "date": "2026-10-22T11:45:28+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Stop importing GitHub pull requests when a meeting starts",
+      "branch": "ethanc/remove-pr-briefing"
+    },
+    {
+      "date": "2026-10-22T11:46:32+01:00",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #6 from ethanyxchen/ethanc/remove-pr-briefing",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-22T11:48:38+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Fix review findings in the note editor",
+      "branch": "ethanc/native-markdown-editor"
+    },
+    {
+      "date": "2026-10-22T11:52:32+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Fix second-round review findings in the note editor",
+      "branch": "ethanc/native-markdown-editor"
+    },
+    {
+      "date": "2026-10-22T12:00:18+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Keep heading reveals in step with edits and settle toggle rules",
+      "branch": "ethanc/native-markdown-editor"
+    },
+    {
+      "date": "2026-10-22T12:04:14+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Track heading reveals from the selection alone",
+      "branch": "ethanc/native-markdown-editor"
+    },
+    {
+      "date": "2026-10-22T12:11:23+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Keep selections set mid-edit in place and compare notes exactly",
+      "branch": "ethanc/native-markdown-editor"
+    },
+    {
+      "date": "2026-10-22T12:14:52+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Compare notes by code units both ways and map pending edits into the selection",
+      "branch": "ethanc/native-markdown-editor"
+    },
+    {
+      "date": "2026-10-22T12:18:38+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Reveal headings from the text view's selection notification",
+      "branch": "ethanc/native-markdown-editor"
+    },
+    {
+      "date": "2026-10-22T12:21:35+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Move ranges across edits endpoint by endpoint",
+      "branch": "ethanc/native-markdown-editor"
+    },
+    {
+      "date": "2026-10-22T12:25:37+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Let code blocks grow at an insertion point and resync reveals after loading",
+      "branch": "ethanc/native-markdown-editor"
+    },
+    {
+      "date": "2026-10-22T12:28:02+01:00",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Grow only code blocks that reach the end of the note",
+      "branch": "ethanc/native-markdown-editor"
+    },
+    {
+      "date": "2026-10-22T12:54:07+01:00",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #7 from ethanyxchen/ethanc/native-markdown-editor",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-26T14:07:09Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Remove transcription, audio capture and the analyzer",
+      "branch": "ethanc/remove-transcription"
+    },
+    {
+      "date": "2026-10-26T14:15:43Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Refuse to start a meeting over one created in the same second",
+      "branch": "ethanc/remove-transcription"
+    },
+    {
+      "date": "2026-10-26T14:17:04Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #8 from ethanyxchen/ethanc/remove-transcription",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-26T14:18:41Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Attach meetings to their calendar occurrence and reopen its note",
+      "branch": "ethanc/meeting-occurrence"
+    },
+    {
+      "date": "2026-10-26T14:22:24Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Key one-off events by series alone and look up occurrences on disk",
+      "branch": "ethanc/meeting-occurrence"
+    },
+    {
+      "date": "2026-10-26T14:24:31Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #9 from ethanyxchen/ethanc/meeting-occurrence",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-26T14:41:38Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Set markdown markers inline instead of hanging them in the margin",
+      "branch": "ethanc/inline-markdown-markers"
+    },
+    {
+      "date": "2026-10-26T15:05:10Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #10 from ethanyxchen/ethanc/inline-markdown-markers",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-26T15:05:43Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Remove attendees from the note page",
+      "branch": "ethanc/remove-note-attendees"
+    },
+    {
+      "date": "2026-10-26T15:07:50Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Show the meeting date as a tear-off calendar leaf in the note header",
+      "branch": "ethanc/note-date-ui"
+    },
+    {
+      "date": "2026-10-26T15:09:10Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Draw the note date as the Apple Calendar app icon",
+      "branch": "ethanc/note-date-ui"
+    },
+    {
+      "date": "2026-10-26T15:10:52Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #11 from ethanyxchen/ethanc/remove-note-attendees",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-26T15:12:31Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Drop the weekday and time from the note header",
+      "branch": "ethanc/note-date-ui"
+    },
+    {
+      "date": "2026-10-26T15:14:13Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Mention people in notes as mailto links keyed by email",
+      "branch": "ethanc/note-people-mentions"
+    },
+    {
+      "date": "2026-10-26T15:15:07Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Center the note title against the date icon",
+      "branch": "ethanc/note-date-ui"
+    },
+    {
+      "date": "2026-10-26T15:23:32Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Date meeting notes by their calendar event, not when the note was opened",
+      "branch": "ethanc/note-date-ui"
+    },
+    {
+      "date": "2026-10-26T15:26:09Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Draw list bullets as quiet dots and recolour Martin in cobalt on warm neutrals",
+      "branch": "ethanc/bullet-point-ideas"
+    },
+    {
+      "date": "2026-10-26T15:26:52Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Keep a note's date in step with its calendar event each time it opens",
+      "branch": "ethanc/note-date-ui"
+    },
+    {
+      "date": "2026-10-26T15:30:06Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #12 from ethanyxchen/ethanc/note-date-ui",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-26T15:38:14Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Nest list items with Tab and colour bullets cobalt",
+      "branch": "ethanc/bullet-point-ideas"
+    },
+    {
+      "date": "2026-10-26T17:08:56Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Set Martin's light theme on a cool mist page with neutral greys",
+      "branch": "ethanc/bullet-point-ideas"
+    },
+    {
+      "date": "2026-10-26T17:15:01Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #13 from ethanyxchen/ethanc/bullet-point-ideas",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-27T12:00:34Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Build a separate Martin per linked worktree with its own identity and data",
+      "branch": "ethanc/worktree-app-identity"
+    },
+    {
+      "date": "2026-10-27T12:00:36Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Merge branch 'main' into ethanc/note-people-mentions",
+      "branch": "ethanc/note-people-mentions"
+    },
+    {
+      "date": "2026-10-27T12:09:03Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Seed a worktree's Martin with a copy of the main app's data",
+      "branch": "ethanc/worktree-app-identity"
+    },
+    {
+      "date": "2026-10-27T12:09:09Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Suggest mentions in a Martin-styled picker instead of the system completion list",
+      "branch": "ethanc/note-people-mentions"
+    },
+    {
+      "date": "2026-10-27T12:15:34Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Group mention suggestions by meeting and highlight what matched",
+      "branch": "ethanc/note-people-mentions"
+    },
+    {
+      "date": "2026-10-27T12:16:10Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #14 from ethanyxchen/ethanc/worktree-app-identity",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-27T12:20:52Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Give Martin a cobalt notepad app icon rendered at build time",
+      "branch": "ethanc/app-icon"
+    },
+    {
+      "date": "2026-10-27T12:22:18Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Cascade new windows from the frontmost Martin window",
+      "branch": "ethanc/cascade-windows"
+    },
+    {
+      "date": "2026-10-27T12:23:06Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Store mentions as @{Name <email>} instead of mailto links",
+      "branch": "ethanc/note-people-mentions"
+    },
+    {
+      "date": "2026-10-27T12:28:39Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #16 from ethanyxchen/ethanc/cascade-windows",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-27T12:33:39Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #17 from ethanyxchen/ethanc/note-people-mentions",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-27T12:40:01Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Draw Martin's icon and menu bar glyph as fanned note windows",
+      "branch": "ethanc/app-icon"
+    },
+    {
+      "date": "2026-10-27T12:43:25Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Cut the menu bar glyph's gap with a clip instead of erasing pixels",
+      "branch": "ethanc/app-icon"
+    },
+    {
+      "date": "2026-10-27T12:48:28Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Render each icon size once, name failed writes, and typecheck the icon script on commit",
+      "branch": "ethanc/app-icon"
+    },
+    {
+      "date": "2026-10-27T12:50:55Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #15 from ethanyxchen/ethanc/app-icon",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-27T12:53:23Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Tint a worktree's Martin icon with a colour picked from its path",
+      "branch": "ethanc/worktree-icon-tint"
+    },
+    {
+      "date": "2026-10-27T12:55:42Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Pick a worktree's icon colour from its name, as its identity is",
+      "branch": "ethanc/worktree-icon-tint"
+    },
+    {
+      "date": "2026-10-27T12:57:33Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #18 from ethanyxchen/ethanc/worktree-icon-tint",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-27T12:58:36Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Right-align event times in Upcoming and mark other-day dates with a calendar icon",
+      "branch": "ethanc/upcoming-page-titles"
+    },
+    {
+      "date": "2026-10-27T13:00:42Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Even out the Upcoming row's hover inset",
+      "branch": "ethanc/upcoming-page-titles"
+    },
+    {
+      "date": "2026-10-27T13:02:24Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Hug the Upcoming row's hover background to its content",
+      "branch": "ethanc/upcoming-page-titles"
+    },
+    {
+      "date": "2026-10-27T13:03:39Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Drop the date range under the Upcoming title",
+      "branch": "ethanc/upcoming-page-titles"
+    },
+    {
+      "date": "2026-10-27T13:04:21Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Ship a committed default app icon, rendered over only in worktrees",
+      "branch": "ethanc/default-app-icon"
+    },
+    {
+      "date": "2026-10-27T13:08:07Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #19 from ethanyxchen/ethanc/default-app-icon",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-27T13:12:34Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Scroll window titles into the titlebar through a shared Page",
+      "branch": "ethanc/upcoming-page-titles"
+    },
+    {
+      "date": "2026-10-27T13:15:11Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Let the calendars Martin follows be chosen in Settings",
+      "branch": "ethanc/calendar-tracking-settings"
+    },
+    {
+      "date": "2026-10-27T13:16:59Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Show the titlebar title as soon as the page title scrolls away",
+      "branch": "ethanc/upcoming-page-titles"
+    },
+    {
+      "date": "2026-10-27T13:19:51Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Show Upcoming and Settings as pages of one window",
+      "branch": "ethanc/calendar-tracking-settings"
+    },
+    {
+      "date": "2026-10-27T13:20:23Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Set the titlebar title in the page title's serif",
+      "branch": "ethanc/upcoming-page-titles"
+    },
+    {
+      "date": "2026-10-27T13:23:34Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Focus a note's editor with the caret at its end when its window opens",
+      "branch": "ethanc/focus-note-on-open"
+    },
+    {
+      "date": "2026-10-27T13:24:18Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Delete a list marker with one backspace at the start of its content",
+      "branch": "ethanc/backspace-list-marker"
+    },
+    {
+      "date": "2026-10-27T13:26:42Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Give AgendaDay its end so rows read the day's bounds from one place",
+      "branch": "ethanc/upcoming-page-titles"
+    },
+    {
+      "date": "2026-10-27T13:26:47Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Resize the note editor when revealing markdown markers changes its height",
+      "branch": "ethanc/upcoming-page-titles"
+    },
+    {
+      "date": "2026-10-27T13:27:05Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Keep a list item's indent when backspace deletes its marker",
+      "branch": "ethanc/backspace-list-marker"
+    },
+    {
+      "date": "2026-10-27T13:27:26Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Test that opening a note focuses its editor with the caret at the end",
+      "branch": "ethanc/focus-note-on-open"
+    },
+    {
+      "date": "2026-10-27T13:27:30Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Require a regression test with every fix and behaviour change",
+      "branch": "ethanc/focus-note-on-open"
+    },
+    {
+      "date": "2026-10-27T13:28:16Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #20 from ethanyxchen/ethanc/focus-note-on-open",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-27T13:44:13Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #22 from ethanyxchen/ethanc/backspace-list-marker",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-27T13:44:41Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #21 from ethanyxchen/ethanc/upcoming-page-titles",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-27T13:50:30Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Merge branch 'main' into supaterm/calendar-tracking-settings",
+      "branch": "ethanc/calendar-tracking-settings"
+    },
+    {
+      "date": "2026-10-27T13:50:40Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Slide between Upcoming and Settings like ma-turbo-overload's page push",
+      "branch": "ethanc/calendar-tracking-settings"
+    },
+    {
+      "date": "2026-10-27T13:59:22Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Inset the page tabs evenly, concentric with the window's corner",
+      "branch": "ethanc/calendar-tracking-settings"
+    },
+    {
+      "date": "2026-10-27T14:02:07Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Group Settings by calendar source and sort names as Finder does",
+      "branch": "ethanc/calendar-tracking-settings"
+    },
+    {
+      "date": "2026-10-27T14:11:28Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #23 from ethanyxchen/ethanc/calendar-tracking-settings",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-28T10:08:56Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Add Notes and Meetings pages to browse saved notes",
+      "branch": "ethanc/notes-library"
+    },
+    {
+      "date": "2026-10-28T10:17:53Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Group Settings into Navigation bar and Calendars sections",
+      "branch": "ethanc/notes-library"
+    },
+    {
+      "date": "2026-10-28T10:23:52Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Centre a larger navigation bar and tighten its motion",
+      "branch": "ethanc/notes-library"
+    },
+    {
+      "date": "2026-10-28T10:30:51Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Put the page tabs in a Liquid Glass toolbar sized like Calendar's",
+      "branch": "ethanc/notes-library"
+    },
+    {
+      "date": "2026-10-28T10:36:35Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Address review findings in the notes library",
+      "branch": "ethanc/notes-library"
+    },
+    {
+      "date": "2026-10-28T10:37:55Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #24 from ethanyxchen/ethanc/notes-library",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-28T10:47:01Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Archive and delete notes, with an Archive window to restore them",
+      "branch": "ethanc/archive-notes"
+    },
+    {
+      "date": "2026-10-28T10:47:48Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Fix Supaterm worktree setup and add project scripts",
+      "branch": "ethanc/setup-supaterm-schema"
+    },
+    {
+      "date": "2026-10-28T10:51:30Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #25 from ethanyxchen/ethanc/setup-supaterm-schema",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-28T10:55:31Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Show archive and delete buttons on hover, with shortcuts in a Note menu",
+      "branch": "ethanc/archive-notes"
+    },
+    {
+      "date": "2026-10-28T11:01:24Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Adopt Liquid Glass across the floating layer",
+      "branch": "ethanc/liquid-glass"
+    },
+    {
+      "date": "2026-10-28T11:02:44Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Keep a row highlighted while the pointer is on its buttons",
+      "branch": "ethanc/archive-notes"
+    },
+    {
+      "date": "2026-10-28T11:08:28Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Address review findings in the Liquid Glass pass",
+      "branch": "ethanc/liquid-glass"
+    },
+    {
+      "date": "2026-10-28T11:09:23Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Give row buttons their own slot and align the note lists with their heading",
+      "branch": "ethanc/archive-notes"
+    },
+    {
+      "date": "2026-10-28T11:10:46Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #26 from ethanyxchen/ethanc/liquid-glass",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-28T11:12:05Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Merge branch 'main' into ethanc/archive-notes",
+      "branch": "ethanc/archive-notes"
+    },
+    {
+      "date": "2026-10-28T11:16:30Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Put an Archive button in the toolbar of the Notes and Meetings pages",
+      "branch": "ethanc/archive-notes"
+    },
+    {
+      "date": "2026-10-28T11:25:41Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Open a meeting series in one step when the window has to widen for it",
+      "branch": "ethanc/archive-notes"
+    },
+    {
+      "date": "2026-10-28T11:30:10Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Show the series inspector in the same frame the window widens",
+      "branch": "ethanc/archive-notes"
+    },
+    {
+      "date": "2026-10-28T11:37:34Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Reveal the meeting series column as the window widens, in one motion",
+      "branch": "ethanc/archive-notes"
+    },
+    {
+      "date": "2026-10-28T11:39:40Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Go back to the native inspector and its own animation for meeting series",
+      "branch": "ethanc/archive-notes"
+    },
+    {
+      "date": "2026-10-28T11:48:56Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Keep renames when archiving, unarchive a note when its event starts, and tidy the note menus",
+      "branch": "ethanc/archive-notes"
+    },
+    {
+      "date": "2026-10-28T11:52:25Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Show shortcut hints in the row menu and Archive tooltip, and drop Open Archive from the row menu",
+      "branch": "ethanc/archive-notes"
+    },
+    {
+      "date": "2026-10-28T11:55:11Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Keep shortcuts in the menu bar and tooltips on the row buttons",
+      "branch": "ethanc/archive-notes"
+    },
+    {
+      "date": "2026-10-28T11:57:26Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Drop the archive and delete shortcuts, and open the archive from the Window menu",
+      "branch": "ethanc/archive-notes"
+    },
+    {
+      "date": "2026-10-28T11:58:31Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #27 from ethanyxchen/ethanc/archive-notes",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-28T12:04:20Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Rewrite the README for users and drop colleague emails",
+      "branch": "ethanc/dmg-release-sparkle"
+    },
+    {
+      "date": "2026-10-28T12:11:23Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Ship Martin as a notarized DMG with Sparkle updates from GitHub releases",
+      "branch": "ethanc/dmg-release-sparkle"
+    },
+    {
+      "date": "2026-10-28T12:28:34Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #28 from ethanyxchen/ethanc/dmg-release-sparkle",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-28T12:40:09Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Switch home pages with Command-number shortcuts from the Window menu",
+      "branch": "ethanc/page-shortcuts"
+    },
+    {
+      "date": "2026-10-28T12:40:13Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Keep the note menu at the trailing edge of the toolbar",
+      "branch": "ethanc/centered-three-circle-button"
+    },
+    {
+      "date": "2026-10-28T12:45:28Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Show page shortcuts in tab tooltips and keep their numbers stable on a hidden page",
+      "branch": "ethanc/page-shortcuts"
+    },
+    {
+      "date": "2026-10-28T12:46:32Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Archive and delete the front note from a Note menu with shortcuts",
+      "branch": "ethanc/centered-three-circle-button"
+    },
+    {
+      "date": "2026-10-28T13:04:30Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #29 from ethanyxchen/ethanc/page-shortcuts",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-28T13:53:43Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #30 from ethanyxchen/ethanc/centered-three-circle-button",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-28T15:14:39Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Lay out the DMG window with a drag-to-Applications background and Martin's volume icon",
+      "branch": "ethanc/dmg-installer-background"
+    },
+    {
+      "date": "2026-10-28T15:35:24Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #31 from ethanyxchen/ethanc/dmg-installer-background",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-28T15:38:39Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Pin setup-uv to v10.3.3, which has no floating v10 tag",
+      "branch": "ethanc/pin-setup-uv"
+    },
+    {
+      "date": "2026-10-28T15:40:41Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #32 from ethanyxchen/ethanc/pin-setup-uv",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-28T16:14:52Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Replace the Meetings tab with Projects and add quick notes",
+      "branch": "ethanc/projects"
+    },
+    {
+      "date": "2026-10-28T16:23:11Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "List Move to Project first in the note menus",
+      "branch": "ethanc/projects"
+    },
+    {
+      "date": "2026-10-28T16:24:35Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Type a project name inside the chip, which grows with it",
+      "branch": "ethanc/projects"
+    },
+    {
+      "date": "2026-10-28T16:32:50Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Rename, archive and delete projects, and lead the tabs with Notes",
+      "branch": "ethanc/projects"
+    },
+    {
+      "date": "2026-10-28T16:34:23Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Drop the empty-state line under the Projects heading",
+      "branch": "ethanc/projects"
+    },
+    {
+      "date": "2026-10-28T16:37:27Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Start a quick note with ⌘N",
+      "branch": "ethanc/projects"
+    },
+    {
+      "date": "2026-10-28T16:44:18Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Pick a note's project from a searchable popover",
+      "branch": "ethanc/projects"
+    },
+    {
+      "date": "2026-10-28T16:49:17Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Open a project beside a narrow project list, and tighten page margins",
+      "branch": "ethanc/projects"
+    },
+    {
+      "date": "2026-10-28T16:52:25Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Clear the project search placeholder as soon as you type",
+      "branch": "ethanc/projects"
+    },
+    {
+      "date": "2026-10-28T16:52:32Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Archive and delete the open project with ⌃⌘A and ⌥⌘⌫",
+      "branch": "ethanc/projects"
+    },
+    {
+      "date": "2026-10-28T17:00:29Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Fix review findings in windows, project renames and restores",
+      "branch": "ethanc/projects"
+    },
+    {
+      "date": "2026-10-28T17:01:49Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #33 from ethanyxchen/ethanc/projects",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-28T17:05:00Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Open the main window when Martin launches",
+      "branch": "ethanc/open-home-on-launch"
+    },
+    {
+      "date": "2026-10-28T17:07:55Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #34 from ethanyxchen/ethanc/open-home-on-launch",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-28T17:41:28Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Remove Take Notes from the menu bar",
+      "branch": "ethanc/qol-menu-bar-and-notes"
+    },
+    {
+      "date": "2026-10-28T17:43:14Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Show each note's project instead of its preview in the notes list",
+      "branch": "ethanc/qol-menu-bar-and-notes"
+    },
+    {
+      "date": "2026-10-28T17:46:53Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Toggle checklists with ⇧⌘L from the Format menu",
+      "branch": "ethanc/qol-menu-bar-and-notes"
+    },
+    {
+      "date": "2026-10-28T17:47:02Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Trim the menu bar to three recent notes and drop Check for Updates",
+      "branch": "ethanc/qol-menu-bar-and-notes"
+    },
+    {
+      "date": "2026-10-28T17:51:20Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Show a pointing hand over checklist checkboxes",
+      "branch": "ethanc/qol-menu-bar-and-notes"
+    },
+    {
+      "date": "2026-10-28T17:52:44Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Pin notes to the top of the notes list and the menu bar",
+      "branch": "ethanc/qol-menu-bar-and-notes"
+    },
+    {
+      "date": "2026-10-28T17:56:38Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Crossfade row actions with the timestamp in place and add Pin to them",
+      "branch": "ethanc/qol-menu-bar-and-notes"
+    },
+    {
+      "date": "2026-10-28T17:58:17Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #35 from ethanyxchen/ethanc/qol-menu-bar-and-notes",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-29T11:41:43Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Link projects to a local GitHub repository with a suggestion from recent activity",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T12:28:33Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Ask Claude which local repository holds a project's code",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T12:34:24Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Set up Claude Code or Codex as the assistant that finds a project's repository",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T12:37:12Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Simplify the assistant and repository copy",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T12:42:14Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Describe the assistant by what it does for projects",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T14:00:51Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Make a project's repository opt-in, drop the Terminal setup steps and show the real assistant logos",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T14:08:46Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Find each project's repository in the background and link it the moment it is turned on",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T14:10:34Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Let projects be made secret, keeping them and their notes out of sight until shown",
+      "branch": "ethanc/toggle-hidden-projects"
+    },
+    {
+      "date": "2026-10-29T14:11:42Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Toggle secret projects with ⇧⌘S from the Project menu",
+      "branch": "ethanc/toggle-hidden-projects"
+    },
+    {
+      "date": "2026-10-29T14:15:06Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Pick a project's repository with the lightest models and a smaller prompt",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T14:16:20Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Make a project secret with ⌃⌘S",
+      "branch": "ethanc/toggle-hidden-projects"
+    },
+    {
+      "date": "2026-10-29T14:17:33Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Let the projects list shrink with the window after closing a project",
+      "branch": "ethanc/fix-ui-crash"
+    },
+    {
+      "date": "2026-10-29T14:20:58Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Hide the row divider beside the selected project",
+      "branch": "ethanc/hide-divider-beside-selected-row"
+    },
+    {
+      "date": "2026-10-29T14:21:53Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Close a project's note windows when it is made secret",
+      "branch": "ethanc/toggle-hidden-projects"
+    },
+    {
+      "date": "2026-10-29T14:21:54Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Keep the projects list at sidebar width while a project is open",
+      "branch": "ethanc/fix-ui-crash"
+    },
+    {
+      "date": "2026-10-29T14:23:34Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #36 from ethanyxchen/ethanc/hide-divider-beside-selected-row",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-29T14:23:46Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Rank repositories by when they were last worked on and pick the most recent one the agent matches",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T14:25:06Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #37 from ethanyxchen/ethanc/toggle-hidden-projects",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-29T14:26:44Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #38 from ethanyxchen/ethanc/fix-ui-crash",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-29T14:31:14Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Count a repository whose name or README names the project as a match",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T14:54:16Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Keep Martin alive when an assistant exits early or hangs",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T14:57:12Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Give up on a hung assistant at a per-call deadline and keep broken pipes local",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T14:58:40Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Spawn assistants off the task pool, only kill a live process, and name the deadlines",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T15:15:40Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Merge remote-tracking branch 'origin/main' into ethanc/link-project-github-repos",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T15:18:36Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Run each assistant in its own process group and judge it by how it exited",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T15:20:53Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Save each project's repository lookup and ask again only when its inputs change",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T15:25:15Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Accept a tool's result once it exits, and only kill its group while the leader is unreaped",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T15:25:24Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Ask again when the assistant or prompt changes, and never save an abandoned lookup",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T15:25:34Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Let the divider check run off the main actor",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T15:33:05Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Decide a timeout before killing the group, wait for late output, and retry interrupted waits",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T15:33:15Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Fingerprint the whole prompt, drop superseded lookups, and keep the cache on a read error",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T15:48:06Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Track every process an assistant starts and leave none behind, even ones that leave its group",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T15:49:34Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Keep a project's repository lookup for good, changed only by linking a repository by hand",
+      "branch": "ethanc/link-project-github-repos"
+    },
+    {
+      "date": "2026-10-29T16:04:34Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #39 from ethanyxchen/ethanc/link-project-github-repos",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-29T18:16:13Z",
+      "author": "Ethan C",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Add a conductor agent that builds a project overview from its notes and GitHub activity",
+      "branch": "supaterm/2e313e72"
+    },
+    {
+      "date": "2026-10-29T18:29:53Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Drop the thinking field from the conductor schema, which made opus refuse every turn, and add a gated benchmark",
+      "branch": "supaterm/2e313e72"
+    },
+    {
+      "date": "2026-10-29T22:40:25Z",
+      "author": "Ethan C",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Show images inline in notes, added by drop or paste and resized by dragging a corner",
+      "branch": "ethanc/inline-note-images"
+    },
+    {
+      "date": "2026-10-29T22:44:14Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #40 from ethanyxchen/ethanc/inline-note-images",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-29T22:46:16Z",
+      "author": "Ethan C",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Show a note's title in the window bar only after its own title scrolls away",
+      "branch": "supaterm/a1cabba2"
+    },
+    {
+      "date": "2026-10-29T22:53:02Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #41 from ethanyxchen/supaterm/a1cabba2",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-03T10:58:52Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen@berkeley.edu",
+      "subject": "Continue a list on Enter when the item contains bold, italic or code",
+      "branch": "supaterm/fix-text-editor-bug"
+    },
+    {
+      "date": "2026-11-03T11:13:52Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen@berkeley.edu",
+      "subject": "Keep the caret out of a list item's hidden marker so typing at its start keeps the bullet",
+      "branch": "supaterm/text-editor-bug"
+    },
+    {
+      "date": "2026-11-03T12:09:11Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen@berkeley.edu",
+      "subject": "Continue lists inside quotes and keep the quote when an empty item ends",
+      "branch": "supaterm/fix-text-editor-bug"
+    },
+    {
+      "date": "2026-11-03T12:12:23Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #42 from ethanyxchen/supaterm/fix-text-editor-bug",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-03T12:34:45Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen@berkeley.edu",
+      "subject": "Merge remote-tracking branch 'origin/main' into supaterm/text-editor-bug",
+      "branch": "supaterm/text-editor-bug"
+    },
+    {
+      "date": "2026-11-03T12:39:53Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #43 from ethanyxchen/supaterm/text-editor-bug",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-03T23:47:32Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen@berkeley.edu",
+      "subject": "Document releasing in patch increments of 2",
+      "branch": "supaterm/release-martin-version"
+    },
+    {
+      "date": "2026-11-04T15:47:14Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen@berkeley.edu",
+      "subject": "Frost the toolbar over scrolled page content like Photos",
+      "branch": "ethanc/frosted-toolbar"
+    },
+    {
+      "date": "2026-11-04T15:49:55Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen@berkeley.edu",
+      "subject": "Renumber the ordered items below when Return adds one mid-list",
+      "branch": "ethanc/renumber-ordered-list"
+    },
+    {
+      "date": "2026-11-04T15:53:51Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen@berkeley.edu",
+      "subject": "Only shift the ordered items whose numbers collide with the inserted one",
+      "branch": "ethanc/renumber-ordered-list"
+    },
+    {
+      "date": "2026-11-04T16:00:48Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen@berkeley.edu",
+      "subject": "Clean up test data and add workflow tests that drive real note windows",
+      "branch": "supaterm/review-app-test-suite"
+    },
+    {
+      "date": "2026-11-04T16:45:13Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #44 from ethanyxchen/ethanc/frosted-toolbar",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-04T16:45:23Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #45 from ethanyxchen/ethanc/renumber-ordered-list",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-04T16:45:33Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #46 from ethanyxchen/supaterm/review-app-test-suite",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-04T17:10:17Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen@berkeley.edu",
+      "subject": "File a new quick note into the project open in the home window",
+      "branch": "ethanc/new-note-in-open-project"
+    },
+    {
+      "date": "2026-11-04T17:14:42Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen@berkeley.edu",
+      "subject": "Give notes started in the same second their own folders",
+      "branch": "ethanc/new-note-in-open-project"
+    },
+    {
+      "date": "2026-11-04T19:50:07Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen@berkeley.edu",
+      "subject": "Call the editor lookup through self so the local editor does not shadow it in #require",
+      "branch": "ethanc/new-note-in-open-project"
+    },
+    {
+      "date": "2026-11-04T20:07:49Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #47 from ethanyxchen/ethanc/new-note-in-open-project",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-04T20:24:35Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #48 from ethanyxchen/supaterm/release-martin-version",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-16T15:21:22Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Navigate between screens in one window",
+      "branch": "ethanc/one-window-navigation"
+    },
+    {
+      "date": "2026-11-16T15:29:43Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Keep a title typed before Back, and leave nothing behind a closed window",
+      "branch": "ethanc/one-window-navigation"
+    },
+    {
+      "date": "2026-11-16T15:34:42Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Keep a title typed before quitting, and close a project once it is hidden",
+      "branch": "ethanc/one-window-navigation"
+    },
+    {
+      "date": "2026-11-16T15:40:17Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Save a note only when its own window closes, and narrow smoothly leaving Projects",
+      "branch": "ethanc/one-window-navigation"
+    },
+    {
+      "date": "2026-11-16T15:44:57Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #49 from ethanyxchen/ethanc/one-window-navigation",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-17T16:04:00Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Send usage events, logs, crashes and AI traces to PostHog",
+      "branch": "ethanc/try-posthog"
+    },
+    {
+      "date": "2026-11-17T16:05:35Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Add martin-agent, a TypeScript agent that writes project overviews on the Claude or OpenAI API",
+      "branch": "ethanc/martin-agent"
+    },
+    {
+      "date": "2026-11-17T16:05:35Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Add martin-agent, a TypeScript agent that writes project overviews on the Claude or OpenAI API",
+      "branch": "supaterm/2e313e72"
+    },
+    {
+      "date": "2026-11-17T16:14:42Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Write project overviews with Haiku 5.5 instead of Opus 5.5",
+      "branch": "ethanc/martin-agent"
+    },
+    {
+      "date": "2026-11-17T16:14:42Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Write project overviews with Haiku 5.5 instead of Opus 5.5",
+      "branch": "supaterm/2e313e72"
+    },
+    {
+      "date": "2026-11-17T16:22:16Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Price every benchmark run and let tools validate their own input",
+      "branch": "ethanc/martin-agent"
+    },
+    {
+      "date": "2026-11-17T16:25:47Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Run PR builds on a self-hosted Mac runner",
+      "branch": "ethanc/self-hosted-ci"
+    },
+    {
+      "date": "2026-11-17T16:33:09Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #52 from ethanyxchen/ethanc/self-hosted-ci",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-17T16:36:39Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #50 from ethanyxchen/ethanc/try-posthog",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-17T16:41:30Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Merge remote-tracking branch 'origin/main' into ethanc/martin-agent",
+      "branch": "ethanc/martin-agent"
+    },
+    {
+      "date": "2026-11-17T16:41:46Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Run the agent's checks on the self-hosted Mac runner like the app build",
+      "branch": "ethanc/martin-agent"
+    },
+    {
+      "date": "2026-11-17T16:49:48Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Kill a tool's processes oldest first so no helper outlives its child being killed",
+      "branch": "ethanc/fix-flaky-helper-timeout-test"
+    },
+    {
+      "date": "2026-11-17T16:52:21Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #53 from ethanyxchen/ethanc/fix-flaky-helper-timeout-test",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-17T16:53:43Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #51 from ethanyxchen/ethanc/martin-agent",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-17T17:32:46Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Read commits from branches and tags only, skipping checkpoint refs",
+      "branch": "ethanc/agent-commit-refs"
+    },
+    {
+      "date": "2026-11-17T17:37:12Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #54 from ethanyxchen/ethanc/agent-commit-refs",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-17T17:40:59Z",
+      "author": "Ethan Chen",
+      "email": "ethan.c@goodnotes.com",
+      "subject": "Grade the overview benchmark with a pinned judge against per-stage rubrics",
+      "branch": "ethanc/agent-eval-judge"
+    },
+    {
+      "date": "2026-11-17T17:44:45Z",
+      "author": "Ethan Chen",
+      "email": "ethanyxchen456@gmail.com",
+      "subject": "Merge pull request #55 from ethanyxchen/ethanc/agent-eval-judge",
+      "branch": "main"
+    }
+  ],
+  "pullRequests": [
+    {
+      "title": "Upcoming meetings window: see the next few days and record a meeting by clicking it",
+      "author": "ethanyxchen",
+      "branch": "ethanc/calendar-events",
+      "createdAt": "2026-10-20T13:47:04Z",
+      "mergedAt": "2026-10-20T14:07:08Z",
+      "closedAt": "2026-10-20T14:07:08Z",
+      "additions": 325,
+      "deletions": 30,
+      "changedFiles": 7,
+      "commits": 3
+    },
+    {
+      "title": "Highlight the meeting under the pointer in the Upcoming window",
+      "author": "ethanyxchen",
+      "branch": "ethanc/upcoming-pointer",
+      "createdAt": "2026-10-20T14:38:41Z",
+      "mergedAt": "2026-10-20T14:39:43Z",
+      "closedAt": "2026-10-20T14:39:43Z",
+      "additions": 15,
+      "deletions": 6,
+      "changedFiles": 1,
+      "commits": 1
+    },
+    {
+      "title": "Opt out of the Deepgram Model Improvement Program",
+      "author": "ethanyxchen",
+      "branch": "ethanc/deepgram-mip-opt-out",
+      "createdAt": "2026-10-21T15:54:22Z",
+      "mergedAt": "2026-10-21T15:57:00Z",
+      "closedAt": "2026-10-21T15:57:00Z",
+      "additions": 2,
+      "deletions": 2,
+      "changedFiles": 2,
+      "commits": 1
+    },
+    {
+      "title": "Show Martin in the Dock",
+      "author": "ethanyxchen",
+      "branch": "ethanc/dock-icon",
+      "createdAt": "2026-10-22T09:42:15Z",
+      "mergedAt": "2026-10-22T09:52:56Z",
+      "closedAt": "2026-10-22T09:52:57Z",
+      "additions": 24,
+      "deletions": 6,
+      "changedFiles": 3,
+      "commits": 1
+    },
+    {
+      "title": "Drag Martin's windows between displays without the jump",
+      "author": "ethanyxchen",
+      "branch": "ethanc/window-drag-across-displays",
+      "createdAt": "2026-10-22T10:04:09Z",
+      "mergedAt": "2026-10-22T10:09:48Z",
+      "closedAt": "2026-10-22T10:09:48Z",
+      "additions": 26,
+      "deletions": 8,
+      "changedFiles": 4,
+      "commits": 2
+    },
+    {
+      "title": "Stop importing GitHub pull requests when a meeting starts",
+      "author": "ethanyxchen",
+      "branch": "ethanc/remove-pr-briefing",
+      "createdAt": "2026-10-22T10:45:59Z",
+      "mergedAt": "2026-10-22T10:46:33Z",
+      "closedAt": "2026-10-22T10:46:33Z",
+      "additions": 24,
+      "deletions": 381,
+      "changedFiles": 18,
+      "commits": 1
+    },
+    {
+      "title": "Edit notes as source Markdown on TextKit 2",
+      "author": "ethanyxchen",
+      "branch": "ethanc/native-markdown-editor",
+      "createdAt": "2026-10-22T11:30:00Z",
+      "mergedAt": "2026-10-22T11:54:07Z",
+      "closedAt": "2026-10-22T11:54:07Z",
+      "additions": 938,
+      "deletions": 303,
+      "changedFiles": 8,
+      "commits": 14
+    },
+    {
+      "title": "Remove transcription and refocus Martin on calendar notes",
+      "author": "ethanyxchen",
+      "branch": "ethanc/remove-transcription",
+      "createdAt": "2026-10-26T14:16:01Z",
+      "mergedAt": "2026-10-26T14:17:04Z",
+      "closedAt": "2026-10-26T14:17:04Z",
+      "additions": 56,
+      "deletions": 2366,
+      "changedFiles": 47,
+      "commits": 2
+    },
+    {
+      "title": "Attach meeting notes to their calendar occurrence",
+      "author": "ethanyxchen",
+      "branch": "ethanc/meeting-occurrence",
+      "createdAt": "2026-10-26T14:22:40Z",
+      "mergedAt": "2026-10-26T14:24:32Z",
+      "closedAt": "2026-10-26T14:24:32Z",
+      "additions": 45,
+      "deletions": 11,
+      "changedFiles": 8,
+      "commits": 2
+    },
+    {
+      "title": "Set Markdown markers inline instead of in the margin",
+      "author": "ethanyxchen",
+      "branch": "ethanc/inline-markdown-markers",
+      "createdAt": "2026-10-26T15:02:30Z",
+      "mergedAt": "2026-10-26T15:05:10Z",
+      "closedAt": "2026-10-26T15:05:10Z",
+      "additions": 14,
+      "deletions": 21,
+      "changedFiles": 4,
+      "commits": 1
+    },
+    {
+      "title": "Remove attendees from the note page",
+      "author": "ethanyxchen",
+      "branch": "ethanc/remove-note-attendees",
+      "createdAt": "2026-10-26T15:07:22Z",
+      "mergedAt": "2026-10-26T15:10:52Z",
+      "closedAt": "2026-10-26T15:10:52Z",
+      "additions": 9,
+      "deletions": 36,
+      "changedFiles": 8,
+      "commits": 1
+    },
+    {
+      "title": "Show the note date as the Apple Calendar icon",
+      "author": "ethanyxchen",
+      "branch": "ethanc/note-date-ui",
+      "createdAt": "2026-10-26T15:21:51Z",
+      "mergedAt": "2026-10-26T15:30:07Z",
+      "closedAt": "2026-10-26T15:30:07Z",
+      "additions": 78,
+      "deletions": 21,
+      "changedFiles": 6,
+      "commits": 6
+    },
+    {
+      "title": "Draw list bullets as cobalt dots and move Martin to a cool mist theme",
+      "author": "ethanyxchen",
+      "branch": "ethanc/bullet-point-ideas",
+      "createdAt": "2026-10-26T17:14:32Z",
+      "mergedAt": "2026-10-26T17:15:01Z",
+      "closedAt": "2026-10-26T17:15:02Z",
+      "additions": 150,
+      "deletions": 25,
+      "changedFiles": 6,
+      "commits": 3
+    },
+    {
+      "title": "Run a separate Martin per worktree, seeded with the main app's data",
+      "author": "ethanyxchen",
+      "branch": "ethanc/worktree-app-identity",
+      "createdAt": "2026-10-27T12:14:54Z",
+      "mergedAt": "2026-10-27T12:16:10Z",
+      "closedAt": "2026-10-27T12:16:10Z",
+      "additions": 18,
+      "deletions": 4,
+      "changedFiles": 5,
+      "commits": 2
+    },
+    {
+      "title": "Give Martin a fanned-windows app icon and menu bar glyph",
+      "author": "ethanyxchen",
+      "branch": "ethanc/app-icon",
+      "createdAt": "2026-10-27T12:21:13Z",
+      "mergedAt": "2026-10-27T12:50:55Z",
+      "closedAt": "2026-10-27T12:50:56Z",
+      "additions": 116,
+      "deletions": 7,
+      "changedFiles": 5,
+      "commits": 4
+    },
+    {
+      "title": "Cascade new Martin windows instead of stacking them",
+      "author": "ethanyxchen",
+      "branch": "ethanc/cascade-windows",
+      "createdAt": "2026-10-27T12:23:07Z",
+      "mergedAt": "2026-10-27T12:28:40Z",
+      "closedAt": "2026-10-27T12:28:40Z",
+      "additions": 5,
+      "deletions": 1,
+      "changedFiles": 1,
+      "commits": 1
+    },
+    {
+      "title": "Mention people in notes with @, keyed by their email",
+      "author": "ethanyxchen",
+      "branch": "ethanc/note-people-mentions",
+      "createdAt": "2026-10-27T12:28:36Z",
+      "mergedAt": "2026-10-27T12:33:39Z",
+      "closedAt": "2026-10-27T12:33:39Z",
+      "additions": 450,
+      "deletions": 8,
+      "changedFiles": 15,
+      "commits": 5
+    },
+    {
+      "title": "Tint each worktree's Martin icon",
+      "author": "ethanyxchen",
+      "branch": "ethanc/worktree-icon-tint",
+      "createdAt": "2026-10-27T12:55:56Z",
+      "mergedAt": "2026-10-27T12:57:33Z",
+      "closedAt": "2026-10-27T12:57:33Z",
+      "additions": 7,
+      "deletions": 4,
+      "changedFiles": 2,
+      "commits": 2
+    },
+    {
+      "title": "Ship a committed default Martin icon, tinted over only in worktrees",
+      "author": "ethanyxchen",
+      "branch": "ethanc/default-app-icon",
+      "createdAt": "2026-10-27T13:07:40Z",
+      "mergedAt": "2026-10-27T13:08:08Z",
+      "closedAt": "2026-10-27T13:08:08Z",
+      "additions": 4,
+      "deletions": 4,
+      "changedFiles": 2,
+      "commits": 1
+    },
+    {
+      "title": "Focus a note's editor when its window opens",
+      "author": "ethanyxchen",
+      "branch": "ethanc/focus-note-on-open",
+      "createdAt": "2026-10-27T13:25:21Z",
+      "mergedAt": "2026-10-27T13:28:16Z",
+      "closedAt": "2026-10-27T13:28:16Z",
+      "additions": 21,
+      "deletions": 0,
+      "changedFiles": 4,
+      "commits": 3
+    },
+    {
+      "title": "Right-align Upcoming times and scroll page titles into the titlebar",
+      "author": "ethanyxchen",
+      "branch": "ethanc/upcoming-page-titles",
+      "createdAt": "2026-10-27T13:27:09Z",
+      "mergedAt": "2026-10-27T13:44:41Z",
+      "closedAt": "2026-10-27T13:44:41Z",
+      "additions": 134,
+      "deletions": 77,
+      "changedFiles": 7,
+      "commits": 9
+    },
+    {
+      "title": "Delete an empty list item's marker with one backspace",
+      "author": "ethanyxchen",
+      "branch": "ethanc/backspace-list-marker",
+      "createdAt": "2026-10-27T13:27:22Z",
+      "mergedAt": "2026-10-27T13:44:13Z",
+      "closedAt": "2026-10-27T13:44:14Z",
+      "additions": 29,
+      "deletions": 7,
+      "changedFiles": 3,
+      "commits": 2
+    },
+    {
+      "title": "Choose which calendars Martin follows, in a Settings page beside Upcoming",
+      "author": "ethanyxchen",
+      "branch": "ethanc/calendar-tracking-settings",
+      "createdAt": "2026-10-27T14:02:52Z",
+      "mergedAt": "2026-10-27T14:11:28Z",
+      "closedAt": "2026-10-27T14:11:28Z",
+      "additions": 316,
+      "deletions": 57,
+      "changedFiles": 8,
+      "commits": 6
+    },
+    {
+      "title": "Browse saved notes in Notes and Meetings pages with a Liquid Glass page bar",
+      "author": "ethanyxchen",
+      "branch": "ethanc/notes-library",
+      "createdAt": "2026-10-28T10:37:18Z",
+      "mergedAt": "2026-10-28T10:37:55Z",
+      "closedAt": "2026-10-28T10:37:55Z",
+      "additions": 661,
+      "deletions": 95,
+      "changedFiles": 19,
+      "commits": 5
+    },
+    {
+      "title": "Fix Supaterm worktree setup and add project scripts",
+      "author": "ethanyxchen",
+      "branch": "ethanc/setup-supaterm-schema",
+      "createdAt": "2026-10-28T10:50:23Z",
+      "mergedAt": "2026-10-28T10:51:31Z",
+      "closedAt": "2026-10-28T10:51:31Z",
+      "additions": 22,
+      "deletions": 9,
+      "changedFiles": 2,
+      "commits": 1
+    },
+    {
+      "title": "Adopt Liquid Glass across the floating layer",
+      "author": "ethanyxchen",
+      "branch": "ethanc/liquid-glass",
+      "createdAt": "2026-10-28T11:08:48Z",
+      "mergedAt": "2026-10-28T11:10:46Z",
+      "closedAt": "2026-10-28T11:10:47Z",
+      "additions": 120,
+      "deletions": 103,
+      "changedFiles": 7,
+      "commits": 2
+    },
+    {
+      "title": "Archive and delete notes, with an Archive window to restore them",
+      "author": "ethanyxchen",
+      "branch": "ethanc/archive-notes",
+      "createdAt": "2026-10-28T11:49:22Z",
+      "mergedAt": "2026-10-28T11:58:31Z",
+      "closedAt": "2026-10-28T11:58:31Z",
+      "additions": 279,
+      "deletions": 32,
+      "changedFiles": 8,
+      "commits": 14
+    },
+    {
+      "title": "Ship Martin as a notarized DMG with Sparkle updates",
+      "author": "ethanyxchen",
+      "branch": "ethanc/dmg-release-sparkle",
+      "createdAt": "2026-10-28T12:27:34Z",
+      "mergedAt": "2026-10-28T12:28:34Z",
+      "closedAt": "2026-10-28T12:28:34Z",
+      "additions": 247,
+      "deletions": 18,
+      "changedFiles": 13,
+      "commits": 2
+    },
+    {
+      "title": "Switch home pages with Command-number shortcuts",
+      "author": "ethanyxchen",
+      "branch": "ethanc/page-shortcuts",
+      "createdAt": "2026-10-28T12:45:47Z",
+      "mergedAt": "2026-10-28T13:04:31Z",
+      "closedAt": "2026-10-28T13:04:31Z",
+      "additions": 22,
+      "deletions": 4,
+      "changedFiles": 3,
+      "commits": 2
+    },
+    {
+      "title": "Move the note menu to the toolbar's trailing edge and bring back archive and delete shortcuts",
+      "author": "ethanyxchen",
+      "branch": "ethanc/centered-three-circle-button",
+      "createdAt": "2026-10-28T13:50:40Z",
+      "mergedAt": "2026-10-28T13:53:44Z",
+      "closedAt": "2026-10-28T13:53:44Z",
+      "additions": 87,
+      "deletions": 12,
+      "changedFiles": 4,
+      "commits": 2
+    },
+    {
+      "title": "Give the DMG installer a drag-to-Applications layout and Martin's disk icon",
+      "author": "ethanyxchen",
+      "branch": "ethanc/dmg-installer-background",
+      "createdAt": "2026-10-28T15:33:20Z",
+      "mergedAt": "2026-10-28T15:35:24Z",
+      "closedAt": "2026-10-28T15:35:24Z",
+      "additions": 70,
+      "deletions": 4,
+      "changedFiles": 5,
+      "commits": 1
+    },
+    {
+      "title": "Pin setup-uv to an exact version so the Release workflow can start",
+      "author": "ethanyxchen",
+      "branch": "ethanc/pin-setup-uv",
+      "createdAt": "2026-10-28T15:38:51Z",
+      "mergedAt": "2026-10-28T15:40:42Z",
+      "closedAt": "2026-10-28T15:40:42Z",
+      "additions": 1,
+      "deletions": 1,
+      "changedFiles": 1,
+      "commits": 1
+    },
+    {
+      "title": "Replace the Meetings tab with Projects and add quick notes",
+      "author": "ethanyxchen",
+      "branch": "ethanc/projects",
+      "createdAt": "2026-10-28T17:01:04Z",
+      "mergedAt": "2026-10-28T17:01:49Z",
+      "closedAt": "2026-10-28T17:01:49Z",
+      "additions": 1088,
+      "deletions": 238,
+      "changedFiles": 23,
+      "commits": 11
+    },
+    {
+      "title": "Open the main window when Martin launches",
+      "author": "ethanyxchen",
+      "branch": "ethanc/open-home-on-launch",
+      "createdAt": "2026-10-28T17:05:10Z",
+      "mergedAt": "2026-10-28T17:07:56Z",
+      "closedAt": "2026-10-28T17:07:56Z",
+      "additions": 4,
+      "deletions": 0,
+      "changedFiles": 1,
+      "commits": 1
+    },
+    {
+      "title": "Tidy the menu bar, show projects in the notes list, add checklist and pin features",
+      "author": "ethanyxchen",
+      "branch": "ethanc/qol-menu-bar-and-notes",
+      "createdAt": "2026-10-28T17:48:36Z",
+      "mergedAt": "2026-10-28T17:58:18Z",
+      "closedAt": "2026-10-28T17:58:18Z",
+      "additions": 182,
+      "deletions": 63,
+      "changedFiles": 10,
+      "commits": 7
+    },
+    {
+      "title": "Hide the row divider beside the selected project",
+      "author": "ethanyxchen",
+      "branch": "ethanc/hide-divider-beside-selected-row",
+      "createdAt": "2026-10-29T14:21:22Z",
+      "mergedAt": "2026-10-29T14:23:34Z",
+      "closedAt": "2026-10-29T14:23:34Z",
+      "additions": 21,
+      "deletions": 3,
+      "changedFiles": 2,
+      "commits": 1
+    },
+    {
+      "title": "Secret projects",
+      "author": "ethanyxchen",
+      "branch": "ethanc/toggle-hidden-projects",
+      "createdAt": "2026-10-29T14:22:12Z",
+      "mergedAt": "2026-10-29T14:25:07Z",
+      "closedAt": "2026-10-29T14:25:07Z",
+      "additions": 98,
+      "deletions": 7,
+      "changedFiles": 6,
+      "commits": 4
+    },
+    {
+      "title": "Fix the projects list clipping and crashing after closing a project",
+      "author": "ethanyxchen",
+      "branch": "ethanc/fix-ui-crash",
+      "createdAt": "2026-10-29T14:22:14Z",
+      "mergedAt": "2026-10-29T14:26:45Z",
+      "closedAt": "2026-10-29T14:26:45Z",
+      "additions": 40,
+      "deletions": 1,
+      "changedFiles": 2,
+      "commits": 2
+    },
+    {
+      "title": "Link projects to their GitHub repository, found by Claude Code or Codex",
+      "author": "ethanyxchen",
+      "branch": "ethanc/link-project-github-repos",
+      "createdAt": "2026-10-29T15:00:11Z",
+      "mergedAt": "2026-10-29T16:04:34Z",
+      "closedAt": "2026-10-29T16:04:35Z",
+      "additions": 1535,
+      "deletions": 6,
+      "changedFiles": 19,
+      "commits": 23
+    },
+    {
+      "title": "Show images inline in notes",
+      "author": "ethanyxchen",
+      "branch": "ethanc/inline-note-images",
+      "createdAt": "2026-10-29T22:41:13Z",
+      "mergedAt": "2026-10-29T22:44:14Z",
+      "closedAt": "2026-10-29T22:44:14Z",
+      "additions": 858,
+      "deletions": 13,
+      "changedFiles": 9,
+      "commits": 1
+    },
+    {
+      "title": "Show a note's title in the window bar only after its own title scrolls away",
+      "author": "ethanyxchen",
+      "branch": "supaterm/a1cabba2",
+      "createdAt": "2026-10-29T22:46:47Z",
+      "mergedAt": "2026-10-29T22:53:03Z",
+      "closedAt": "2026-10-29T22:53:03Z",
+      "additions": 21,
+      "deletions": 2,
+      "changedFiles": 2,
+      "commits": 1
+    },
+    {
+      "title": "Continue a list on Enter when the item contains bold, italic or code",
+      "author": "ethanyxchen",
+      "branch": "supaterm/fix-text-editor-bug",
+      "createdAt": "2026-11-03T11:08:53Z",
+      "mergedAt": "2026-11-03T12:12:24Z",
+      "closedAt": "2026-11-03T12:12:24Z",
+      "additions": 81,
+      "deletions": 25,
+      "changedFiles": 4,
+      "commits": 2
+    },
+    {
+      "title": "Keep the bullet when typing at the start of a list item",
+      "author": "ethanyxchen",
+      "branch": "supaterm/text-editor-bug",
+      "createdAt": "2026-11-03T11:14:24Z",
+      "mergedAt": "2026-11-03T12:39:53Z",
+      "closedAt": "2026-11-03T12:39:54Z",
+      "additions": 47,
+      "deletions": 1,
+      "changedFiles": 2,
+      "commits": 2
+    },
+    {
+      "title": "Frost the toolbar over scrolled page content like Photos",
+      "author": "ethanyxchen",
+      "branch": "ethanc/frosted-toolbar",
+      "createdAt": "2026-11-04T15:50:08Z",
+      "mergedAt": "2026-11-04T16:45:14Z",
+      "closedAt": "2026-11-04T16:45:14Z",
+      "additions": 1,
+      "deletions": 1,
+      "changedFiles": 1,
+      "commits": 1
+    },
+    {
+      "title": "Renumber the items below when adding to a numbered list",
+      "author": "ethanyxchen",
+      "branch": "ethanc/renumber-ordered-list",
+      "createdAt": "2026-11-04T15:54:17Z",
+      "mergedAt": "2026-11-04T16:45:24Z",
+      "closedAt": "2026-11-04T16:45:24Z",
+      "additions": 66,
+      "deletions": 1,
+      "changedFiles": 4,
+      "commits": 2
+    },
+    {
+      "title": "Clean up test data and add workflow tests that drive real note windows",
+      "author": "ethanyxchen",
+      "branch": "supaterm/review-app-test-suite",
+      "createdAt": "2026-11-04T16:07:09Z",
+      "mergedAt": "2026-11-04T16:45:34Z",
+      "closedAt": "2026-11-04T16:45:34Z",
+      "additions": 165,
+      "deletions": 48,
+      "changedFiles": 8,
+      "commits": 1
+    },
+    {
+      "title": "File ⌘N notes into the open project and stop same-second notes from colliding",
+      "author": "ethanyxchen",
+      "branch": "ethanc/new-note-in-open-project",
+      "createdAt": "2026-11-04T17:15:31Z",
+      "mergedAt": "2026-11-04T20:07:49Z",
+      "closedAt": "2026-11-04T20:07:49Z",
+      "additions": 36,
+      "deletions": 9,
+      "changedFiles": 6,
+      "commits": 3
+    },
+    {
+      "title": "Document releasing in patch increments of 2",
+      "author": "ethanyxchen",
+      "branch": "supaterm/release-martin-version",
+      "createdAt": "2026-11-04T20:10:31Z",
+      "mergedAt": "2026-11-04T20:24:36Z",
+      "closedAt": "2026-11-04T20:24:36Z",
+      "additions": 8,
+      "deletions": 1,
+      "changedFiles": 1,
+      "commits": 1
+    },
+    {
+      "title": "Move between screens in one window with a back arrow",
+      "author": "ethanyxchen",
+      "branch": "ethanc/one-window-navigation",
+      "createdAt": "2026-11-16T15:40:46Z",
+      "mergedAt": "2026-11-16T15:44:58Z",
+      "closedAt": "2026-11-16T15:44:58Z",
+      "additions": 385,
+      "deletions": 150,
+      "changedFiles": 12,
+      "commits": 4
+    },
+    {
+      "title": "Send usage events, logs, crashes and AI traces to PostHog",
+      "author": "ethanyxchen",
+      "branch": "ethanc/try-posthog",
+      "createdAt": "2026-11-17T16:04:39Z",
+      "mergedAt": "2026-11-17T16:36:39Z",
+      "closedAt": "2026-11-17T16:36:39Z",
+      "additions": 162,
+      "deletions": 19,
+      "changedFiles": 11,
+      "commits": 1
+    },
+    {
+      "title": "Add a TypeScript agent that writes project overviews",
+      "author": "ethanyxchen",
+      "branch": "ethanc/martin-agent",
+      "createdAt": "2026-11-17T16:22:58Z",
+      "mergedAt": "2026-11-17T16:53:44Z",
+      "closedAt": "2026-11-17T16:53:44Z",
+      "additions": 1605,
+      "deletions": 0,
+      "changedFiles": 41,
+      "commits": 5
+    },
+    {
+      "title": "Run PR builds on our own Mac",
+      "author": "ethanyxchen",
+      "branch": "ethanc/self-hosted-ci",
+      "createdAt": "2026-11-17T16:30:03Z",
+      "mergedAt": "2026-11-17T16:33:11Z",
+      "closedAt": "2026-11-17T16:33:11Z",
+      "additions": 6,
+      "deletions": 1,
+      "changedFiles": 1,
+      "commits": 1
+    },
+    {
+      "title": "Stop a timed-out tool's helpers before they can react to being killed",
+      "author": "ethanyxchen",
+      "branch": "ethanc/fix-flaky-helper-timeout-test",
+      "createdAt": "2026-11-17T16:50:23Z",
+      "mergedAt": "2026-11-17T16:52:21Z",
+      "closedAt": "2026-11-17T16:52:22Z",
+      "additions": 10,
+      "deletions": 2,
+      "changedFiles": 3,
+      "commits": 1
+    },
+    {
+      "title": "Skip Supaterm checkpoint commits in the agent's repo activity",
+      "author": "ethanyxchen",
+      "branch": "ethanc/agent-commit-refs",
+      "createdAt": "2026-11-17T17:33:23Z",
+      "mergedAt": "2026-11-17T17:37:13Z",
+      "closedAt": "2026-11-17T17:37:13Z",
+      "additions": 15,
+      "deletions": 2,
+      "changedFiles": 3,
+      "commits": 1
+    },
+    {
+      "title": "Grade the overview benchmark with a judge and per-stage rubrics",
+      "author": "ethanyxchen",
+      "branch": "ethanc/agent-eval-judge",
+      "createdAt": "2026-11-17T17:41:35Z",
+      "mergedAt": "2026-11-17T17:44:45Z",
+      "closedAt": "2026-11-17T17:44:46Z",
+      "additions": 936,
+      "deletions": 249,
+      "changedFiles": 15,
+      "commits": 1
+    }
+  ],
+  "stages": [
+    {
+      "name": "1-refocus",
+      "cutoff": "2026-10-26T18:00:00Z",
+      "notes": [],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "refocusing Martin on calendar notes: removing transcription and attaching notes to their calendar occurrence",
+            "section": "now",
+            "caption": "that transcription is gone and notes now belong to calendar meetings",
+            "updated": "2026-10-26"
+          },
+          {
+            "id": "the Markdown notes editor: the TextKit 2 source Markdown editor, including the TextKit 2 branch left on Oct 21, inline markers, cobalt bullets and the @-mentions branch in progress",
+            "section": "now",
+            "updated": "2026-10-26"
+          },
+          {
+            "id": "one-line pull request summaries and talking points on the meeting page, the branch left on Oct 21",
+            "section": "shelved",
+            "updated": "2026-10-21"
+          },
+          {
+            "id": "the Upcoming meetings window, finished on Oct 20",
+            "section": "absent"
+          },
+          {
+            "id": "Dock icon and dragging windows between displays, finished on Oct 22",
+            "section": "absent"
+          },
+          {
+            "id": "meeting recording and live transcription as ongoing work, built Oct 19–20 and removed on Oct 26",
+            "section": "absent"
+          }
+        ],
+        "tolerated": [
+          "Mentioning people with @ as its own task in Now, split from the editor work",
+          "The cool mist theme and date-as-calendar-icon page styling as their own task in Now, split from the refocus or editor work"
+        ]
+      }
+    },
+    {
+      "name": "2-all-merged",
+      "cutoff": "2026-11-02T18:00:00Z",
+      "notes": [
+        {
+          "id": "improvement-checklist",
+          "title": "Improvement Checklist",
+          "date": "2026-10-28T17:43:04Z",
+          "changedAt": "2026-10-28T17:43:04Z",
+          "file": "notes/improvement-checklist.md"
+        },
+        {
+          "id": "project-crunching",
+          "title": "Project Crunching",
+          "date": "2026-10-29T17:01:05Z",
+          "changedAt": "2026-10-29T17:01:05Z",
+          "file": "notes/project-crunching.md"
+        }
+      ],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "the agent that builds a project overview from notes and GitHub activity, whose branch has been idle since Oct 29",
+            "section": "shelved",
+            "updated": "2026-10-29"
+          },
+          {
+            "id": "the TextKit 2 notes editor branch left on Oct 21, which belongs to the finished editor work and must not be listed as shelved",
+            "section": "absent"
+          },
+          {
+            "id": "one-line pull request summaries and talking points on the meeting page, the branch left on Oct 21",
+            "section": "shelved",
+            "updated": "2026-10-21"
+          },
+          {
+            "id": "the Improvement Checklist items, a note feature not tied to meetings and sorting by project, both ticked",
+            "section": "absent"
+          },
+          {
+            "id": "the Projects tab with quick notes, finished on Oct 28",
+            "section": "absent"
+          },
+          {
+            "id": "linking projects to their GitHub repository, finished on Oct 29",
+            "section": "absent"
+          },
+          {
+            "id": "showing images inline in notes, finished on Oct 29",
+            "section": "absent"
+          },
+          {
+            "id": "the notes library with archive and delete, finished on Oct 28",
+            "section": "absent"
+          },
+          {
+            "id": "shipping Martin as a DMG with Sparkle updates, finished on Oct 28",
+            "section": "absent"
+          },
+          {
+            "id": "the app icon and a separate tinted Martin per worktree, finished on Oct 27",
+            "section": "absent"
+          }
+        ],
+        "tolerated": []
+      }
+    },
+    {
+      "name": "3-quiet-week",
+      "cutoff": "2026-11-09T18:00:00Z",
+      "notes": [
+        {
+          "id": "improvement-checklist",
+          "title": "Improvement Checklist",
+          "date": "2026-10-28T17:43:04Z",
+          "changedAt": "2026-10-28T17:43:04Z",
+          "file": "notes/improvement-checklist.md"
+        },
+        {
+          "id": "project-crunching",
+          "title": "Project Crunching",
+          "date": "2026-10-29T17:01:05Z",
+          "changedAt": "2026-10-29T17:01:05Z",
+          "file": "notes/project-crunching.md"
+        }
+      ],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "the agent that builds a project overview from notes and GitHub activity, whose branch has been idle since Oct 29",
+            "section": "shelved",
+            "updated": "2026-10-29"
+          },
+          {
+            "id": "the TextKit 2 notes editor branch left on Oct 21, which belongs to the finished editor work and must not be listed as shelved",
+            "section": "absent"
+          },
+          {
+            "id": "one-line pull request summaries and talking points on the meeting page, the branch left on Oct 21",
+            "section": "shelved",
+            "updated": "2026-10-21"
+          },
+          {
+            "id": "list editing fixes in the notes editor, finished on Nov 4",
+            "section": "absent"
+          },
+          {
+            "id": "filing new notes into the open project, finished on Nov 4",
+            "section": "absent"
+          },
+          {
+            "id": "the release process and app test suite, finished on Nov 4",
+            "section": "absent"
+          },
+          {
+            "id": "the Improvement Checklist items, a note feature not tied to meetings and sorting by project, both ticked",
+            "section": "absent"
+          }
+        ],
+        "tolerated": []
+      }
+    },
+    {
+      "name": "4-agent-day",
+      "cutoff": "2026-11-17T17:45:00Z",
+      "notes": [
+        {
+          "id": "improvement-checklist",
+          "title": "Improvement Checklist",
+          "date": "2026-10-28T17:43:04Z",
+          "changedAt": "2026-10-28T17:43:04Z",
+          "file": "notes/improvement-checklist.md"
+        },
+        {
+          "id": "project-crunching",
+          "title": "Project Crunching",
+          "date": "2026-10-29T17:01:05Z",
+          "changedAt": "2026-10-29T17:01:05Z",
+          "file": "notes/project-crunching.md"
+        }
+      ],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "martin-agent, the agent that writes project overviews, with its self-hosted CI, checkpoint-free repo activity and judged benchmark",
+            "section": "now",
+            "caption": "that the agent merged and its benchmark is being built",
+            "updated": "2026-11-17"
+          },
+          {
+            "id": "PostHog telemetry for usage events, logs, crashes and AI traces",
+            "section": "now",
+            "updated": "2026-11-17"
+          },
+          {
+            "id": "one-window navigation with a back arrow",
+            "section": "now",
+            "updated": "2026-11-16"
+          },
+          {
+            "id": "the TextKit 2 notes editor branch left on Oct 21, which belongs to the finished editor work and must not be listed as shelved",
+            "section": "absent"
+          },
+          {
+            "id": "one-line pull request summaries and talking points on the meeting page, the branch left on Oct 21",
+            "section": "shelved",
+            "updated": "2026-10-21"
+          },
+          {
+            "id": "a separate shelved task for the Oct 29 conductor agent branch, which belongs to the martin-agent work",
+            "section": "absent"
+          },
+          {
+            "id": "the Improvement Checklist items, a note feature not tied to meetings and sorting by project, both ticked",
+            "section": "absent"
+          }
+        ],
+        "tolerated": [],
+        "order": [
+          "martin-agent, the agent that writes project overviews, with its self-hosted CI, checkpoint-free repo activity and judged benchmark",
+          "PostHog telemetry for usage events, logs, crashes and AI traces",
+          "one-window navigation with a back arrow"
+        ]
+      }
+    }
+  ]
+}

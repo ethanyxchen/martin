@@ -1,0 +1,4 @@
+- tomás: speaker names shipped. next: google token refresh server side
+- me: still on the onboarding checklist, want it done before 2.4
+- 2.4 cut thu 12th, testing after
+- jonas out wed

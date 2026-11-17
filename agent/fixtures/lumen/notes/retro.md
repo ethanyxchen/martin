@@ -1,6 +1,6 @@
 # October retro
 
-Attendees: me, Priya, Sam, Lee from support
+Attendees: Nadia, Priya, Sam, Lee from support
 
 Support queue. Lee walked through the ticket trends for the last four weeks. Volume is down eleven percent overall, mostly because the login loop on older Android phones was fixed in the September patch. The two biggest remaining categories are people who cannot find where their exported photos went, and people confused by storage limits on the free plan. Lee wants a short help article for each before the holidays, and asked whether the export screen could say where files are saved. Nobody owns that yet; we agreed to revisit it at planning rather than pick it up now.
 
@@ -27,8 +27,6 @@ Community. Three people from the beta forum offered to translate the app into Po
 Misc. The office move is on November 18. Bring a box. The team lunch is on the Friday after the release.
 
 Owner updates at the end:
-
-- Onboarding redesign shipped to everyone on Oct 14. It's done; the permissions prompt change cut drop-off at that step by a third.
 
 - Shared albums: invite links and the album feed work; I'm on notifications for new photos next.
 

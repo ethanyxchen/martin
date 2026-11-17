@@ -1,0 +1,1448 @@
+{
+  "project": "Tandem",
+  "owner": {
+    "name": "Maya Okafor",
+    "emails": [
+      "maya.okafor@fernlight.io",
+      "maya.okafor@gmail.com"
+    ],
+    "login": "mokafor"
+  },
+  "repository": {
+    "folder": ".",
+    "slug": "fernlight/tandem"
+  },
+  "commits": [
+    {
+      "date": "2026-10-26T10:12:00Z",
+      "author": "Tomás Herrera",
+      "email": "tomas.herrera@fernlight.io",
+      "subject": "Retry recording uploads on flaky connections",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-27T14:40:00Z",
+      "author": "Jonas Lindqvist",
+      "email": "jonas.lindqvist@fernlight.io",
+      "subject": "Log Stripe webhook failures with the workspace id",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-28T11:00:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Index transcript segments for search",
+      "branch": "maya/transcript-search"
+    },
+    {
+      "date": "2026-10-29T16:00:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Search transcripts from the meeting list",
+      "branch": "maya/transcript-search"
+    },
+    {
+      "date": "2026-10-29T17:30:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Add the design token palette",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-30T15:00:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Add a getting-started checklist to the empty home screen",
+      "branch": "maya/onboarding-checklist"
+    },
+    {
+      "date": "2026-11-02T09:10:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Tick checklist items as people finish them",
+      "branch": "maya/onboarding-checklist"
+    },
+    {
+      "date": "2026-11-02T10:15:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@gmail.com",
+      "subject": "Merge pull request #1 from fernlight/maya/onboarding-checklist",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-02T10:40:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Extract action items from the summary into their own model",
+      "branch": "maya/action-items"
+    },
+    {
+      "date": "2026-11-02T13:00:00Z",
+      "author": "Tomás Herrera",
+      "email": "tomas.herrera@fernlight.io",
+      "subject": "Label transcript lines with the speaker's name",
+      "branch": "tomas/speaker-labels"
+    },
+    {
+      "date": "2026-11-02T15:20:00Z",
+      "author": "Jonas Lindqvist",
+      "email": "jonas.lindqvist@fernlight.io",
+      "subject": "Add seats to the workspace plan",
+      "branch": "jonas/billing-seats"
+    },
+    {
+      "date": "2026-11-02T16:30:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Show action items under the summary",
+      "branch": "maya/action-items"
+    },
+    {
+      "date": "2026-11-03T10:30:00Z",
+      "author": "Tomás Herrera",
+      "email": "tomas.herrera@fernlight.io",
+      "subject": "Match speakers to calendar attendees",
+      "branch": "tomas/speaker-labels"
+    },
+    {
+      "date": "2026-11-03T11:15:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Sync action items to everyone in the meeting",
+      "branch": "maya/action-items"
+    },
+    {
+      "date": "2026-11-03T14:00:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Show the meeting duration in the share page header",
+      "branch": "maya/share-duration"
+    },
+    {
+      "date": "2026-11-03T14:40:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@gmail.com",
+      "subject": "Merge pull request #2 from fernlight/maya/share-duration",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-04T11:10:00Z",
+      "author": "Jonas Lindqvist",
+      "email": "jonas.lindqvist@fernlight.io",
+      "subject": "Charge for seats added mid-cycle",
+      "branch": "jonas/billing-seats"
+    },
+    {
+      "date": "2026-11-04T14:00:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Rename speakerLabel to speakerName from review",
+      "branch": "tomas/speaker-labels"
+    },
+    {
+      "date": "2026-11-04T15:00:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Confirm when a share link is copied",
+      "branch": "maya/share-copy-toast"
+    },
+    {
+      "date": "2026-11-04T15:20:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Assign an action item to an attendee",
+      "branch": "maya/action-items"
+    },
+    {
+      "date": "2026-11-04T15:30:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@gmail.com",
+      "subject": "Merge pull request #3 from fernlight/maya/share-copy-toast",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-04T16:30:00Z",
+      "author": "Tomás Herrera",
+      "email": "tomas.herrera@fernlight.io",
+      "subject": "Fall back to Speaker 1, 2 when no attendee matches",
+      "branch": "tomas/speaker-labels"
+    },
+    {
+      "date": "2026-11-05T10:00:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Detect an expired Google Calendar token",
+      "branch": "maya/calendar-reconnect"
+    },
+    {
+      "date": "2026-11-05T10:00:00Z",
+      "author": "Tomás Herrera",
+      "email": "tomas.herrera@fernlight.io",
+      "subject": "Merge pull request #4 from fernlight/tomas/speaker-labels",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-05T12:00:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Assignee picker with attendee avatars",
+      "branch": "maya/action-items"
+    },
+    {
+      "date": "2026-11-06T11:40:00Z",
+      "author": "Jonas Lindqvist",
+      "email": "jonas.lindqvist@fernlight.io",
+      "subject": "Seat count on the billing page",
+      "branch": "jonas/billing-seats"
+    },
+    {
+      "date": "2026-11-06T15:00:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Notify people when they're assigned an action item",
+      "branch": "maya/action-items"
+    },
+    {
+      "date": "2026-11-06T18:00:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Ask to reconnect Google Calendar from the meeting list",
+      "branch": "maya/calendar-reconnect"
+    },
+    {
+      "date": "2026-11-09T17:00:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Due dates on action items",
+      "branch": "maya/action-items"
+    },
+    {
+      "date": "2026-11-10T09:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the avatar to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T09:40:00Z",
+      "author": "Tomás Herrera",
+      "email": "tomas.herrera@fernlight.io",
+      "subject": "Stop the recording upload test from racing the timer",
+      "branch": "tomas/flaky-upload-test"
+    },
+    {
+      "date": "2026-11-10T09:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the avatar stack to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T10:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the badge to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T10:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the banner to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T10:20:00Z",
+      "author": "Tomás Herrera",
+      "email": "tomas.herrera@fernlight.io",
+      "subject": "Merge pull request #8 from fernlight/tomas/flaky-upload-test",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-10T10:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the button to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T11:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the calendar picker to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T11:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the checkbox to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T11:30:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Remind assignees the day before an item is due",
+      "branch": "maya/action-items"
+    },
+    {
+      "date": "2026-11-10T11:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the chip to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T12:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the command bar to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T12:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the context menu to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T12:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the date field to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T13:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the dialog to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T13:20:00Z",
+      "author": "Jonas Lindqvist",
+      "email": "jonas.lindqvist@fernlight.io",
+      "subject": "Prorate seat removals",
+      "branch": "jonas/billing-seats"
+    },
+    {
+      "date": "2026-11-10T13:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the divider to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T13:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the empty state to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T14:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the file drop to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T14:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the header to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T14:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the home list to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T15:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the icon button to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T15:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the inline editor to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T15:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the link preview to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T16:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the list row to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T16:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the loading bar to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-10T16:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the meeting card to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T09:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the meeting header to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T09:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the menu to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T10:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the note editor to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T10:05:00Z",
+      "author": "Jonas Lindqvist",
+      "email": "jonas.lindqvist@fernlight.io",
+      "subject": "Bump the Stripe SDK to 19.2",
+      "branch": "jonas/stripe-sdk"
+    },
+    {
+      "date": "2026-11-11T10:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the notification to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T10:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the onboarding card to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T10:40:00Z",
+      "author": "Jonas Lindqvist",
+      "email": "jonas.lindqvist@fernlight.io",
+      "subject": "Merge pull request #9 from fernlight/jonas/stripe-sdk",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-11T11:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the pagination to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T11:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the participant list to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T11:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the pill to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T12:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the popover to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T12:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the progress ring to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T12:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the radio to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T13:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the recording pill to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T13:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the search field to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T13:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the segmented control to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T14:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the settings page to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T14:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the share page to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T14:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the sheet to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T15:00:00Z",
+      "author": "Tomás Herrera",
+      "email": "tomas.herrera@fernlight.io",
+      "subject": "Refresh Google tokens on the server before they expire",
+      "branch": "tomas/google-token-refresh"
+    },
+    {
+      "date": "2026-11-11T15:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the sidebar to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T15:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the skeleton to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T15:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the slider to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T16:00:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Batch reminder emails into one per person",
+      "branch": "maya/action-items"
+    },
+    {
+      "date": "2026-11-11T16:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the snackbar to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T16:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the speaker chip to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-11T16:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the spinner to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T09:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the split view to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T09:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the status dot to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T10:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the stepper to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T10:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the summary card to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T10:30:00Z",
+      "author": "Tomás Herrera",
+      "email": "tomas.herrera@fernlight.io",
+      "subject": "Tell the app when a Google token can't be refreshed",
+      "branch": "tomas/google-token-refresh"
+    },
+    {
+      "date": "2026-11-12T10:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the switch to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T11:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the tab bar to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T11:00:00Z",
+      "author": "Tomás Herrera",
+      "email": "tomas.herrera@fernlight.io",
+      "subject": "Merge pull request #10 from fernlight/tomas/google-token-refresh",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-12T11:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the table to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T11:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the tag field to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T12:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the text area to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T12:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the text field to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T12:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the timeline to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T13:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the toast to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T13:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the toolbar to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T13:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the tooltip to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T14:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the transcript line to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T14:10:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Send reminders in the assignee's time zone",
+      "branch": "maya/action-items"
+    },
+    {
+      "date": "2026-11-12T14:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the upload row to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T14:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the user menu to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T15:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the video tile to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T15:00:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@gmail.com",
+      "subject": "Merge pull request #6 from fernlight/maya/action-items",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-12T15:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the waveform to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T15:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the workspace switcher to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T16:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the action item row to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T16:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the assignee picker to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T16:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the billing page to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-12T16:45:00Z",
+      "author": "Jonas Lindqvist",
+      "email": "jonas.lindqvist@fernlight.io",
+      "subject": "Seat invoices in the billing emails",
+      "branch": "jonas/billing-seats"
+    },
+    {
+      "date": "2026-11-13T09:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Move the calendar banner to design tokens",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T09:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the avatar",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T10:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the avatar stack",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T10:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the badge",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T10:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the banner",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T11:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the button",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T11:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the calendar picker",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T11:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the checkbox",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T12:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the chip",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T12:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the command bar",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T12:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the context menu",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T13:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the date field",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T13:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the dialog",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T13:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the divider",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T14:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the empty state",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T14:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the file drop",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T14:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the header",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T15:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the home list",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T15:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the icon button",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T15:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the inline editor",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T16:00:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the link preview",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T16:20:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the list row",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T16:40:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Replace hard-coded colours in the loading bar",
+      "branch": "aiko/design-tokens"
+    },
+    {
+      "date": "2026-11-13T17:30:00Z",
+      "author": "Aiko Tanaka",
+      "email": "aiko.tanaka@fernlight.io",
+      "subject": "Merge pull request #7 from fernlight/aiko/design-tokens",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-16T09:50:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Merge branch 'main' into maya/transcript-search",
+      "branch": "maya/transcript-search"
+    },
+    {
+      "date": "2026-11-16T10:20:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Rank transcript search results by recency",
+      "branch": "maya/transcript-search"
+    },
+    {
+      "date": "2026-11-16T14:40:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Highlight matches in the transcript",
+      "branch": "maya/transcript-search"
+    },
+    {
+      "date": "2026-11-16T15:10:00Z",
+      "author": "Tomás Herrera",
+      "email": "tomas.herrera@fernlight.io",
+      "subject": "Show the speaker's avatar beside each transcript line",
+      "branch": "tomas/speaker-avatars"
+    }
+  ],
+  "pullRequests": [
+    {
+      "title": "Getting-started checklist on the empty home screen",
+      "author": "mokafor",
+      "branch": "maya/onboarding-checklist",
+      "createdAt": "2026-11-02T09:30:00Z",
+      "mergedAt": "2026-11-02T10:15:00Z",
+      "closedAt": "2026-11-02T10:15:00Z",
+      "additions": 212,
+      "deletions": 18,
+      "changedFiles": 6,
+      "commits": 2
+    },
+    {
+      "title": "Shared action items with assignees, due dates and reminders",
+      "author": "mokafor",
+      "branch": "maya/action-items",
+      "createdAt": "2026-11-02T11:00:00Z",
+      "mergedAt": "2026-11-12T15:00:00Z",
+      "closedAt": "2026-11-12T15:00:00Z",
+      "additions": 1840,
+      "deletions": 260,
+      "changedFiles": 34,
+      "commits": 10
+    },
+    {
+      "title": "Speaker names in transcripts",
+      "author": "therrera",
+      "branch": "tomas/speaker-labels",
+      "createdAt": "2026-11-03T11:00:00Z",
+      "mergedAt": "2026-11-05T10:00:00Z",
+      "closedAt": "2026-11-05T10:00:00Z",
+      "additions": 620,
+      "deletions": 80,
+      "changedFiles": 14,
+      "commits": 4
+    },
+    {
+      "title": "Meeting duration on the share page",
+      "author": "mokafor",
+      "branch": "maya/share-duration",
+      "createdAt": "2026-11-03T14:10:00Z",
+      "mergedAt": "2026-11-03T14:40:00Z",
+      "closedAt": "2026-11-03T14:40:00Z",
+      "additions": 24,
+      "deletions": 3,
+      "changedFiles": 2,
+      "commits": 1
+    },
+    {
+      "title": "Per-seat billing for team workspaces",
+      "author": "jlindqvist",
+      "branch": "jonas/billing-seats",
+      "createdAt": "2026-11-04T11:30:00Z",
+      "mergedAt": null,
+      "closedAt": null,
+      "additions": 1320,
+      "deletions": 140,
+      "changedFiles": 28,
+      "commits": 6
+    },
+    {
+      "title": "Confirm copied share links",
+      "author": "mokafor",
+      "branch": "maya/share-copy-toast",
+      "createdAt": "2026-11-04T15:05:00Z",
+      "mergedAt": "2026-11-04T15:30:00Z",
+      "closedAt": "2026-11-04T15:30:00Z",
+      "additions": 31,
+      "deletions": 6,
+      "changedFiles": 3,
+      "commits": 1
+    },
+    {
+      "title": "Move every component to the design tokens",
+      "author": "aikotanaka",
+      "branch": "aiko/design-tokens",
+      "createdAt": "2026-11-10T09:30:00Z",
+      "mergedAt": "2026-11-13T17:30:00Z",
+      "closedAt": "2026-11-13T17:30:00Z",
+      "additions": 2100,
+      "deletions": 1900,
+      "changedFiles": 96,
+      "commits": 92
+    },
+    {
+      "title": "Deflake the recording upload test",
+      "author": "therrera",
+      "branch": "tomas/flaky-upload-test",
+      "createdAt": "2026-11-10T09:45:00Z",
+      "mergedAt": "2026-11-10T10:20:00Z",
+      "closedAt": "2026-11-10T10:20:00Z",
+      "additions": 12,
+      "deletions": 9,
+      "changedFiles": 1,
+      "commits": 1
+    },
+    {
+      "title": "Stripe SDK 19.2",
+      "author": "jlindqvist",
+      "branch": "jonas/stripe-sdk",
+      "createdAt": "2026-11-11T10:10:00Z",
+      "mergedAt": "2026-11-11T10:40:00Z",
+      "closedAt": "2026-11-11T10:40:00Z",
+      "additions": 8,
+      "deletions": 8,
+      "changedFiles": 2,
+      "commits": 1
+    },
+    {
+      "title": "Refresh Google tokens before they expire",
+      "author": "therrera",
+      "branch": "tomas/google-token-refresh",
+      "createdAt": "2026-11-11T15:10:00Z",
+      "mergedAt": "2026-11-12T11:00:00Z",
+      "closedAt": "2026-11-12T11:00:00Z",
+      "additions": 240,
+      "deletions": 30,
+      "changedFiles": 7,
+      "commits": 2
+    }
+  ],
+  "stages": [
+    {
+      "name": "1-midweek",
+      "cutoff": "2026-11-04T18:00:00Z",
+      "notes": [
+        {
+          "id": "my-tasks",
+          "title": "My tasks",
+          "date": "2026-11-02T08:45:00Z",
+          "changedAt": "2026-11-02T08:45:00Z",
+          "file": "notes/my-tasks-1.md"
+        },
+        {
+          "id": "ideas",
+          "title": "low hanging fruit",
+          "date": "2026-11-03T12:00:00Z",
+          "changedAt": "2026-11-03T12:00:00Z",
+          "file": "notes/ideas.md"
+        }
+      ],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "shared action items with assignees, due dates and reminders",
+            "section": "now",
+            "caption": "that the work is still in review and growing",
+            "updated": "2026-11-04"
+          },
+          {
+            "id": "share page fixes: meeting duration and the copied link confirmation",
+            "section": "now",
+            "updated": "2026-11-04"
+          },
+          {
+            "id": "calendar reconnect for expiring Google tokens",
+            "section": "next"
+          },
+          {
+            "id": "2.4 release testing",
+            "section": "next"
+          },
+          {
+            "id": "transcript search, the branch left on Oct 29",
+            "section": "shelved",
+            "updated": "2026-10-29"
+          },
+          {
+            "id": "the getting-started checklist on the empty home screen, merged on Nov 2",
+            "section": "absent"
+          },
+          {
+            "id": "Tomás's speaker names in transcripts, including the review fix the owner pushed to it",
+            "section": "absent"
+          },
+          {
+            "id": "Jonas's per-seat billing",
+            "section": "absent"
+          },
+          {
+            "id": "the low hanging fruit ideas, such as a recording shortcut or Notion export, which nobody has taken on",
+            "section": "absent"
+          }
+        ],
+        "tolerated": []
+      }
+    },
+    {
+      "name": "2-monday-morning",
+      "cutoff": "2026-11-09T09:00:00Z",
+      "notes": [
+        {
+          "id": "my-tasks",
+          "title": "My tasks",
+          "date": "2026-11-02T08:45:00Z",
+          "changedAt": "2026-11-06T17:00:00Z",
+          "file": "notes/my-tasks-2.md"
+        },
+        {
+          "id": "ideas",
+          "title": "low hanging fruit",
+          "date": "2026-11-03T12:00:00Z",
+          "changedAt": "2026-11-03T12:00:00Z",
+          "file": "notes/ideas.md"
+        },
+        {
+          "id": "none",
+          "title": "None",
+          "date": "2026-11-06T09:00:00Z",
+          "changedAt": "2026-11-06T09:00:00Z",
+          "file": "notes/none.md"
+        }
+      ],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "calendar reconnect for expiring Google tokens, the branch last touched Friday evening",
+            "section": "now",
+            "updated": "2026-11-06"
+          },
+          {
+            "id": "shared action items with assignees, due dates and reminders",
+            "section": "now",
+            "caption": "that the assignee picker is done and the work is still in review",
+            "updated": "2026-11-06"
+          },
+          {
+            "id": "2.4 release testing",
+            "section": "next"
+          },
+          {
+            "id": "transcript search, the branch left on Oct 29",
+            "section": "shelved",
+            "updated": "2026-10-29"
+          },
+          {
+            "id": "share page fixes, merged on Nov 3 and 4",
+            "section": "absent"
+          },
+          {
+            "id": "the getting-started checklist on the empty home screen, merged on Nov 2",
+            "section": "absent"
+          },
+          {
+            "id": "Tomás's speaker names in transcripts, including the review fix the owner pushed to it",
+            "section": "absent"
+          },
+          {
+            "id": "Jonas's per-seat billing",
+            "section": "absent"
+          },
+          {
+            "id": "the low hanging fruit ideas, such as a recording shortcut or Notion export, which nobody has taken on",
+            "section": "absent"
+          },
+          {
+            "id": "the empty note titled None",
+            "section": "absent"
+          }
+        ],
+        "tolerated": []
+      }
+    },
+    {
+      "name": "3-tuesday-stale",
+      "cutoff": "2026-11-10T09:00:00Z",
+      "notes": [
+        {
+          "id": "my-tasks",
+          "title": "My tasks",
+          "date": "2026-11-02T08:45:00Z",
+          "changedAt": "2026-11-09T18:30:00Z",
+          "file": "notes/my-tasks-3.md"
+        },
+        {
+          "id": "ideas",
+          "title": "low hanging fruit",
+          "date": "2026-11-03T12:00:00Z",
+          "changedAt": "2026-11-03T12:00:00Z",
+          "file": "notes/ideas.md"
+        },
+        {
+          "id": "none",
+          "title": "None",
+          "date": "2026-11-06T09:00:00Z",
+          "changedAt": "2026-11-06T09:00:00Z",
+          "file": "notes/none.md"
+        },
+        {
+          "id": "one-on-one",
+          "title": "Tomás / Maya 1:1",
+          "date": "2026-11-09T11:00:00Z",
+          "changedAt": "2026-11-09T11:20:00Z",
+          "file": "notes/one-on-one.md"
+        },
+        {
+          "id": "release-testing",
+          "title": "2.4 release testing",
+          "date": "2026-11-09T12:00:00Z",
+          "changedAt": "2026-11-09T12:00:00Z",
+          "file": "notes/release-testing-1.md"
+        }
+      ],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "shared action items with assignees, due dates and reminders",
+            "section": "now",
+            "caption": "that due dates are in and reminders are left",
+            "updated": "2026-11-09"
+          },
+          {
+            "id": "2.4 release testing, a single checklist task",
+            "section": "now",
+            "caption": "the open checks, such as action item sync, browsers, the Android share sheet and offline sync",
+            "updated": "2026-11-09"
+          },
+          {
+            "id": "Notion export",
+            "section": "next"
+          },
+          {
+            "id": "calendar reconnect for expiring Google tokens, the branch idle since Friday evening",
+            "section": "shelved",
+            "updated": "2026-11-06"
+          },
+          {
+            "id": "transcript search, the branch left on Oct 29",
+            "section": "shelved",
+            "updated": "2026-10-29"
+          },
+          {
+            "id": "the getting-started checklist, which the 1:1 says the owner is still on but which merged on Nov 2",
+            "section": "absent"
+          },
+          {
+            "id": "Tomás's speaker names in transcripts, including the review fix the owner pushed to it",
+            "section": "absent"
+          },
+          {
+            "id": "Jonas's per-seat billing",
+            "section": "absent"
+          },
+          {
+            "id": "the other low hanging fruit ideas: a recording shortcut, a dark share page, copying action items as Markdown and auto-titled meetings",
+            "section": "absent"
+          },
+          {
+            "id": "the empty note titled None",
+            "section": "absent"
+          }
+        ],
+        "tolerated": []
+      }
+    },
+    {
+      "name": "4-picked-up-again",
+      "cutoff": "2026-11-16T18:00:00Z",
+      "notes": [
+        {
+          "id": "my-tasks",
+          "title": "My tasks",
+          "date": "2026-11-02T08:45:00Z",
+          "changedAt": "2026-11-13T11:00:00Z",
+          "file": "notes/my-tasks-4.md"
+        },
+        {
+          "id": "ideas",
+          "title": "low hanging fruit",
+          "date": "2026-11-03T12:00:00Z",
+          "changedAt": "2026-11-03T12:00:00Z",
+          "file": "notes/ideas.md"
+        },
+        {
+          "id": "none",
+          "title": "None",
+          "date": "2026-11-06T09:00:00Z",
+          "changedAt": "2026-11-06T09:00:00Z",
+          "file": "notes/none.md"
+        },
+        {
+          "id": "one-on-one",
+          "title": "Tomás / Maya 1:1",
+          "date": "2026-11-09T11:00:00Z",
+          "changedAt": "2026-11-09T11:20:00Z",
+          "file": "notes/one-on-one.md"
+        },
+        {
+          "id": "release-testing",
+          "title": "2.4 release testing",
+          "date": "2026-11-09T12:00:00Z",
+          "changedAt": "2026-11-12T17:00:00Z",
+          "file": "notes/release-testing-2.md"
+        }
+      ],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "transcript search, picked up again on Nov 16",
+            "section": "now",
+            "updated": "2026-11-16"
+          },
+          {
+            "id": "2.4 release testing, a single checklist task",
+            "section": "now",
+            "caption": "that the Android share sheet and offline sync are still open",
+            "updated": "2026-11-12"
+          },
+          {
+            "id": "Notion export",
+            "section": "next"
+          },
+          {
+            "id": "shared action items with assignees, due dates and reminders, merged on Nov 12",
+            "section": "absent"
+          },
+          {
+            "id": "calendar reconnect, ticked done in My tasks because Tomás fixed token refresh on the server",
+            "section": "absent"
+          },
+          {
+            "id": "the getting-started checklist on the empty home screen, merged on Nov 2",
+            "section": "absent"
+          },
+          {
+            "id": "Tomás's speaker names in transcripts, including the review fix the owner pushed to it",
+            "section": "absent"
+          },
+          {
+            "id": "Jonas's per-seat billing",
+            "section": "absent"
+          },
+          {
+            "id": "Aiko's move of every component to the design tokens",
+            "section": "absent"
+          },
+          {
+            "id": "Tomás's Google token refresh",
+            "section": "absent"
+          },
+          {
+            "id": "the other low hanging fruit ideas: a recording shortcut, a dark share page, copying action items as Markdown and auto-titled meetings",
+            "section": "absent"
+          },
+          {
+            "id": "the empty note titled None",
+            "section": "absent"
+          }
+        ],
+        "tolerated": [],
+        "order": [
+          "transcript search, picked up again on Nov 16",
+          "2.4 release testing, a single checklist task"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+- HM: Ana, eng mgr on payments
+- team of 5, rebuilding checkout
+- asked about the offline rewrite, went well
+- next: onsite, recruiter to schedule

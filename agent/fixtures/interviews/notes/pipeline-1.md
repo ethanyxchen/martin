@@ -1,0 +1,5 @@
+- Arcadia: recruiter screen done, tech screen thu nov 5
+- Brightwave: take-home, due fri nov 6
+- Copperleaf: HM chat wed nov 4
+- Driftwood: final round mon nov 2
+- maybe apply to Halcyon? Mei says the team is great

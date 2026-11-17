@@ -29,6 +29,8 @@ The provider is Claude (`ANTHROPIC_API_KEY`) or OpenAI (`OPENAI_API_KEY`), chose
 
 ### Fixtures
 
+Four projects are graded. Martin is this repository's real activity from Oct 19 to Nov 17, with its two real notes. Tandem is an invented work app with teammates, a large pull request in progress and more than 100 commits in one window. Lumen is an invented app whose branches and merges drive started and done. Interviews is a job search with notes only.
+
 Each project is a folder holding `scenario.json` and its notes. A scenario has the project's owner (name, emails and GitHub login), its repository or null, the commits (date, author, email, subject and branch), the pull requests (title, author, branch, `createdAt`, `mergedAt`, `closedAt`, lines added and removed, files changed and commit count) and the stages. Each stage has a cutoff, the notes visible then, and a rubric.
 
 At each cutoff the fixture works out which commits and pull requests are visible, each pull request's state, and each branch's last commit, how far it is ahead of main, whether it has merged and its pull request. None of these are stored. The agent reads them through the same `repo_activity` view as a real repository.

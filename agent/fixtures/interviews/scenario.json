@@ -1,0 +1,259 @@
+{
+  "project": "Interviews",
+  "owner": {
+    "name": "Jordan Ellis",
+    "emails": [
+      "jordan.ellis@fastmail.com"
+    ],
+    "login": "jordanellis"
+  },
+  "repository": null,
+  "commits": [],
+  "pullRequests": [],
+  "stages": [
+    {
+      "name": "1-four-at-once",
+      "cutoff": "2026-11-04T18:00:00Z",
+      "notes": [
+        {
+          "id": "about-me",
+          "title": "Me",
+          "date": "2026-10-28T20:00:00Z",
+          "changedAt": "2026-10-28T20:10:00Z",
+          "file": "notes/about-me.md"
+        },
+        {
+          "id": "pipeline",
+          "title": "Pipeline",
+          "date": "2026-10-30T09:00:00Z",
+          "changedAt": "2026-10-30T09:15:00Z",
+          "file": "notes/pipeline-1.md"
+        },
+        {
+          "id": "driftwood",
+          "title": "Driftwood final round",
+          "date": "2026-11-02T16:00:00Z",
+          "changedAt": "2026-11-02T16:30:00Z",
+          "file": "notes/driftwood-1.md"
+        },
+        {
+          "id": "brightwave",
+          "title": "Brightwave take-home",
+          "date": "2026-11-03T19:00:00Z",
+          "changedAt": "2026-11-03T19:20:00Z",
+          "file": "notes/brightwave-1.md"
+        },
+        {
+          "id": "copperleaf",
+          "title": "Copperleaf HM chat",
+          "date": "2026-11-04T15:00:00Z",
+          "changedAt": "2026-11-04T15:30:00Z",
+          "file": "notes/copperleaf.md"
+        }
+      ],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "Copperleaf, the hiring manager chat done and an onsite to be scheduled",
+            "section": "now",
+            "updated": "2026-11-04"
+          },
+          {
+            "id": "the Brightwave take-home",
+            "section": "now",
+            "caption": "that it is due Friday Nov 6 with screens, tests and the write-up left",
+            "updated": "2026-11-03"
+          },
+          {
+            "id": "Driftwood, waiting to hear after the final round",
+            "section": "now",
+            "updated": "2026-11-02"
+          },
+          {
+            "id": "the owner's background, strengths and what they want, from the note about themselves",
+            "section": "absent"
+          }
+        ],
+        "tolerated": [
+          "The Arcadia tech screen on Nov 5 in Next, since Now holds only the three most recent",
+          "Applying to Halcyon in Next or Shelved, since the owner is only thinking about it"
+        ],
+        "order": [
+          "Copperleaf, the hiring manager chat done and an onsite to be scheduled",
+          "the Brightwave take-home",
+          "Driftwood, waiting to hear after the final round"
+        ]
+      }
+    },
+    {
+      "name": "2-offer-and-prep",
+      "cutoff": "2026-11-08T12:00:00Z",
+      "notes": [
+        {
+          "id": "about-me",
+          "title": "Me",
+          "date": "2026-10-28T20:00:00Z",
+          "changedAt": "2026-10-28T20:10:00Z",
+          "file": "notes/about-me.md"
+        },
+        {
+          "id": "pipeline",
+          "title": "Pipeline",
+          "date": "2026-10-30T09:00:00Z",
+          "changedAt": "2026-10-30T09:15:00Z",
+          "file": "notes/pipeline-1.md"
+        },
+        {
+          "id": "driftwood",
+          "title": "Driftwood final round",
+          "date": "2026-11-02T16:00:00Z",
+          "changedAt": "2026-11-07T10:00:00Z",
+          "file": "notes/driftwood-2.md"
+        },
+        {
+          "id": "brightwave",
+          "title": "Brightwave take-home",
+          "date": "2026-11-03T19:00:00Z",
+          "changedAt": "2026-11-06T21:05:00Z",
+          "file": "notes/brightwave-2.md"
+        },
+        {
+          "id": "copperleaf",
+          "title": "Copperleaf HM chat",
+          "date": "2026-11-04T15:00:00Z",
+          "changedAt": "2026-11-04T15:30:00Z",
+          "file": "notes/copperleaf.md"
+        },
+        {
+          "id": "arcadia",
+          "title": "Arcadia tech screen",
+          "date": "2026-11-05T18:00:00Z",
+          "changedAt": "2026-11-05T18:20:00Z",
+          "file": "notes/arcadia-1.md"
+        }
+      ],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "the Driftwood offer",
+            "section": "now",
+            "caption": "that the base and a 4 day remote week are to be negotiated, with an answer due Nov 16",
+            "updated": "2026-11-07"
+          },
+          {
+            "id": "Arcadia system design prep",
+            "section": "now",
+            "caption": "that the system design round is on Tuesday Nov 10",
+            "updated": "2026-11-05"
+          },
+          {
+            "id": "Copperleaf, waiting for the onsite to be scheduled",
+            "section": "now",
+            "updated": "2026-11-04"
+          },
+          {
+            "id": "the Brightwave take-home, submitted on Nov 6",
+            "section": "absent"
+          },
+          {
+            "id": "the owner's background, strengths and what they want, from the note about themselves",
+            "section": "absent"
+          }
+        ],
+        "tolerated": [
+          "Applying to Halcyon in Next or Shelved, since the owner is only thinking about it"
+        ],
+        "order": [
+          "the Driftwood offer",
+          "Arcadia system design prep",
+          "Copperleaf, waiting for the onsite to be scheduled"
+        ]
+      }
+    },
+    {
+      "name": "3-withdrew-and-onsite",
+      "cutoff": "2026-11-11T18:00:00Z",
+      "notes": [
+        {
+          "id": "about-me",
+          "title": "Me",
+          "date": "2026-10-28T20:00:00Z",
+          "changedAt": "2026-10-28T20:10:00Z",
+          "file": "notes/about-me.md"
+        },
+        {
+          "id": "pipeline",
+          "title": "Pipeline",
+          "date": "2026-10-30T09:00:00Z",
+          "changedAt": "2026-11-11T12:00:00Z",
+          "file": "notes/pipeline-2.md"
+        },
+        {
+          "id": "driftwood",
+          "title": "Driftwood final round",
+          "date": "2026-11-02T16:00:00Z",
+          "changedAt": "2026-11-09T13:00:00Z",
+          "file": "notes/driftwood-3.md"
+        },
+        {
+          "id": "brightwave",
+          "title": "Brightwave take-home",
+          "date": "2026-11-03T19:00:00Z",
+          "changedAt": "2026-11-11T14:00:00Z",
+          "file": "notes/brightwave-3.md"
+        },
+        {
+          "id": "copperleaf",
+          "title": "Copperleaf HM chat",
+          "date": "2026-11-04T15:00:00Z",
+          "changedAt": "2026-11-04T15:30:00Z",
+          "file": "notes/copperleaf.md"
+        },
+        {
+          "id": "arcadia",
+          "title": "Arcadia tech screen",
+          "date": "2026-11-05T18:00:00Z",
+          "changedAt": "2026-11-10T17:00:00Z",
+          "file": "notes/arcadia-2.md"
+        }
+      ],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "Brightwave onsite prep",
+            "section": "now",
+            "caption": "that the onsite is on Wednesday Nov 18",
+            "updated": "2026-11-11"
+          },
+          {
+            "id": "Arcadia, system design done and waiting on a decision by Friday",
+            "section": "now",
+            "updated": "2026-11-10"
+          },
+          {
+            "id": "the Driftwood offer",
+            "section": "now",
+            "caption": "that the base is agreed and the 4 day remote week is still to ask",
+            "updated": "2026-11-09"
+          },
+          {
+            "id": "Copperleaf, withdrawn on Nov 11",
+            "section": "absent"
+          },
+          {
+            "id": "the owner's background, strengths and what they want, from the note about themselves",
+            "section": "absent"
+          }
+        ],
+        "tolerated": [
+          "Applying to Halcyon in Next or Shelved, since the owner is only thinking about it"
+        ],
+        "order": [
+          "Brightwave onsite prep",
+          "Arcadia, system design done and waiting on a decision by Friday",
+          "the Driftwood offer"
+        ]
+      }
+    }
+  ]
+}
