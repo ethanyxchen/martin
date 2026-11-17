@@ -10,4 +10,10 @@ enum Telemetry {
         config.logs.serviceName = "martin"
         return config
     }
+
+    static func share(_ sharing: Bool) {
+        guard sharing else { return PostHogSDK.shared.optOut() }
+        if let config = config() { PostHogSDK.shared.setup(config) }
+        PostHogSDK.shared.optIn()
+    }
 }
