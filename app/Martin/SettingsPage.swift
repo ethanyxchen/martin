@@ -13,17 +13,9 @@ struct SettingsView: View {
                     NavigationToggles(hidden: $app.hiddenPages)
                         .flush()
                 }
-                SettingsSection(title: "Assistant", detail: "Reads your notes to keep your projects up to date.") {
-                    HStack(spacing: 10) {
-                        Text(app.assistant?.title ?? "None")
-                            .font(.system(size: 13))
-                            .foregroundStyle(app.assistant == nil ? Theme.tertiary : Theme.ink)
-                        Button(app.assistant == nil ? "Set Up…" : "Change…") { app.openAssistantSetup() }
-                        if app.assistant != nil {
-                            Button("Turn Off") { app.assistant = nil }
-                        }
-                    }
-                    .flush()
+                SettingsSection(title: "Assistant", detail: "Reads your notes to keep your projects up to date. Your notes go only to the provider whose API key you save.") {
+                    APIKeyForm(app: app)
+                        .flush()
                 }
                 SettingsSection(title: "Calendars", detail: "Martin shows events and takes notes for the calendars you tick.") {
                     CalendarFeed(query: true, promise: "you can choose which of them Martin follows") { _ in
@@ -61,6 +53,51 @@ private struct SettingsSection<Content: View>: View {
             .flush()
             content
         }
+    }
+}
+
+private struct APIKeyForm: View {
+    let app: AppState
+    @State private var provider = Provider.anthropic
+    @State private var key = ""
+
+    var body: some View {
+        if let credential = app.credential {
+            HStack(spacing: 10) {
+                Label("\(credential.provider.title) API key saved", systemImage: "checkmark.circle.fill")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Theme.ink)
+                Button("Remove") { app.credential = nil }
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 10) {
+                Picker("Provider", selection: $provider) {
+                    ForEach(Provider.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
+                HStack(spacing: 10) {
+                    SecureField("\(provider.title) API key", text: $key)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: 280)
+                        .onSubmit(save)
+                    Button("Save", action: save)
+                        .disabled(trimmedKey.isEmpty)
+                }
+            }
+            .font(.system(size: 13))
+        }
+    }
+
+    private var trimmedKey: String {
+        key.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func save() {
+        guard !trimmedKey.isEmpty else { return }
+        app.use(Credential(provider: provider, key: trimmedKey))
+        key = ""
     }
 }
 

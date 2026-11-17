@@ -6,16 +6,16 @@ import Testing
 @MainActor
 final class AppStateTests: Sandbox {
     @Test func pageAndHiddenPagesAreRememberedAcrossLaunches() {
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         app.page = .projects
         app.hiddenPages = [.upcoming]
-        let relaunched = AppState(library: library, defaults: defaults)
+        let relaunched = AppState(library: library, defaults: defaults, credentials: credentials)
         #expect(relaunched.page == .projects)
         #expect(relaunched.hiddenPages == [.upcoming])
     }
 
     @Test func pageShortcutsNumberTheShownPagesAndStayPutOnAHiddenPage() {
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         app.hiddenPages = [.notes]
         app.page = .notes
         #expect(HomePage.allCases.map(app.shortcut(of:)) == [nil, 1, 2, 3])
@@ -24,7 +24,7 @@ final class AppStateTests: Sandbox {
     @Test func savingANoteUpdatesItsPreview() throws {
         let meeting = try library.create(title: "Standup")
         try library.saveNote("# Before", for: meeting)
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         #expect(app.previews[meeting.id] == "Before")
         app.save("- shipped **icons**", for: meeting)
         #expect(app.previews[meeting.id] == "shipped icons")
@@ -33,11 +33,11 @@ final class AppStateTests: Sandbox {
 
     @Test func archivingMovesANoteToTheArchiveAndRestoringBringsItBack() throws {
         let meeting = try library.create(title: "Standup")
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         app.archive(meeting)
         #expect(app.notes.isEmpty)
         #expect(app.archive.map(\.id) == [meeting.id])
-        #expect(AppState(library: library, defaults: defaults).archive.map(\.id) == [meeting.id])
+        #expect(AppState(library: library, defaults: defaults, credentials: credentials).archive.map(\.id) == [meeting.id])
         app.restore(try #require(app.meeting(meeting.id)))
         #expect(app.notes.map(\.id) == [meeting.id])
         #expect(app.archive.isEmpty)
@@ -46,7 +46,7 @@ final class AppStateTests: Sandbox {
     @Test func deletingANoteRemovesItForGood() throws {
         let meeting = try library.create(title: "Standup")
         try library.saveNote("# Secret", for: meeting)
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         app.delete(meeting)
         #expect(app.meetings.isEmpty)
         #expect(app.previews[meeting.id] == nil)
@@ -55,7 +55,7 @@ final class AppStateTests: Sandbox {
 
     @Test func archivingKeepsARenameMadeAfterTheNoteWasPickedUp() throws {
         let meeting = try library.create(title: "Standup")
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         app.rename(meeting, to: "Retro")
         app.archive(meeting)
         #expect(app.archive.map(\.title) == ["Retro"])
@@ -63,7 +63,7 @@ final class AppStateTests: Sandbox {
 
     @Test func filingANoteIntoANewProjectShelvesItThere() throws {
         let meeting = try library.create(title: "Kickoff")
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         app.file(meeting, inNewProjectNamed: "Atlas")
         let atlas = try #require(app.projects.first)
         #expect(atlas.name == "Atlas")
@@ -74,7 +74,7 @@ final class AppStateTests: Sandbox {
     }
 
     @Test func aNoteIsLabelledWithItsProjectEvenOnceTheProjectIsArchived() throws {
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         let meeting = try library.create(title: "Kickoff")
         app.reload()
         #expect(app.projectName(of: meeting) == "Unassigned")
@@ -88,7 +88,7 @@ final class AppStateTests: Sandbox {
     @Test func pinnedNotesComeFirstUntilUnpinnedAndSkipTheArchive() throws {
         let older = try library.create(startedAt: .now.addingTimeInterval(-60), title: "Older")
         let newer = try library.create(title: "Newer")
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         #expect(app.pinned.isEmpty)
         app.pin(older, true)
         #expect(app.pinned.map(\.id) == [older.id])
@@ -112,7 +112,7 @@ final class AppStateTests: Sandbox {
     }
 
     @Test func archivingAProjectMovesItAndItsNotesToTheArchive() throws {
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         let meeting = try library.create(title: "Kickoff")
         app.file(meeting, inNewProjectNamed: "Atlas")
         let atlas = try #require(app.projects.first)
@@ -126,7 +126,7 @@ final class AppStateTests: Sandbox {
     }
 
     @Test func renamingAProjectIgnoresABlankName() throws {
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         app.file(try library.create(), inNewProjectNamed: "Atlas")
         app.rename(try #require(app.projects.first), to: "  Atlas Redesign ")
         #expect(app.projects.map(\.name) == ["Atlas Redesign"])
@@ -135,7 +135,7 @@ final class AppStateTests: Sandbox {
     }
 
     @Test func renamingAProjectArchivedSinceKeepsItArchived() throws {
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         app.file(try library.create(), inNewProjectNamed: "Atlas")
         let atlas = try #require(app.projects.first)
         app.archive(atlas)
@@ -145,7 +145,7 @@ final class AppStateTests: Sandbox {
     }
 
     @Test func deletingAProjectDeletesItsNotes() throws {
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         let kept = try library.create(startedAt: .distantPast)
         app.file(try library.create(), inNewProjectNamed: "Atlas")
         app.delete(try #require(app.projects.first))
@@ -154,20 +154,20 @@ final class AppStateTests: Sandbox {
     }
 
     @Test func aRepositoryIsTurnedOnThenLinkedAndRememberedUntilRemoved() throws {
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         app.file(try library.create(), inNewProjectNamed: "Martin")
         #expect(app.projects.map(\.repository) == [nil])
         app.link(try #require(app.projects.first), to: .unset)
-        #expect(AppState(library: library, defaults: defaults).projects.map(\.repository) == [.unset])
+        #expect(AppState(library: library, defaults: defaults, credentials: credentials).projects.map(\.repository) == [.unset])
         let folder = URL(filePath: "/Users/ada/Developer/martin", directoryHint: .isDirectory)
         app.link(try #require(app.projects.first), to: .folder(folder))
-        #expect(AppState(library: library, defaults: defaults).projects.map(\.repository) == [.folder(folder)])
+        #expect(AppState(library: library, defaults: defaults, credentials: credentials).projects.map(\.repository) == [.folder(folder)])
         app.link(try #require(app.projects.first), to: nil)
-        #expect(AppState(library: library, defaults: defaults).projects.map(\.repository) == [nil])
+        #expect(AppState(library: library, defaults: defaults, credentials: credentials).projects.map(\.repository) == [nil])
     }
 
     @Test func linkingAProjectArchivedSinceKeepsItArchived() throws {
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         app.file(try library.create(), inNewProjectNamed: "Martin")
         let martin = try #require(app.projects.first)
         app.archive(martin)
@@ -176,22 +176,22 @@ final class AppStateTests: Sandbox {
         #expect(app.archivedProjects.map(\.repository?.folder?.lastPathComponent) == ["martin"])
     }
 
-    @Test func theChosenAssistantIsRememberedAcrossLaunches() {
-        let app = AppState(library: library, defaults: defaults, finder: finding(nil))
-        #expect(app.assistant == nil)
-        app.use(.codex)
-        #expect(AppState(library: library, defaults: defaults).assistant == .codex)
-        app.assistant = nil
-        #expect(AppState(library: library, defaults: defaults).assistant == nil)
+    @Test func theSavedAPIKeyIsRememberedAcrossLaunches() {
+        let app = AppState(library: library, defaults: defaults, credentials: credentials, finder: finding(nil))
+        #expect(app.credential == nil)
+        app.use(openAI)
+        #expect(AppState(library: library, defaults: defaults, credentials: credentials).credential == openAI)
+        app.credential = nil
+        #expect(AppState(library: library, defaults: defaults, credentials: credentials).credential == nil)
     }
 
-    @Test func noRepositoryIsSoughtWithoutAnAssistantOrForALinkedProject() async throws {
-        let app = AppState(library: library, defaults: defaults, finder: finding(nil))
+    @Test func noRepositoryIsSoughtWithoutAnAPIKeyOrForALinkedProject() async throws {
+        let app = AppState(library: library, defaults: defaults, credentials: credentials, finder: finding(nil))
         app.file(try library.create(), inNewProjectNamed: "Martin")
         await app.suggestRepositories()
         #expect(app.suggestions.isEmpty)
         app.link(try #require(app.projects.first), to: .folder(URL(filePath: "/Users/ada/Developer/martin", directoryHint: .isDirectory)))
-        app.assistant = .claude
+        app.credential = claude
         await app.suggestRepositories()
         #expect(app.suggestions.isEmpty)
     }
@@ -212,9 +212,9 @@ final class AppStateTests: Sandbox {
 
     @Test func aRepositoryFoundInTheBackgroundIsLinkedTheMomentItIsTurnedOn() async throws {
         let martin = try clone("martin")
-        let app = AppState(library: library, defaults: defaults, finder: finding(martin))
+        let app = AppState(library: library, defaults: defaults, credentials: credentials, finder: finding(martin))
         app.file(try library.create(), inNewProjectNamed: "Martin")
-        app.assistant = .claude
+        app.credential = claude
         await app.suggestRepositories()
         #expect(app.projects.map(\.repository) == [nil])
         app.addRepository(to: try #require(app.projects.first))
@@ -223,9 +223,9 @@ final class AppStateTests: Sandbox {
 
     @Test func aRepositoryTurnedOnBeforeItIsFoundIsLinkedOnceItIs() async throws {
         let martin = try clone("martin")
-        let app = AppState(library: library, defaults: defaults, finder: finding(martin))
+        let app = AppState(library: library, defaults: defaults, credentials: credentials, finder: finding(martin))
         app.file(try library.create(), inNewProjectNamed: "Martin")
-        app.assistant = .claude
+        app.credential = claude
         app.addRepository(to: try #require(app.projects.first))
         #expect(app.projects.map(\.repository) == [.unset])
         await app.suggestRepository(for: try #require(app.projects.first))
@@ -233,16 +233,16 @@ final class AppStateTests: Sandbox {
     }
 
     @Test func withNothingFoundTurningItOnLeavesTheRepositoryToChoose() async throws {
-        let app = AppState(library: library, defaults: defaults, finder: finding(nil))
+        let app = AppState(library: library, defaults: defaults, credentials: credentials, finder: finding(nil))
         app.file(try library.create(), inNewProjectNamed: "Interviews")
-        app.assistant = .claude
+        app.credential = claude
         await app.suggestRepositories()
         app.addRepository(to: try #require(app.projects.first))
         #expect(app.projects.map(\.repository) == [.unset])
     }
 
     @Test func aSecretProjectAndItsNotesStayOutOfSightUntilSecretsAreShown() throws {
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         let loose = try library.create(startedAt: .distantPast)
         let filed = try library.create()
         app.file(filed, inNewProjectNamed: "Atlas")
@@ -252,7 +252,7 @@ final class AppStateTests: Sandbox {
         #expect(app.shelves.map(\.id) == [.unassigned])
         #expect(app.pinned.isEmpty)
         #expect(app.unpinned.map(\.id) == [loose.id])
-        #expect(AppState(library: library, defaults: defaults).shelves.map(\.id) == [.unassigned])
+        #expect(AppState(library: library, defaults: defaults, credentials: credentials).shelves.map(\.id) == [.unassigned])
         app.showsSecrets = true
         #expect(app.shelves.map(\.id) == [.project(atlas.id), .unassigned])
         #expect(app.pinned.map(\.id) == [filed.id])
@@ -266,12 +266,12 @@ final class AppStateTests: Sandbox {
         let martin = try clone("martin")
         let asked = Asked()
         let meeting = try library.create(title: "Kickoff")
-        let app = AppState(library: library, defaults: defaults, finder: finding(martin, asked: asked))
+        let app = AppState(library: library, defaults: defaults, credentials: credentials, finder: finding(martin, asked: asked))
         app.file(meeting, inNewProjectNamed: "Notepad")
-        app.assistant = .claude
+        app.credential = claude
         await app.suggestRepositories()
         app.save("- ship the menu bar", for: try #require(app.meeting(meeting.id)))
-        let relaunched = AppState(library: library, defaults: defaults, finder: finding(nil, asked: asked))
+        let relaunched = AppState(library: library, defaults: defaults, credentials: credentials, finder: finding(nil, asked: asked))
         await relaunched.suggestRepositories()
         #expect(await asked.times == 1)
         #expect(relaunched.suggestions.values.map(\.self) == [.found(martin)])
@@ -279,11 +279,11 @@ final class AppStateTests: Sandbox {
 
     @Test func findingNothingIsSavedTooAndNotAskedAgain() async throws {
         let asked = Asked()
-        let app = AppState(library: library, defaults: defaults, finder: finding(nil, asked: asked))
+        let app = AppState(library: library, defaults: defaults, credentials: credentials, finder: finding(nil, asked: asked))
         app.file(try library.create(), inNewProjectNamed: "Interviews")
-        app.assistant = .claude
+        app.credential = claude
         await app.suggestRepositories()
-        let relaunched = AppState(library: library, defaults: defaults, finder: finding(try clone("martin"), asked: asked))
+        let relaunched = AppState(library: library, defaults: defaults, credentials: credentials, finder: finding(try clone("martin"), asked: asked))
         await relaunched.suggestRepositories()
         #expect(await asked.times == 1)
         #expect(relaunched.suggestions.values.map(\.self) == [.found(nil)])
@@ -292,13 +292,13 @@ final class AppStateTests: Sandbox {
     @Test func aRepositoryLinkedByHandReplacesTheSavedLookup() async throws {
         let martin = try clone("martin"), notepad = try clone("notepad")
         let asked = Asked()
-        let app = AppState(library: library, defaults: defaults, finder: finding(martin, asked: asked))
+        let app = AppState(library: library, defaults: defaults, credentials: credentials, finder: finding(martin, asked: asked))
         app.file(try library.create(), inNewProjectNamed: "Notepad")
-        app.assistant = .claude
+        app.credential = claude
         await app.suggestRepositories()
         app.link(try #require(app.projects.first), to: .folder(notepad.folder))
         app.link(try #require(app.projects.first), to: nil)
-        let relaunched = AppState(library: library, defaults: defaults, finder: finding(martin, asked: asked))
+        let relaunched = AppState(library: library, defaults: defaults, credentials: credentials, finder: finding(martin, asked: asked))
         await relaunched.suggestRepositories()
         relaunched.addRepository(to: try #require(relaunched.projects.first))
         #expect(relaunched.projects.map(\.repository) == [.folder(notepad.folder)])
@@ -308,45 +308,57 @@ final class AppStateTests: Sandbox {
     @Test func aFailedLookupIsNotSavedSoTheNextLaunchAsksAgain() async throws {
         let martin = try clone("martin")
         let asked = Asked()
-        let app = AppState(library: library, defaults: defaults, finder: finding(martin, asked: asked, failing: true))
+        let app = AppState(library: library, defaults: defaults, credentials: credentials, finder: finding(martin, asked: asked, failing: true))
         app.file(try library.create(), inNewProjectNamed: "Notepad")
-        app.assistant = .claude
+        app.credential = claude
         await app.suggestRepositories()
-        await AppState(library: library, defaults: defaults, finder: finding(martin, asked: asked)).suggestRepositories()
+        await AppState(library: library, defaults: defaults, credentials: credentials, finder: finding(martin, asked: asked)).suggestRepositories()
         #expect(await asked.times == 2)
         #expect(try library.lookups().values.map(\.folder) == [martin.folder])
     }
 
+    @Test func aMeetingWithoutANoteYetStillTellsTheLookupItsTitle() async throws {
+        let finder = RepositoryFinder(nearby: { _ in [] }, match: { _, notes, _, _ in notes.isEmpty ? nil : [] })
+        let app = AppState(library: library, defaults: defaults, credentials: credentials, finder: finder)
+        app.file(try library.create(title: "Lumen sync"), inNewProjectNamed: "Lumen")
+        app.credential = claude
+        await app.suggestRepositories()
+        #expect(try library.lookups().count == 1)
+    }
+
     @Test func aSecretProjectIsNotLookedUpInTheBackground() async throws {
         let asked = Asked()
-        let app = AppState(library: library, defaults: defaults, finder: finding(try clone("martin"), asked: asked))
+        let app = AppState(library: library, defaults: defaults, credentials: credentials, finder: finding(try clone("martin"), asked: asked))
         app.file(try library.create(), inNewProjectNamed: "Martin")
         app.keepSecret(try #require(app.projects.first), true)
-        app.assistant = .claude
+        app.credential = claude
         await app.suggestRepositories()
         #expect(await asked.times == 0)
     }
 
     @Test(arguments: [true, false])
-    func aLookupAbandonedWhileTheAssistantWorksIsNotSaved(deleting: Bool) async throws {
+    func aLookupAbandonedWhileTheProviderWorksIsNotSaved(deleting: Bool) async throws {
         let martin = try clone("martin")
         let current = Current()
         let finder = RepositoryFinder(nearby: { _ in [martin] }, match: { project, _, _, _ in
             await MainActor.run {
                 guard let app = current.app else { return }
-                if deleting { app.delete(project) } else { app.assistant = .codex }
+                if deleting { app.delete(project) } else { app.credential = openAI }
             }
             return [martin.slug.lowercased()]
         })
-        let app = AppState(library: library, defaults: defaults, finder: finder)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials, finder: finder)
         current.app = app
         app.file(try library.create(), inNewProjectNamed: "Notepad")
-        app.assistant = .claude
+        app.credential = claude
         await app.suggestRepository(for: try #require(app.projects.first ?? app.allProjects.first))
         #expect(try library.lookups().isEmpty)
         #expect(app.suggestions.isEmpty)
     }
 }
+
+private let claude = Credential(provider: .anthropic, key: "sk-ant")
+private let openAI = Credential(provider: .openai, key: "sk-proj")
 
 @MainActor
 final class Current: @unchecked Sendable {

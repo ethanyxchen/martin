@@ -40,6 +40,10 @@ struct CommandTests {
         #expect(ContinuousClock.now - start < .seconds(5))
     }
 
+    @Test func aToolSeesTheEnvironmentItIsGivenOnTopOfMartins() async {
+        #expect(await Command.run("sh", ["-c", "printf '%s %s' \"$MARTIN_KEY\" \"${PATH:+path}\""], environment: ["MARTIN_KEY": "sk"], timeout: 10) == "sk path")
+    }
+
     @Test func aToolThatCannotBeFoundFails() async {
         #expect(await Command.run("martin-no-such-tool", [], timeout: 5) == nil)
     }

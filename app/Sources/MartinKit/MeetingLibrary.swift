@@ -163,14 +163,14 @@ public struct MeetingLibrary: Sendable {
     }
 
     public func note(of meeting: Meeting) -> String? {
-        try? String(contentsOf: noteURL(of: meeting), encoding: .utf8)
+        try? String(contentsOf: noteFile(of: meeting), encoding: .utf8)
     }
 
     public func saveNote(_ note: String, for meeting: Meeting) throws {
-        try note.write(to: noteURL(of: meeting), atomically: true, encoding: .utf8)
+        try note.write(to: noteFile(of: meeting), atomically: true, encoding: .utf8)
     }
 
-    private func noteURL(of meeting: Meeting) -> URL {
+    public func noteFile(of meeting: Meeting) -> URL {
         folder(of: meeting).appending(path: "note.md")
     }
 

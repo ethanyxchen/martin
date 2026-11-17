@@ -17,6 +17,10 @@ jobs:
 
       - uses: astral-sh/setup-uv@v10.3.3
 
+      - uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: 1.4.3
+
       - name: Import Developer ID certificate
         env:
           DEVELOPER_ID_P12: ${{ secrets.DEVELOPER_ID_P12 }}

@@ -34,8 +34,11 @@ export function prompt(job: LookupJob, excerpts: string[]): string {
 }
 
 async function excerpts(job: LookupJob): Promise<string[]> {
-  return Promise.all(job.notes.map(async note => {
-    const text = await Bun.file(note.path).text().catch(() => { throw new Failure(`Couldn't read note “${note.title}”.`) })
-    return `# ${note.title}\n${prefix(text, excerptLength)}`
-  }))
+  return Promise.all(job.notes.map(async note => `# ${note.title}\n${prefix(await text(note), excerptLength)}`))
+}
+
+async function text(note: LookupJob["notes"][number]): Promise<string> {
+  const file = Bun.file(note.path)
+  if (!await file.exists()) return ""
+  return file.text().catch(() => { throw new Failure(`Couldn't read note “${note.title}”.`) })
 }

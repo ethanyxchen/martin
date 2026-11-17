@@ -5,17 +5,19 @@ enum Command {
     static let grace: TimeInterval = 1
     static let census: TimeInterval = 0.1
 
-    static func run(_ tool: String, _ arguments: [String], input: String? = nil, timeout: TimeInterval) async -> String? {
+    static func run(_ tool: String, _ arguments: [String], input: String? = nil, environment: [String: String] = [:], timeout: TimeInterval) async -> String? {
         await withCheckedContinuation { continuation in
-            Run(arguments: ["/usr/bin/env", tool] + arguments, input: input, timeout: timeout) { continuation.resume(returning: $0) }.start()
+            Run(arguments: ["/usr/bin/env", tool] + arguments, input: input, environment: Self.environment.merging(environment) { $1 }, timeout: timeout) {
+                continuation.resume(returning: $0)
+            }.start()
         }
     }
 
-    fileprivate static var environment: [String] {
+    private static var environment: [String: String] {
         var environment = ProcessInfo.processInfo.environment
         environment["PATH"] = [environment["PATH"], "/opt/homebrew/bin", "/usr/local/bin", URL.homeDirectory.appending(path: ".local/bin").path(percentEncoded: false)]
             .compactMap(\.self).joined(separator: ":")
-        return environment.map { "\($0.key)=\($0.value)" }
+        return environment
     }
 }
 
@@ -23,6 +25,7 @@ private final class Run: @unchecked Sendable {
     private let queue = DispatchQueue(label: "Command.run")
     private let arguments: [String]
     private let input: String?
+    private let environment: [String: String]
     private let timeout: TimeInterval
     private let done: (String?) -> Void
     private var group: pid_t = 0
@@ -40,9 +43,10 @@ private final class Run: @unchecked Sendable {
     private var deadline: DispatchSourceTimer?
     private var census: DispatchSourceTimer?
 
-    init(arguments: [String], input: String?, timeout: TimeInterval, done: @escaping (String?) -> Void) {
+    init(arguments: [String], input: String?, environment: [String: String], timeout: TimeInterval, done: @escaping (String?) -> Void) {
         self.arguments = arguments
         self.input = input
+        self.environment = environment
         self.timeout = timeout
         self.done = done
     }
@@ -87,7 +91,7 @@ private final class Run: @unchecked Sendable {
         posix_spawnattr_setflags(&attributes, Int16(POSIX_SPAWN_SETPGROUP | POSIX_SPAWN_CLOEXEC_DEFAULT))
         posix_spawnattr_setpgroup(&attributes, 0)
         let argv = arguments.map { strdup($0) } + [nil]
-        let envp = Command.environment.map { strdup($0) } + [nil]
+        let envp = environment.map { strdup("\($0.key)=\($0.value)") } + [nil]
         defer { (argv + envp).forEach { free($0) } }
         var pid = pid_t()
         let spawned = posix_spawn(&pid, arguments[0], &actions, &attributes, argv, envp) == 0

@@ -18,7 +18,7 @@ final class NavigatorTests: Sandbox {
 
     @Test func screensStackAboveHomeAndBackReturnsThroughThem() throws {
         let meeting = try library.create(title: "Standup")
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         app.open(meeting)
         #expect(app.path == [.note(meeting.id)])
         #expect(app.motion == .push)
@@ -34,7 +34,7 @@ final class NavigatorTests: Sandbox {
     @Test func openingAScreenAlreadyInTheStackGoesBackToIt() throws {
         let standup = try library.create(title: "Standup")
         let retro = try library.create(title: "Retro")
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         app.openArchive()
         app.open(standup)
         app.open(retro)
@@ -47,7 +47,7 @@ final class NavigatorTests: Sandbox {
     }
 
     @Test func goingHomeLeavesEveryScreenOnThePageAsked() throws {
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         app.open(try library.create())
         app.openArchive()
         app.openHome(on: .upcoming)
@@ -58,7 +58,7 @@ final class NavigatorTests: Sandbox {
 
     @Test func everyScreenOpensInTheOneWindowWithABackArrowAboveHome() async throws {
         let meeting = try library.create(title: "Standup")
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         let window = app.window
         func back() async throws -> NSToolbarItem? {
             for _ in 0..<50 {
@@ -81,7 +81,7 @@ final class NavigatorTests: Sandbox {
 @MainActor
 final class ClosingTheWindowTests: Sandbox {
     @Test func closingTheWindowLeavesNothingForTheMenusToActOn() throws {
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         let meeting = try library.create()
         app.file(meeting, inNewProjectNamed: "Atlas")
         app.page = .projects
@@ -94,7 +94,7 @@ final class ClosingTheWindowTests: Sandbox {
     }
 
     @Test func leavingProjectsClosesTheOpenProjectEvenFromAnotherScreen() throws {
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         let meeting = try library.create()
         app.file(meeting, inNewProjectNamed: "Atlas")
         app.page = .projects
