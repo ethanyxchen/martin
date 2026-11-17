@@ -1,0 +1,13 @@
+{
+  "kind": "overview",
+  "provider": "anthropic",
+  "project": { "name": "Juniper" },
+  "cutoff": "2026-11-10T09:00:00-08:00",
+  "previous": null,
+  "notes": [
+    { "id": "2026-11-02-091500", "title": "Beta planning", "date": "2026-11-02T09:15:00-08:00", "changedAt": "2026-11-02T10:00:00-08:00", "path": "fixtures/sample/notes/2026-11-02-091500.md" },
+    { "id": "2026-11-06-140000", "title": "Design review", "date": "2026-11-06T14:00:00-08:00", "changedAt": "2026-11-06T15:00:00-08:00", "path": "fixtures/sample/notes/2026-11-06-140000.md" },
+    { "id": "2026-11-09-100000", "title": "Beta check-in", "date": "2026-11-09T10:00:00-08:00", "changedAt": "2026-11-09T10:30:00-08:00", "path": "fixtures/sample/notes/2026-11-09-100000.md" }
+  ],
+  "repository": null
+}

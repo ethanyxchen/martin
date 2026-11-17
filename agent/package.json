@@ -1,0 +1,19 @@
+{
+  "name": "martin-agent",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc && bun test",
+    "build": "bun build --compile --target=bun-darwin-arm64 src/main.ts --outfile dist/martin-agent",
+    "eval": "bun eval/eval.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "1.9.0",
+    "openai": "7.57.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.4",
+    "typescript": "7.0.2"
+  }
+}
