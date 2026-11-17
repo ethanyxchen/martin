@@ -13,9 +13,6 @@ public enum Assistant: String, CaseIterable, Identifiable, Sendable {
     public struct Generation: Sendable {
         public let provider: String
         public let model: String
-        public let prompt: String
-        public let instructions: String
-        public let output: String?
         public let latency: TimeInterval
         public let isError: Bool
     }
@@ -84,9 +81,6 @@ public enum Assistant: String, CaseIterable, Identifiable, Sendable {
         Self.generationObserver?(Generation(
             provider: provider,
             model: model,
-            prompt: prompt,
-            instructions: instructions,
-            output: output.map { String(decoding: $0, as: UTF8.self) },
             latency: Date().timeIntervalSince(startedAt),
             isError: output == nil
         ))

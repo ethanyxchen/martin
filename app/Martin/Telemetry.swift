@@ -1,4 +1,5 @@
 import Foundation
+import MartinKit
 import PostHog
 
 enum Telemetry {
@@ -9,5 +10,17 @@ enum Telemetry {
         config.errorTrackingConfig.autoCapture = true
         config.logs.serviceName = "martin"
         return config
+    }
+
+    static func generation(_ generation: Assistant.Generation, trace: String, session: String) -> [String: Any] {
+        [
+            "$ai_trace_id": trace,
+            "$ai_session_id": session,
+            "$ai_span_name": "repository_match",
+            "$ai_model": generation.model,
+            "$ai_provider": generation.provider,
+            "$ai_latency": generation.latency,
+            "$ai_is_error": generation.isError,
+        ]
     }
 }

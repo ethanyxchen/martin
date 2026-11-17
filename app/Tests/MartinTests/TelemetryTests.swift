@@ -1,5 +1,6 @@
 import Foundation
 import PostHog
+@testable import MartinKit
 import Testing
 @testable import Martin
 
@@ -19,6 +20,12 @@ struct TelemetryTests {
 
     @Test func aBuildWithoutAProjectReportsNothing() throws {
         #expect(try Self.config(of: [:]) == nil)
+    }
+
+    @Test func aRepositoryMatchIsReportedWithoutWhatWasAskedOrAnswered() {
+        let generation = Assistant.Generation(provider: "anthropic", model: "haiku", latency: 1.5, isError: false)
+        let properties = Telemetry.generation(generation, trace: "trace", session: "session")
+        #expect(Set(properties.keys) == ["$ai_trace_id", "$ai_session_id", "$ai_span_name", "$ai_model", "$ai_provider", "$ai_latency", "$ai_is_error"])
     }
 
     private static func config(of info: [String: String]) throws -> PostHogConfig? {

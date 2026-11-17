@@ -360,7 +360,7 @@ final class AppState {
         let notes = notes(in: project).prefix(Agent.noteLimit).map { "# \($0.displayTitle)\n\(library.note(of: $0) ?? "")" }
         let session = aiSessionID
         let trace = UUID().uuidString
-        let matches = await Assistant.$generationObserver.withValue({ Self.capture($0, trace: trace, session: session) }) {
+        let matches = await Assistant.$generationObserver.withValue({ PostHogSDK.shared.capture("$ai_generation", properties: Telemetry.generation($0, trace: trace, session: session)) }) {
             await finder.match(project, notes, candidates, assistant)
         }
         let repository = await Task.detached { Agent.pick(for: project, matches: matches ?? [], among: candidates) }.value
@@ -371,26 +371,6 @@ final class AppState {
             "assistant": assistant.rawValue,
             "result": repository == nil ? "not_found" : "found",
         ])
-    }
-
-    nonisolated private static func capture(_ generation: Assistant.Generation, trace: String, session: String) {
-        var properties: [String: Any] = [
-            "$ai_trace_id": trace,
-            "$ai_session_id": session,
-            "$ai_span_name": "repository_match",
-            "$ai_model": generation.model,
-            "$ai_provider": generation.provider,
-            "$ai_latency": generation.latency,
-            "$ai_is_error": generation.isError,
-            "$ai_input": [
-                ["role": "system", "content": generation.instructions],
-                ["role": "user", "content": generation.prompt],
-            ],
-        ]
-        if let output = generation.output {
-            properties["$ai_output_choices"] = [["role": "assistant", "content": output]]
-        }
-        PostHogSDK.shared.capture("$ai_generation", properties: properties)
     }
 
     private func found(_ repository: Repository?, for project: Project) {
