@@ -21,6 +21,28 @@ struct TelemetryTests {
         #expect(try Self.config(of: [:]) == nil)
     }
 
+    @Test func reportsSkipTheServerLookupOfTheUsersLocation() throws {
+        let config = try #require(try Self.config(of: ["PostHogProjectToken": "phc_test", "PostHogHost": "https://eu.i.posthog.com"]))
+        #expect(config.disableGeoIp)
+    }
+
+    @Test func theHomeDirectoryIsReplacedWithATildeEverywhereInAReport() {
+        let properties: [String: Any] = [
+            "$exception_list": [[
+                "value": "Couldn't open /Users/ada/Notes/plan.md",
+                "stacktrace": ["frames": [["filename": "/Users/ada/Developer/martin/Editor.swift", "lineno": 12]]],
+            ]],
+            "source": "/Users/ada",
+        ]
+        let scrubbed = Telemetry.scrubbingHome(properties, home: "/Users/ada")
+        let exception = (scrubbed["$exception_list"] as? [[String: Any]])?.first
+        let frame = ((exception?["stacktrace"] as? [String: Any])?["frames"] as? [[String: Any]])?.first
+        #expect(exception?["value"] as? String == "Couldn't open ~/Notes/plan.md")
+        #expect(frame?["filename"] as? String == "~/Developer/martin/Editor.swift")
+        #expect(frame?["lineno"] as? Int == 12)
+        #expect(scrubbed["source"] as? String == "~")
+    }
+
     private static func config(of info: [String: String]) throws -> PostHogConfig? {
         let url = FileManager.default.temporaryDirectory.appending(path: "\(UUID()).app")
         defer { try? FileManager.default.removeItem(at: url) }
