@@ -157,8 +157,8 @@ private final class Run: @unchecked Sendable {
         guard var lineage else { return }
         lineage.record(holders: true)
         self.lineage = lineage
-        if !escapedOnly { killpg(group, SIGKILL) }
         Lineage.kill(escapedOnly ? lineage.escaped() : Array(lineage.members))
+        if !escapedOnly { killpg(group, SIGKILL) }
     }
 
     private func reap() {

@@ -43,7 +43,7 @@ struct Lineage {
     }
 
     static func kill(_ members: some Sequence<Member>) {
-        for member in members where entry(of: member.pid)?.member == member {
+        for member in members.sorted(by: { $0.started < $1.started }) where entry(of: member.pid)?.member == member {
             Darwin.kill(member.pid, SIGKILL)
         }
     }
