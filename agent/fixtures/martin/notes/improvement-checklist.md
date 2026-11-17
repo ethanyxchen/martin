@@ -1,0 +1,2 @@
+- [x] Add a new meeting note feature (does not have to be linked to meetings)
+- [x] Instead of sorting by meetings, sort by project

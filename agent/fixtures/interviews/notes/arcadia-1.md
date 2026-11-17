@@ -1,0 +1,5 @@
+- graph q (course schedule), topo sort, a bit slow
+- they liked the offline story
+- system design round next Tuesday 2pm
+- [ ] prep: design a rate limiter
+- [ ] prep: caching / cdn basics

@@ -1,8 +1,8 @@
 # Lumen planning kickoff
 
-Attendees: me, Priya, Sam
+Attendees: Nadia, Priya, Sam
 
-- I'm redesigning onboarding this sprint: new welcome screens and a clearer photo permissions prompt.
+- Onboarding redesign this sprint: new welcome screens, clearer photo permissions prompt.
 - After onboarding, I'll build shared albums so people can invite friends to add photos.
 - Dark mode is something we'd like to do after shared albums.
 - Priya owns the billing migration to the new payments provider.

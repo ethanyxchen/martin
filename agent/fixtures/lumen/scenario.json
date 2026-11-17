@@ -1,63 +1,120 @@
 {
   "project": "Lumen",
   "owner": {
-    "name": "Me",
+    "name": "Nadia Brennan",
     "emails": [
-      "me@example.com"
+      "nadia@lumen.photos",
+      "nadia.brennan@gmail.com"
     ],
-    "login": "me"
+    "login": "nbrennan"
   },
   "repository": {
     "folder": ".",
-    "slug": "example/lumen"
+    "slug": "lumen/lumen"
   },
   "commits": [
     {
-      "date": "2026-10-02T14:00:00-07:00",
-      "author": "Me",
-      "email": "me@example.com",
+      "date": "2026-09-29T14:00:00-07:00",
+      "author": "Nadia Brennan",
+      "email": "nadia@lumen.photos",
       "subject": "Add new welcome screens",
       "branch": "onboarding-redesign"
     },
     {
+      "date": "2026-09-30T11:00:00-07:00",
+      "author": "Nadia Brennan",
+      "email": "nadia@lumen.photos",
+      "subject": "Animate the welcome screens",
+      "branch": "onboarding-redesign"
+    },
+    {
+      "date": "2026-10-02T14:00:00-07:00",
+      "author": "Nadia Brennan",
+      "email": "nadia@lumen.photos",
+      "subject": "Explain why Lumen needs photo access before asking",
+      "branch": "onboarding-redesign"
+    },
+    {
+      "date": "2026-10-06T15:00:00-07:00",
+      "author": "Nadia Brennan",
+      "email": "nadia@lumen.photos",
+      "subject": "New photo permissions prompt",
+      "branch": "onboarding-redesign"
+    },
+    {
       "date": "2026-10-07T11:00:00-07:00",
-      "author": "Priya",
-      "email": "priya@example.com",
+      "author": "Priya Raman",
+      "email": "priya@lumen.photos",
       "subject": "Move billing webhooks to the new payments provider",
       "branch": "priya/payments-provider"
     },
     {
+      "date": "2026-10-07T18:00:00Z",
+      "author": "Priya Raman",
+      "email": "priya@lumen.photos",
+      "subject": "Merge pull request #2 from lumen/priya/payments-provider",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-08T10:00:00-07:00",
+      "author": "Nadia Brennan",
+      "email": "nadia@lumen.photos",
+      "subject": "Permissions prompt copy from design review",
+      "branch": "onboarding-redesign"
+    },
+    {
       "date": "2026-10-08T14:00:00-07:00",
-      "author": "Me",
-      "email": "me@example.com",
+      "author": "Nadia Brennan",
+      "email": "nadia@lumen.photos",
       "subject": "Prototype album invite links",
       "branch": "shared-albums"
     },
     {
-      "date": "2026-10-13T14:00:00-07:00",
-      "author": "Me",
-      "email": "me@example.com",
-      "subject": "Ship the new photo permissions prompt",
+      "date": "2026-10-09T16:00:00-07:00",
+      "author": "Nadia Brennan",
+      "email": "nadia@lumen.photos",
+      "subject": "Address onboarding review comments",
       "branch": "onboarding-redesign"
     },
     {
+      "date": "2026-10-12T10:00:00-07:00",
+      "author": "Nadia Brennan",
+      "email": "nadia.brennan@gmail.com",
+      "subject": "Merge pull request #1 from lumen/onboarding-redesign",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-13T14:00:00-07:00",
+      "author": "Nadia Brennan",
+      "email": "nadia@lumen.photos",
+      "subject": "Album feed",
+      "branch": "shared-albums"
+    },
+    {
+      "date": "2026-10-15T11:00:00-07:00",
+      "author": "Nadia Brennan",
+      "email": "nadia@lumen.photos",
+      "subject": "Accept an album invite",
+      "branch": "shared-albums"
+    },
+    {
       "date": "2026-10-16T14:00:00-07:00",
-      "author": "Priya",
-      "email": "priya@example.com",
+      "author": "Priya Raman",
+      "email": "priya@lumen.photos",
       "subject": "Double-write invoices to both payment providers",
       "branch": "priya/payments-provider"
     },
     {
-      "date": "2026-10-17T14:00:00-07:00",
-      "author": "Me",
-      "email": "me@example.com",
-      "subject": "Album feed and invite acceptance",
+      "date": "2026-10-20T16:00:00-07:00",
+      "author": "Nadia Brennan",
+      "email": "nadia@lumen.photos",
+      "subject": "Register devices for new album photo notifications",
       "branch": "shared-albums"
     },
     {
       "date": "2026-10-21T14:00:00-07:00",
-      "author": "Me",
-      "email": "me@example.com",
+      "author": "Nadia Brennan",
+      "email": "nadia@lumen.photos",
       "subject": "Measure photo upload timings",
       "branch": "upload-performance"
     }
@@ -65,19 +122,19 @@
   "pullRequests": [
     {
       "title": "Onboarding redesign",
-      "author": "me",
+      "author": "nbrennan",
       "branch": "onboarding-redesign",
       "createdAt": "2026-10-02T15:00:00-07:00",
-      "mergedAt": "2026-10-14T17:00:00Z",
-      "closedAt": "2026-10-14T17:00:00Z",
+      "mergedAt": "2026-10-12T10:00:00-07:00",
+      "closedAt": "2026-10-12T10:00:00-07:00",
       "additions": 1240,
       "deletions": 380,
       "changedFiles": 22,
-      "commits": 2
+      "commits": 6
     },
     {
       "title": "Billing webhooks on the new provider",
-      "author": "priya",
+      "author": "praman",
       "branch": "priya/payments-provider",
       "createdAt": "2026-10-07T11:30:00-07:00",
       "mergedAt": "2026-10-07T18:00:00Z",
@@ -89,7 +146,7 @@
     },
     {
       "title": "Shared albums",
-      "author": "me",
+      "author": "nbrennan",
       "branch": "shared-albums",
       "createdAt": "2026-10-08T15:00:00-07:00",
       "mergedAt": null,
@@ -97,7 +154,7 @@
       "additions": 1630,
       "deletions": 90,
       "changedFiles": 27,
-      "commits": 2
+      "commits": 4
     }
   ],
   "stages": [
@@ -117,14 +174,15 @@
         "tasks": [
           {
             "id": "onboarding redesign",
-            "section": "now"
+            "section": "now",
+            "updated": "2026-09-30"
           },
           {
             "id": "shared albums",
             "section": "next"
           },
           {
-            "id": "billing migration, which is Priya's",
+            "id": "the billing migration, which is Priya's",
             "section": "absent"
           }
         ],
@@ -157,14 +215,17 @@
         "tasks": [
           {
             "id": "onboarding redesign",
-            "section": "now"
+            "section": "now",
+            "updated": "2026-10-08"
           },
           {
             "id": "shared albums",
-            "section": "now"
+            "section": "now",
+            "caption": "that invite links are being prototyped",
+            "updated": "2026-10-08"
           },
           {
-            "id": "billing migration, which is Priya's",
+            "id": "the billing migration, which is Priya's",
             "section": "absent"
           }
         ],
@@ -175,7 +236,7 @@
       }
     },
     {
-      "name": "3-shipped-and-shelved",
+      "name": "3-merged-and-shelved",
       "cutoff": "2026-10-15T18:00:00-07:00",
       "notes": [
         {
@@ -203,19 +264,21 @@
       "rubric": {
         "tasks": [
           {
-            "id": "onboarding redesign, shipped on Oct 14",
+            "id": "onboarding redesign, merged on Oct 12",
             "section": "absent"
           },
           {
             "id": "shared albums",
-            "section": "now"
+            "section": "now",
+            "updated": "2026-10-15"
           },
           {
             "id": "home screen widget",
-            "section": "shelved"
+            "section": "shelved",
+            "updated": "2026-10-14"
           },
           {
-            "id": "billing migration, which is Priya's",
+            "id": "the billing migration, which is Priya's",
             "section": "absent"
           }
         ],
@@ -261,19 +324,22 @@
       "rubric": {
         "tasks": [
           {
-            "id": "shared albums",
-            "section": "now"
+            "id": "photo upload performance audit",
+            "section": "now",
+            "updated": "2026-10-21"
           },
           {
-            "id": "photo upload performance audit",
-            "section": "now"
+            "id": "shared albums",
+            "section": "now",
+            "updated": "2026-10-20"
           },
           {
             "id": "home screen widget",
-            "section": "shelved"
+            "section": "shelved",
+            "updated": "2026-10-14"
           },
           {
-            "id": "onboarding redesign, shipped on Oct 14",
+            "id": "onboarding redesign, merged on Oct 12",
             "section": "absent"
           },
           {
@@ -281,12 +347,14 @@
             "section": "absent"
           },
           {
-            "id": "billing migration, which is Priya's",
+            "id": "the billing migration, which is Priya's",
             "section": "absent"
           }
         ],
-        "tolerated": [
-          "Notifications for new album photos in Next, since the retro says the owner is on them next"
+        "tolerated": [],
+        "order": [
+          "photo upload performance audit",
+          "shared albums"
         ]
       }
     }

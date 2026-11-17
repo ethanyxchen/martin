@@ -1,0 +1,6 @@
+- [x] action items: assignee picker
+- [x] action items: due dates
+- [x] action items: reminders
+- [x] calendar reconnect (tomás fixed token refresh server side, dropping my branch)
+- [ ] 2.4 release testing
+- [ ] notion export (from the LHF list), after 2.4
