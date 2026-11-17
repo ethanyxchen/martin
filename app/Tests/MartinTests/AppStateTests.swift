@@ -317,6 +317,15 @@ final class AppStateTests: Sandbox {
         #expect(try library.lookups().values.map(\.folder) == [martin.folder])
     }
 
+    @Test func aMeetingWithoutANoteYetStillTellsTheLookupItsTitle() async throws {
+        let finder = RepositoryFinder(nearby: { _ in [] }, match: { _, notes, _, _ in notes.isEmpty ? nil : [] })
+        let app = AppState(library: library, defaults: defaults, credentials: credentials, finder: finder)
+        app.file(try library.create(title: "Lumen sync"), inNewProjectNamed: "Lumen")
+        app.credential = claude
+        await app.suggestRepositories()
+        #expect(try library.lookups().count == 1)
+    }
+
     @Test func aSecretProjectIsNotLookedUpInTheBackground() async throws {
         let asked = Asked()
         let app = AppState(library: library, defaults: defaults, credentials: credentials, finder: finding(try clone("martin"), asked: asked))

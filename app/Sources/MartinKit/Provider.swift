@@ -24,7 +24,7 @@ public enum Provider: String, CaseIterable, Identifiable, Sendable, Encodable {
 
 public struct Credential: Equatable, Sendable {
     public let provider: Provider
-    public let key: String
+    let key: String
 
     public init(provider: Provider, key: String) {
         self.provider = provider

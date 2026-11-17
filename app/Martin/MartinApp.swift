@@ -357,10 +357,8 @@ final class AppState {
         let round = lookupRound
         if scouting == nil { await scoutRepositories() }
         let candidates = await scouting?.value ?? []
-        let notes = notes(in: project).lazy.compactMap { meeting in
-            self.library.noteFile(of: meeting).map { Agent.Note(title: meeting.displayTitle, file: $0) }
-        }.prefix(Agent.noteLimit)
-        let matches = await finder.match(project, Array(notes), candidates, credential)
+        let notes = notes(in: project).prefix(Agent.noteLimit).map { Agent.Note(title: $0.displayTitle, file: library.noteFile(of: $0)) }
+        let matches = await finder.match(project, notes, candidates, credential)
         let repository = await Task.detached { Agent.pick(for: project, matches: matches ?? [], among: candidates) }.value
         guard round == lookupRound, allProjects.contains(where: { $0.id == project.id }) else { return }
         if matches != nil { try? library.save(RepositoryLookup(folder: repository?.folder), for: project.id) }
