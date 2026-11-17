@@ -119,6 +119,19 @@ describe("github activity", () => {
     expect(commits.find(commit => commit.subject === "second")?.author).toBe("Bo <bo@example.com>")
   })
 
+  test("reads branches and tags but skips other refs", async () => {
+    const repository = await folder()
+    const git = (...args: string[]) => $`git -C ${repository} -c user.name=Ann -c user.email=ann@example.com ${args}`.text()
+    const detached = async (subject: string) => (await git("commit-tree", "HEAD^{tree}", "-p", "HEAD", "-m", subject)).trim()
+    await git("init", "-q", "-b", "main")
+    await git("commit", "-q", "--allow-empty", "-m", "branch")
+    await git("tag", "release", await detached("tagged"))
+    await git("update-ref", "refs/supaterm/checkpoints/x", await detached("checkpoint"))
+    const activity = github({ folder: repository, slug: "ann/lumen" }, { since: new Date(Date.now() - 60_000), until: new Date(Date.now() + 60_000) })
+    const commits = await activity.commits(0, 10)
+    expect(commits.map(commit => commit.subject).sort()).toEqual(["branch", "tagged"])
+  })
+
   test("fails rather than returning nothing when git fails", async () => {
     const activity = github({ folder: join(await folder(), "missing"), slug: "ann/lumen" }, { since: new Date(0), until: new Date() })
     expect(activity.commits(0, 10)).rejects.toThrow()
