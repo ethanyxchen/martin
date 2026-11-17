@@ -6,21 +6,30 @@ import { characters, prefix } from "./text"
 export type Tool = {
   name: string
   description: string
-  input: z.ZodObject
-  run: (input: any) => Promise<string>
+  parameters: Record<string, unknown>
+  run: (input: unknown) => Promise<string>
 }
 
 export const pageLength = 4000
 export const commitBatch = 100
 export const pullRequestLimit = 30
 
-function tool<Input extends z.ZodObject>(definition: {
+function tool<Input extends z.ZodObject>({ name, description, input, run }: {
   name: string
   description: string
   input: Input
   run: (input: z.infer<Input>) => Promise<string>
 }): Tool {
-  return definition
+  const { $schema: _, ...parameters } = z.toJSONSchema(input)
+  return {
+    name,
+    description,
+    parameters,
+    run: async raw => {
+      const parsed = input.safeParse(raw)
+      return parsed.success ? run(parsed.data) : `Invalid input: ${z.prettifyError(parsed.error)}`
+    },
+  }
 }
 
 export class Sources {

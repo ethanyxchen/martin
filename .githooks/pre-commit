@@ -12,3 +12,5 @@ swift build -c release --package-path "$cache/source/app" --scratch-path "$cache
   -Xswiftc -warnings-as-errors
 swiftc -typecheck -warnings-as-errors "$cache/source/scripts/render-icon.swift"
 swiftc -typecheck -warnings-as-errors "$cache/source/scripts/render-dmg-background.swift"
+bun install --frozen-lockfile --cwd "$cache/source/agent" >/dev/null
+bun run --cwd "$cache/source/agent" check

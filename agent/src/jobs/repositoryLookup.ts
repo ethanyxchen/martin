@@ -1,5 +1,5 @@
 import { Failure } from "../failure"
-import type { JobSpec } from "../providers/provider"
+import type { JobSpec } from "./spec"
 import { type LookupJob, LookupResult } from "../schema"
 import { prefix } from "../text"
 

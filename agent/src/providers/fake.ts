@@ -1,20 +1,21 @@
-import { noUsage, type Provider } from "./provider"
+import type { ProviderName } from "../schema"
+import type { Provider } from "./provider"
 
 export type Script = { calls: { tool: string, input: unknown }[][], answer: unknown }
 
-export function fake(script: Script): Provider {
+export function fake(script: Script, name: ProviderName = "anthropic"): Provider {
   return {
-    async run(spec, emit) {
+    name,
+    async run(request) {
       for (const round of script.calls) {
         await Promise.all(round.map(call => {
-          const tool = spec.tools.find(tool => tool.name === call.tool)
+          const tool = request.tools.find(tool => tool.name === call.tool)
           if (!tool) throw new Error(`No tool ${call.tool}`)
-          const input = tool.input.parse(call.input)
-          emit({ type: "progress", tool: tool.name, input })
-          return tool.run(input)
+          return tool.run(call.input)
         }))
       }
-      return { result: spec.result.parse(script.answer), usage: { ...noUsage(), requests: script.calls.length + 1 }, model: "fake" }
+      const requests = Array.from({ length: script.calls.length + 1 }, () => ({ input: 0, cacheRead: 0, cacheWrite: 0, output: 0 }))
+      return { result: request.result.parse(script.answer), model: "fake", requests }
     },
   }
 }

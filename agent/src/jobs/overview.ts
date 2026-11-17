@@ -1,11 +1,12 @@
 import { type Connect, github } from "../activity"
 import { Failure } from "../failure"
-import type { JobSpec } from "../providers/provider"
+import type { JobSpec } from "./spec"
 import { type Overview, type OverviewJob, OverviewResult, type Task } from "../schema"
 import { readNote, repoActivity, Sources } from "../tools"
 import { day, prefix } from "../text"
 
 export const limits = { now: 3, next: 6, shelved: 6, title: 80, caption: 160 }
+export const models = { anthropic: "claude-haiku-5-5", openai: "gpt-6-luna" }
 const defaultWindow = 30 * 24 * 60 * 60 * 1000
 
 export const system = `You keep a short, friendly overview of one project for the person who owns it.
@@ -33,7 +34,7 @@ export function overview(job: OverviewJob, connect: Connect = github): JobSpec<O
     prompt: prompt(job),
     tools: [readNote(job.notes, sources), ...(repository ? [repoActivity(repository, sources)] : [])],
     result: OverviewResult,
-    model: { anthropic: "claude-haiku-5-5", openai: "gpt-6-luna" },
+    model: models,
     effort: "high",
     finish: result => {
       if (sources.unresolved.length) throw new Failure(`Couldn't read ${sources.unresolved.join(", ")}.`)

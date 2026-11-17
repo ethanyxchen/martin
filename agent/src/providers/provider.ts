@@ -1,37 +1,29 @@
 import type { z } from "zod"
 import { Failure } from "../failure"
-import type { Event } from "../schema"
+import type { ProviderName } from "../schema"
 import type { Tool } from "../tools"
 
 export type Effort = "low" | "medium" | "high" | "xhigh"
 
-export type Model = { anthropic: string, openai: string }
-
-export type JobSpec<Result> = {
+export type Request<Result> = {
   system: string
   prompt: string
   tools: Tool[]
   result: z.ZodType<Result>
-  model: Model
+  model: string
   effort: Effort
-  finish: (result: Result) => Result
 }
 
-export type Usage = { requests: number, input: number, cacheRead: number, cacheWrite: number, output: number }
+export type Usage = { input: number, cacheRead: number, cacheWrite: number, output: number }
 
-export type Outcome<Result> = { result: Result, usage: Usage, model: string }
-
-export type Emit = (event: Event) => void
+export type Outcome<Result> = { result: Result, model: string, requests: Usage[] }
 
 export interface Provider {
-  run<Result>(spec: JobSpec<Result>, emit: Emit): Promise<Outcome<Result>>
+  name: ProviderName
+  run<Result>(request: Request<Result>): Promise<Outcome<Result>>
 }
 
 export const maxTurns = 12
-
-export function noUsage(): Usage {
-  return { requests: 0, input: 0, cacheRead: 0, cacheWrite: 0, output: 0 }
-}
 
 export function parseAnswer<Result>(provider: string, text: string, schema: z.ZodType<Result>): Result {
   try {

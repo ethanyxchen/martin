@@ -23,8 +23,8 @@ export async function execute(argv: string[]): Promise<string> {
 }
 
 export function github(repository: Repository, window: Window, run = execute): Activity {
-  const since = window.since.toISOString()
-  const until = window.until.toISOString()
+  const since = seconds(window.since)
+  const until = seconds(window.until)
   return {
     commits: async (skip, count) => {
       const output = await run([
@@ -39,7 +39,7 @@ export function github(repository: Repository, window: Window, run = execute): A
     pullRequests: async limit => {
       const output = await run([
         "gh", "pr", "list", "--repo", repository.slug, "--state", "all", "--limit", `${limit}`,
-        "--search", `updated:>=${since.replace(/\.\d+Z$/, "Z")}`, "--json", "title,state,updatedAt,author",
+        "--search", `updated:>=${since}`, "--json", "title,state,updatedAt,author",
       ])
       const pulls: { title: string, state: string, updatedAt: string, author: { login: string } | null }[] = JSON.parse(output)
       return pulls
@@ -47,4 +47,8 @@ export function github(repository: Repository, window: Window, run = execute): A
         .map(pull => ({ updatedAt: pull.updatedAt, state: pull.state, title: pull.title, author: pull.author?.login ?? "unknown" }))
     },
   }
+}
+
+function seconds(date: Date): string {
+  return `${date.toISOString().slice(0, 19)}Z`
 }

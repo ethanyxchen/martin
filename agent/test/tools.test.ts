@@ -31,6 +31,12 @@ describe("read_note", () => {
     expect(await tool.run({ id: "a", offset: pageLength })).toContain(`characters ${pageLength}–${pageLength + 1}`)
   })
 
+  test("validates its own input and describes what was wrong", async () => {
+    const tool = readNote([await note(await folder(), "a", "text")], new Sources())
+    expect(await tool.run({ id: 3 })).toStartWith("Invalid input:")
+    expect(tool.parameters).toMatchObject({ type: "object", required: ["id", "offset"], additionalProperties: false })
+  })
+
   test("refuses offsets that are not whole, nonnegative numbers", async () => {
     const tool = readNote([await note(await folder(), "a", "text")], new Sources())
     expect(await tool.run({ id: "a", offset: -1 })).toBe("The offset must be a whole number of characters, at least 0.")
@@ -102,7 +108,11 @@ describe("repo_activity", () => {
 describe("github activity", () => {
   test("reads commits from every branch inside the window", async () => {
     const repository = await folder()
-    await $`git -C ${repository} init -q -b main && git -C ${repository} -c user.name=Ann -c user.email=ann@example.com commit -q --allow-empty -m first && git -C ${repository} switch -q -c side && git -C ${repository} -c user.name=Bo -c user.email=bo@example.com commit -q --allow-empty -m second`
+    const commit = (author: string, subject: string) => $`git -C ${repository} -c user.name=Martin -c user.email=martin@example.com commit -q --allow-empty --author=${author} -m ${subject}`
+    await $`git -C ${repository} init -q -b main`
+    await commit("Ann <ann@example.com>", "first")
+    await $`git -C ${repository} switch -q -c side`
+    await commit("Bo <bo@example.com>", "second")
     const activity = github({ folder: repository, slug: "ann/lumen" }, { since: new Date(Date.now() - 60_000), until: new Date(Date.now() + 60_000) })
     const commits = await activity.commits(0, 10)
     expect(commits.map(commit => commit.subject).sort()).toEqual(["first", "second"])

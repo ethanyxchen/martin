@@ -26,7 +26,7 @@ export async function fixtures(folder: string): Promise<Suite> {
     connect: (_, window) => ({
       commits: async (skip, count) => scenario.commits
         .filter(commit => within(new Date(`${commit.date}T12:00:00Z`), window))
-        .reverse()
+        .toSorted((a, b) => b.date.localeCompare(a.date))
         .slice(skip, skip + count),
       pullRequests: async limit => scenario.pullRequests
         .filter(pull => within(new Date(pull.updatedAt), window))
