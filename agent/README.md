@@ -4,8 +4,10 @@ The program Martin runs for every model call. It reads one job as JSON on stdin 
 
 Jobs:
 
-- `overview` reads a project's notes and its repository's recent activity and returns the tasks being worked on now, next and shelved.
+- `overview` reads a project's notes and its repository's recent activity and returns the tasks being worked on now, next and shelved. The job names the owner (name, emails and GitHub login): a commit is the owner's when its name or email matches, and a pull request when its login matches.
 - `repositoryLookup` names the GitHub repositories that hold a project's code.
+
+The repository decides started and done for code work; notes decide Next, explicit shelving and cancelling, and work that isn't code. `repo_activity` reads three sources: commits with their branch, pull requests with their size, and branches. For each branch touched in the last 30 days, the branches source gives its last commit, idle days, whether it is stale, how far it is ahead of main, whether it has merged, and its pull request. Idle days are calendar days in the cutoff's time zone, with weekend days counted as half. An unmerged branch idle for 2 days or more is stale, and its task is shelved.
 
 The provider is Claude (`ANTHROPIC_API_KEY`) or OpenAI (`OPENAI_API_KEY`), chosen by the job.
 
@@ -31,7 +33,7 @@ Four projects are graded. Martin is this repository's real activity from Oct 19 
 
 Each project is a folder holding `scenario.json` and its notes. A scenario has the project's owner (name, emails and GitHub login), its repository or null, the commits (date, author, email, subject and branch), the pull requests (title, author, branch, `createdAt`, `mergedAt`, `closedAt`, lines added and removed, files changed and commit count) and the stages. Each stage has a cutoff, the notes visible then, and a rubric.
 
-At each cutoff the fixture works out which commits and pull requests are visible, each pull request's state, and each branch's last commit, how far it is ahead of main and whether it has merged. None of these are stored.
+At each cutoff the fixture works out which commits and pull requests are visible, each pull request's state, and each branch's last commit, how far it is ahead of main, whether it has merged and its pull request. None of these are stored. The agent reads them through the same `repo_activity` view as a real repository.
 
 A rubric lists the expected tasks, each with a theme id, its section (`now`, `next`, `shelved` or `absent`), optionally what its caption must say and its `updated` date (a day, or `any` for any reasonable date); the extras it tolerates, in words; and optionally the order of Now.
 
@@ -43,6 +45,6 @@ A rubric lists the expected tasks, each with a theme id, its section (`now`, `ne
 
 Claude Sonnet 5.5 (`claude-sonnet-5-5`, pinned in `eval/judge.ts`) judges each run in one request, from the rubric, the overview and the stage's notes and repository state. It returns pass or fail with a one-line reason for every task's section, caption and date, for the order of Now, and for precision, which fails on an extra the stage doesn't tolerate or on two tasks covering the same theme. Verdicts are cached in `eval/cache/` by a hash of the rubric, the overview and the judge model, so re-scoring a run is free. The judge needs `ANTHROPIC_API_KEY` whichever provider is benchmarked.
 
-Code checks the section limits, that dates are valid days up to the cutoff, and that no task mentions a pull request number, commit hash or file name.
+Code checks the section limits, that dates are valid days up to the cutoff, and that no task mentions a pull request number, commit hash or file name. These invariants are a safety net, not a measure of quality: they're reported on their own line and left out of every score, and a broken one still fails the run.
 
 The report gives pass counts per project and per kind of item, and the time, tokens, agent cost, judge cost and tool calls.

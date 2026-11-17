@@ -1,15 +1,10 @@
 import { readdir } from "node:fs/promises"
 import { join, resolve } from "node:path"
 import { z } from "zod"
-import type { Connect } from "../src/activity"
-import { Note, Repository } from "../src/schema"
-import { day } from "../src/text"
-
-export const main = "main"
+import { type Branch, type Connect, lookback, main, type PullRequest as Pull } from "../src/activity"
+import { Commit, Note, Owner, Repository } from "../src/schema"
 
 const Timestamp = z.iso.datetime({ offset: true })
-
-export const Commit = z.strictObject({ date: Timestamp, author: z.string(), email: z.string(), subject: z.string(), branch: z.string() })
 
 export const PullRequest = z.strictObject({
   title: z.string(),
@@ -46,14 +41,13 @@ const Stage = z.strictObject({
 
 export const Scenario = z.strictObject({
   project: z.string(),
-  owner: z.strictObject({ name: z.string(), emails: z.array(z.string()), login: z.string() }),
+  owner: Owner,
   repository: Repository.nullable(),
   commits: z.array(Commit),
   pullRequests: z.array(PullRequest),
   stages: z.array(Stage),
 })
 
-export type Commit = z.infer<typeof Commit>
 export type PullRequest = z.infer<typeof PullRequest>
 export type Section = z.infer<typeof Section>
 export type Rubric = z.infer<typeof Rubric>
@@ -62,12 +56,8 @@ export type Stage = Omit<z.infer<typeof Stage>, "notes"> & { notes: Note[] }
 export type Project = { id: string, scenario: Scenario, stages: Stage[] }
 
 export type PullState = "OPEN" | "MERGED" | "CLOSED"
-export type Branch = { name: string, lastCommit: string, ahead: number, merged: boolean }
-export type State = {
-  commits: Commit[]
-  pullRequests: (PullRequest & { state: PullState, updatedAt: string })[]
-  branches: Branch[]
-}
+export type Visible = PullRequest & { state: PullState, updatedAt: string }
+export type State = { commits: Commit[], pullRequests: Visible[], branches: Branch[] }
 
 export async function projects(root: string, only?: string): Promise<Project[]> {
   const folders = await readdir(root, { withFileTypes: true })
@@ -103,10 +93,13 @@ export function state(scenario: Pick<Scenario, "commits" | "pullRequests">, cuto
   const names = [...new Set(commits.map(commit => commit.branch))].filter(name => name !== main)
   const branches = names.map(name => {
     const own = commits.filter(commit => commit.branch === name)
-    const merges = pullRequests.filter(pull => pull.branch === name && pull.state === "MERGED").map(pull => pull.mergedAt!)
+    const last = own.reduce((a, b) => Date.parse(b.date) > Date.parse(a.date) ? b : a)
+    const pulls = pullRequests.filter(pull => pull.branch === name)
+    const merges = pulls.filter(pull => pull.state === "MERGED").map(pull => pull.mergedAt!)
     const merge = merges.length ? new Date(latest(merges)) : null
     const ahead = own.filter(commit => !merge || new Date(commit.date) > merge).length
-    return { name, lastCommit: latest(own.map(commit => commit.date)), ahead, merged: merge !== null && ahead === 0 }
+    const pull = pulls.at(-1)
+    return { name, lastCommit: last.date, author: last.author, email: last.email, ahead, merged: merge !== null && ahead === 0, pullRequest: pull ? shape(pull) : null }
   })
   return { commits, pullRequests, branches }
 }
@@ -119,15 +112,19 @@ export function connect(scenario: Scenario): Connect {
       commits: async (skip, count) => visible.commits
         .filter(commit => since(commit.date))
         .toSorted((a, b) => Date.parse(b.date) - Date.parse(a.date))
-        .slice(skip, skip + count)
-        .map(commit => ({ date: day(commit.date), author: `${commit.author} <${commit.email}>`, subject: commit.subject })),
+        .slice(skip, skip + count),
       pullRequests: async limit => visible.pullRequests
         .filter(pull => since(pull.updatedAt))
         .toSorted((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
         .slice(0, limit)
-        .map(pull => ({ updatedAt: pull.updatedAt, state: pull.state, title: pull.title, author: pull.author })),
+        .map(shape),
+      branches: async () => visible.branches.filter(branch => Date.parse(branch.lastCommit) >= window.until.getTime() - lookback),
     }
   }
+}
+
+function shape({ updatedAt, state, title, author, branch, additions, deletions, changedFiles, commits }: Visible): Pull {
+  return { updatedAt, state, title, author, branch, additions, deletions, changedFiles, commits }
 }
 
 function status(pull: PullRequest, end: string | null): PullState {

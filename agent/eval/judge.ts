@@ -15,6 +15,10 @@ export type Item = { key: string, kind: Kind, expect: string }
 export type Verdict = { item: string, kind: Kind, pass: boolean, reason: string }
 export type Judgement = { verdicts: Verdict[], cost: number, cached: boolean }
 
+export function scored(verdicts: Verdict[]): Verdict[] {
+  return verdicts.filter(verdict => verdict.kind !== "invariant")
+}
+
 const system = `You grade a project overview written by an assistant against a rubric. The overview has three sections: now, next and shelved. Each task has a title, a caption and an updated date.
 
 Rubric tasks are themes. A task in the overview matches a theme when it is about the same work, whatever its title. Judge each rubric item on its own, from the overview and the source material, and give a one-line reason that names the overview task you matched, or says none matched.

@@ -7,9 +7,10 @@ import { serve } from "../src/main"
 import { fake } from "../src/providers/fake"
 import type { Provider } from "../src/providers/provider"
 import type { OverviewResult } from "../src/schema"
-import { invariants, items, judge, material } from "../eval/judge"
+import { invariants, items, judge, material, scored } from "../eval/judge"
 import { record } from "../eval/record"
-import { type Commit, connect, load, projects, type PullRequest, type Rubric, state } from "../eval/scenario"
+import type { Commit } from "../src/schema"
+import { connect, load, projects, type PullRequest, type Rubric, state } from "../eval/scenario"
 import { folder } from "./support"
 
 const fixtures = join(import.meta.dir, "..", "fixtures")
@@ -46,14 +47,15 @@ describe("fixture state", () => {
     ])
   })
 
-  test("derives each branch's last commit, how far it is ahead of main and whether it merged", () => {
-    const branches = (at: string) => state(scenario, new Date(at)).branches
+  test("derives each branch's last commit, how far it is ahead of main, whether it merged and its pull request", () => {
+    const branches = (at: string) => state(scenario, new Date(at)).branches.map(({ pullRequest, ...branch }) => ({ ...branch, pull: pullRequest && [pullRequest.title, pullRequest.state] }))
+    const ada = { author: "Ada", email: "ada@example.com" }
     expect(branches("2026-11-04T12:00:00Z")).toEqual([
-      { name: "feature", lastCommit: "2026-11-03T09:00:00Z", ahead: 2, merged: false },
-      { name: "dropped", lastCommit: "2026-11-04T09:00:00Z", ahead: 1, merged: false },
+      { name: "feature", lastCommit: "2026-11-03T09:00:00Z", ...ada, ahead: 2, merged: false, pull: ["Feature", "OPEN"] },
+      { name: "dropped", lastCommit: "2026-11-04T09:00:00Z", ...ada, ahead: 1, merged: false, pull: ["Dropped", "OPEN"] },
     ])
-    expect(branches("2026-11-05T12:00:00Z")[0]).toEqual({ name: "feature", lastCommit: "2026-11-03T09:00:00Z", ahead: 0, merged: true })
-    expect(branches("2026-11-07T12:00:00Z")[0]).toEqual({ name: "feature", lastCommit: "2026-11-06T09:00:00Z", ahead: 1, merged: false })
+    expect(branches("2026-11-05T12:00:00Z")[0]).toEqual({ name: "feature", lastCommit: "2026-11-03T09:00:00Z", ...ada, ahead: 0, merged: true, pull: ["Feature", "MERGED"] })
+    expect(branches("2026-11-07T12:00:00Z")[0]).toEqual({ name: "feature", lastCommit: "2026-11-06T09:00:00Z", ...ada, ahead: 1, merged: false, pull: ["Feature", "MERGED"] })
   })
 
   test("the agent sees only activity inside its window, in the shape git and gh give it", async () => {
@@ -61,14 +63,21 @@ describe("fixture state", () => {
       { folder: ".", slug: "a/b" },
       { since: new Date("2026-11-02T12:00:00Z"), until: new Date("2026-11-04T12:00:00Z") },
     )
-    expect(await activity.commits(0, 10)).toEqual([
-      { date: "2026-11-04", author: "Ada <ada@example.com>", subject: "Work" },
-      { date: "2026-11-03", author: "Ada <ada@example.com>", subject: "Work" },
-    ])
+    expect(await activity.commits(0, 10)).toEqual([commit("2026-11-04T09:00:00Z", "dropped"), commit("2026-11-03T09:00:00Z", "feature")])
+    const size = { additions: 10, deletions: 2, changedFiles: 1, commits: 2 }
     expect(await activity.pullRequests(10)).toEqual([
-      { updatedAt: "2026-11-04T10:00:00Z", state: "OPEN", title: "Dropped", author: "ada" },
-      { updatedAt: "2026-11-03T09:00:00Z", state: "OPEN", title: "Feature", author: "ada" },
+      { updatedAt: "2026-11-04T10:00:00Z", state: "OPEN", title: "Dropped", author: "ada", branch: "dropped", ...size },
+      { updatedAt: "2026-11-03T09:00:00Z", state: "OPEN", title: "Feature", author: "ada", branch: "feature", ...size },
     ])
+    expect((await activity.branches()).map(branch => [branch.name, branch.pullRequest?.title])).toEqual([["feature", "Feature"], ["dropped", "Dropped"]])
+  })
+
+  test("the agent's branches leave out those idle for longer than the lookback", async () => {
+    const activity = connect({ ...scenario, project: "P", owner: { name: "Ada", emails: [], login: "ada" }, repository: null, stages: [] })(
+      { folder: ".", slug: "a/b" },
+      { since: new Date("2026-12-01T12:00:00Z"), until: new Date("2026-12-04T12:00:00Z") },
+    )
+    expect((await activity.branches()).map(branch => branch.name)).toEqual(["feature"])
   })
 })
 
@@ -94,11 +103,14 @@ describe("Lumen", () => {
     const lumen = await load(join(fixtures, "lumen"))
     const stage = lumen.stages[1]!
     const previous = { now: [], next: [], shelved: [], readAt: lumen.stages[0]!.cutoff }
-    const job = { kind: "overview" as const, provider: "anthropic" as const, project: { name: "Lumen" }, cutoff: stage.cutoff, previous, notes: stage.notes, repository: lumen.scenario.repository }
+    const job = { kind: "overview" as const, provider: "anthropic" as const, project: { name: "Lumen" }, owner: lumen.scenario.owner, cutoff: stage.cutoff, previous, notes: stage.notes, repository: lumen.scenario.repository }
     const activity = overview(job, connect(lumen.scenario)).tools.find(tool => tool.name === "repo_activity")!
     const commits = await activity.run({ source: "commits", cursor: null })
     expect(commits).toContain("Prototype album invite links")
     expect(commits).not.toContain("Album feed")
+    const branches = await activity.run({ source: "branches", cursor: null })
+    expect(branches).toContain("shared-albums, owner · last commit 2026-10-08 · idle 0.2 days · 1 commits ahead of main, not merged")
+    expect(branches).toContain("priya/payments-provider, praman · last commit 2026-10-07 · idle 1.3 days · merged")
   })
 
   test("the judge's material has the notes and the state at the cutoff", async () => {
@@ -176,6 +188,12 @@ describe("judge", () => {
 })
 
 describe("invariants", () => {
+  test("are left out of the score", () => {
+    const verdict = (kind: "section" | "invariant", pass: boolean) => ({ item: kind, kind, pass, reason: "" })
+    const verdicts = [verdict("section", true), verdict("section", false), verdict("invariant", true), verdict("invariant", true)]
+    expect(scored(verdicts).map(item => [item.kind, item.pass])).toEqual([["section", true], ["section", false]])
+  })
+
   test("pass a clean overview", () => {
     expect(invariants(result, "2026-10-08T18:00:00-07:00").every(verdict => verdict.pass)).toBe(true)
   })

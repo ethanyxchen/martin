@@ -38,10 +38,21 @@ export const Note = z.object({
 
 export const Repository = z.object({ folder: z.string(), slug: z.string() })
 
+export const Owner = z.strictObject({ name: z.string(), emails: z.array(z.string()), login: z.string() })
+
+export const Commit = z.strictObject({
+  date: z.iso.datetime({ offset: true }),
+  author: z.string(),
+  email: z.string(),
+  subject: z.string(),
+  branch: z.string(),
+})
+
 export const OverviewJob = z.object({
   kind: z.literal("overview"),
   provider: ProviderName,
   project: Project,
+  owner: Owner,
   cutoff: z.iso.datetime({ offset: true }),
   previous: Overview.nullable(),
   notes: z.array(Note),
@@ -65,6 +76,8 @@ export type LookupResult = z.infer<typeof LookupResult>
 export type ProviderName = z.infer<typeof ProviderName>
 export type Note = z.infer<typeof Note>
 export type Repository = z.infer<typeof Repository>
+export type Owner = z.infer<typeof Owner>
+export type Commit = z.infer<typeof Commit>
 export type OverviewJob = z.infer<typeof OverviewJob>
 export type LookupJob = z.infer<typeof LookupJob>
 export type Job = z.infer<typeof Job>

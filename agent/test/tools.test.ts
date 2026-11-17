@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test"
 import { $ } from "bun"
 import { join } from "node:path"
-import { type Activity, type Commit, github } from "../src/activity"
-import { commitBatch, pageLength, pullRequestLimit, readNote, repoActivity, Sources } from "../src/tools"
+import { type Activity, type Branch, execute, github, type PullRequest } from "../src/activity"
+import type { Commit } from "../src/schema"
+import { commitBatch, ownership, pageLength, pullRequestLimit, readNote, repoActivity, Sources } from "../src/tools"
 import { folder, note } from "./support"
 
 describe("read_note", () => {
@@ -59,19 +60,29 @@ describe("read_note", () => {
 })
 
 describe("repo_activity", () => {
-  function recorded(commits: Commit[], fail = false): Activity {
+  const owner = { name: "Ada Park", emails: ["ada@work.com", "ada@home.com"], login: "ada" }
+  const context = { owner, cutoff: "2026-11-16T18:00:00-08:00" }
+  const pull = (fields: Partial<PullRequest> = {}): PullRequest => ({
+    updatedAt: "2026-11-10T10:00:00Z", state: "OPEN", title: "Change", author: "ada", branch: "change", additions: 900, deletions: 40, changedFiles: 12, commits: 5, ...fields,
+  })
+
+  function recorded(commits: Commit[], fail = false, branches: Branch[] = []): Activity {
     return {
       commits: async (skip, count) => {
         if (fail) throw new Error("git failed")
         return commits.slice(skip, skip + count)
       },
-      pullRequests: async limit => Array.from({ length: Math.min(limit, 40) }, (_, index) => ({ updatedAt: "2026-11-10T10:00:00Z", state: "OPEN", title: `Change ${index}`, author: "priya" })),
+      pullRequests: async limit => Array.from({ length: Math.min(limit, 40) }, (_, index) => pull({ title: `Change ${index}`, author: "priya" })),
+      branches: async () => {
+        if (fail) throw new Error("git failed")
+        return branches
+      },
     }
   }
 
   test("pages through every commit without gaps", async () => {
-    const commits = Array.from({ length: commitBatch * 2 + 5 }, (_, index) => ({ date: "2026-11-10", author: "Ann <ann@example.com>", subject: `Commit ${index} ${"y".repeat(60)}` }))
-    const tool = repoActivity(recorded(commits), new Sources())
+    const commits = Array.from({ length: commitBatch * 2 + 5 }, (_, index) => ({ date: "2026-11-10T10:00:00Z", author: "Ann", email: "ann@example.com", subject: `Commit ${index} ${"y".repeat(60)}`, branch: "main" }))
+    const tool = repoActivity(recorded(commits), context, new Sources())
     const seen: string[] = []
     let cursor: string | null = null
     for (;;) {
@@ -86,22 +97,73 @@ describe("repo_activity", () => {
   })
 
   test("refuses cursors it did not issue", async () => {
-    const tool = repoActivity(recorded([]), new Sources())
+    const tool = repoActivity(recorded([]), context, new Sources())
     expect(await tool.run({ source: "commits", cursor: "made-up" })).toContain("Unknown cursor made-up")
   })
 
   test("tells an empty window apart from a failed read", async () => {
     const sources = new Sources()
-    expect(await repoActivity(recorded([]), sources).run({ source: "commits", cursor: null })).toBe("No commits in this window.")
+    expect(await repoActivity(recorded([]), context, sources).run({ source: "commits", cursor: null })).toBe("No commits in this window.")
     expect(sources.unresolved).toEqual([])
-    expect(await repoActivity(recorded([], true), sources).run({ source: "commits", cursor: null })).toBe("The repository's commits couldn't be read.")
+    expect(await repoActivity(recorded([], true), context, sources).run({ source: "commits", cursor: null })).toBe("The repository's commits couldn't be read.")
     expect(sources.unresolved).toEqual(["the repository's commits"])
   })
 
   test("says when the pull request cap was reached", async () => {
-    const page = await repoActivity(recorded([]), new Sources()).run({ source: "pullRequests", cursor: null })
-    expect(page).toContain("2026-11-10 open by priya: Change 0")
+    const page = await repoActivity(recorded([]), context, new Sources()).run({ source: "pullRequests", cursor: null })
+    expect(page).toContain("2026-11-10 open by priya, branch change, +900 −40 in 12 files, 5 commits: Change 0")
     expect(page).toContain(`The cap of ${pullRequestLimit} was reached`)
+  })
+
+  test("marks the owner's commits by name or email and names each commit's branch", async () => {
+    const commits = [
+      { date: "2026-11-10T10:00:00Z", author: "ada park", email: "ada@ci.com", subject: "By name", branch: "main" },
+      { date: "2026-11-09T10:00:00Z", author: "A. Park", email: "Ada@Home.com", subject: "By email", branch: "ada/editor" },
+      { date: "2026-11-08T10:00:00Z", author: "Priya", email: "priya@work.com", subject: "Someone else", branch: "priya/billing" },
+    ]
+    expect(await repoActivity(recorded(commits), context, new Sources()).run({ source: "commits", cursor: null })).toBe([
+      "2026-11-10 on main, owner: By name",
+      "2026-11-09 on ada/editor, owner: By email",
+      "2026-11-08 on priya/billing, Priya <priya@work.com>: Someone else",
+      "End of commits.",
+    ].join("\n"))
+  })
+
+  test("lists branches newest first with idle days, staleness, merge state and pull request", async () => {
+    const branch = (fields: Partial<Branch>): Branch => ({ name: "b", lastCommit: "2026-11-16T09:00:00-08:00", author: "Ada Park", email: "ada@work.com", ahead: 3, merged: false, pullRequest: null, ...fields })
+    const branches = [
+      branch({ name: "ada/old-idea", lastCommit: "2026-11-13T18:00:00-08:00" }),
+      branch({ name: "ada/editor", pullRequest: pull({ branch: "ada/editor", title: "Rebuild the editor" }) }),
+      branch({ name: "ada/shipped", lastCommit: "2026-11-02T10:00:00-08:00", ahead: 0, merged: true, pullRequest: pull({ state: "MERGED", title: "Ship it" }) }),
+      branch({ name: "priya/billing", lastCommit: "2026-11-15T12:00:00-08:00", author: "Priya", email: "priya@work.com", pullRequest: pull({ author: "priya", title: "Billing" }) }),
+    ]
+    expect(await repoActivity(recorded([], false, branches), context, new Sources()).run({ source: "branches", cursor: null })).toBe([
+      "ada/editor, owner · last commit 2026-11-16 · idle 0.4 days · 3 commits ahead of main, not merged · pull request open, +900 −40 in 12 files, 5 commits: Rebuild the editor",
+      "priya/billing, priya · last commit 2026-11-15 · idle 1.0 days · 3 commits ahead of main, not merged · pull request open, +900 −40 in 12 files, 5 commits: Billing",
+      "ada/old-idea, owner · last commit 2026-11-13 · idle 2.0 days, stale · 3 commits ahead of main, not merged · no pull request",
+      "ada/shipped, owner · last commit 2026-11-02 · idle 12.3 days · merged · pull request merged, +900 −40 in 12 files, 5 commits: Ship it",
+    ].join("\n"))
+  })
+
+  test("records unreadable branches as unresolved", async () => {
+    const sources = new Sources()
+    expect(await repoActivity(recorded([], true), context, sources).run({ source: "branches", cursor: null })).toBe("The repository's branches couldn't be read.")
+    expect(sources.unresolved).toEqual(["the repository's branches"])
+  })
+})
+
+describe("ownership", () => {
+  const owns = ownership({ name: "Ada Park", emails: ["ada@work.com", "ada@home.com"], login: "AdaP" })
+
+  test("a commit is the owner's when its name or any of their emails matches, ignoring case", () => {
+    expect(owns.commit({ author: "Ada Park", email: "bot@ci.com" })).toBe(true)
+    expect(owns.commit({ author: "A. Park", email: "ADA@home.com" })).toBe(true)
+    expect(owns.commit({ author: "Ada", email: "ada@other.com" })).toBe(false)
+  })
+
+  test("a pull request is the owner's when its login matches", () => {
+    expect(owns.pull("adap")).toBe(true)
+    expect(owns.pull("ada")).toBe(false)
   })
 })
 
@@ -116,7 +178,7 @@ describe("github activity", () => {
     const activity = github({ folder: repository, slug: "ann/lumen" }, { since: new Date(Date.now() - 60_000), until: new Date(Date.now() + 60_000) })
     const commits = await activity.commits(0, 10)
     expect(commits.map(commit => commit.subject).sort()).toEqual(["first", "second"])
-    expect(commits.find(commit => commit.subject === "second")?.author).toBe("Bo <bo@example.com>")
+    expect(commits.find(commit => commit.subject === "second")).toMatchObject({ author: "Bo", email: "bo@example.com", branch: "side" })
   })
 
   test("reads branches and tags but skips other refs", async () => {
@@ -135,5 +197,45 @@ describe("github activity", () => {
   test("fails rather than returning nothing when git fails", async () => {
     const activity = github({ folder: join(await folder(), "missing"), slug: "ann/lumen" }, { since: new Date(0), until: new Date() })
     expect(activity.commits(0, 10)).rejects.toThrow()
+  })
+})
+
+describe("github branches", () => {
+  test("lists recent branches with their last commit, distance from main, merge state and pull request", async () => {
+    const repository = await folder()
+    const git = (date: string, ...args: string[]) => $`git -C ${repository} ${args}`
+      .env({ ...process.env, GIT_AUTHOR_NAME: "Ada", GIT_AUTHOR_EMAIL: "ada@example.com", GIT_COMMITTER_NAME: "Ada", GIT_COMMITTER_EMAIL: "ada@example.com", GIT_AUTHOR_DATE: date, GIT_COMMITTER_DATE: date })
+      .quiet()
+    const commit = (date: string, subject: string) => git(date, "commit", "-q", "--allow-empty", "-m", subject)
+    await git("2026-11-01T10:00:00Z", "init", "-q", "-b", "main")
+    await git("2026-11-01T10:00:00Z", "remote", "add", "origin", "https://example.com/ada/lumen.git")
+    await commit("2026-09-01T10:00:00Z", "Start")
+    await git("2026-09-01T10:00:00Z", "branch", "ancient")
+    await git("2026-11-02T10:00:00Z", "switch", "-q", "-c", "shipped")
+    await commit("2026-11-02T10:00:00Z", "Shipped work")
+    await git("2026-11-03T10:00:00Z", "switch", "-q", "main")
+    await git("2026-11-03T10:00:00Z", "merge", "-q", "--no-ff", "shipped", "-m", "Merge shipped")
+    await git("2026-11-05T10:00:00Z", "switch", "-q", "-c", "squashed")
+    await commit("2026-11-05T10:00:00Z", "Squashed work")
+    await git("2026-11-06T10:00:00Z", "switch", "-q", "main")
+    await git("2026-11-06T10:00:00Z", "switch", "-q", "-c", "editor")
+    await commit("2026-11-06T10:00:00Z", "Editor one")
+    await commit("2026-11-07T10:00:00Z", "Editor two")
+    await git("2026-11-07T10:00:00Z", "update-ref", "refs/remotes/origin/editor", "HEAD~1")
+    await git("2026-11-07T10:00:00Z", "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/editor")
+    const pulls = [
+      { title: "Editor", state: "OPEN", updatedAt: "2026-11-07T10:00:00Z", mergedAt: null, author: { login: "ada" }, headRefName: "editor", additions: 900, deletions: 10, changedFiles: 9, commits: [{}, {}] },
+      { title: "Squashed", state: "MERGED", updatedAt: "2026-11-06T09:00:00Z", mergedAt: "2026-11-06T09:00:00Z", author: { login: "ada" }, headRefName: "squashed", additions: 5, deletions: 1, changedFiles: 1, commits: [{}] },
+    ]
+    const run = async (argv: string[]) => argv[0] === "gh" ? JSON.stringify(pulls) : execute(argv)
+    const activity = github({ folder: repository, slug: "ada/lumen" }, { since: new Date("2026-11-05T00:00:00Z"), until: new Date("2026-11-08T00:00:00Z") }, run)
+    const branches = (await activity.branches()).map(({ pullRequest, lastCommit, ...branch }) => ({ ...branch, lastCommit: Date.parse(lastCommit), pull: pullRequest?.title ?? null }))
+    expect(branches.toSorted((a, b) => a.name.localeCompare(b.name))).toEqual([
+      { name: "editor", lastCommit: Date.parse("2026-11-07T10:00:00Z"), author: "Ada", email: "ada@example.com", ahead: 2, merged: false, pull: "Editor" },
+      { name: "shipped", lastCommit: Date.parse("2026-11-02T10:00:00Z"), author: "Ada", email: "ada@example.com", ahead: 0, merged: true, pull: null },
+      { name: "squashed", lastCommit: Date.parse("2026-11-05T10:00:00Z"), author: "Ada", email: "ada@example.com", ahead: 0, merged: true, pull: "Squashed" },
+    ])
+    const commits = await activity.commits(0, 10)
+    expect(commits.map(commit => [commit.subject, commit.branch])).toEqual([["Editor two", "editor"], ["Editor one", "editor"], ["Squashed work", "squashed"]])
   })
 })
