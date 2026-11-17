@@ -109,7 +109,7 @@ export function repoActivity(activity: Activity, sources: Sources): Tool {
 
   return tool({
     name: "repo_activity",
-    description: "Read the linked repository's activity since the last read. Source commits pages through every branch's commits with dates and authors; pass cursor null to start and the cursor it reports to continue. Source pullRequests lists recently updated pull requests with their current state and author; its cursor is ignored.",
+    description: "Read the linked repository's activity since the last read. Source commits pages through commits on local branches, remote branches and tags, with dates and authors; pass cursor null to start and the cursor it reports to continue. Source pullRequests lists recently updated pull requests with their current state and author; its cursor is ignored.",
     input: z.strictObject({ source: z.enum(["commits", "pullRequests"]), cursor: z.string().nullable() }),
     run: ({ source, cursor }) => source === "commits" ? commits(cursor) : pullRequests(),
   })

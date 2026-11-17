@@ -28,7 +28,7 @@ export function github(repository: Repository, window: Window, run = execute): A
   return {
     commits: async (skip, count) => {
       const output = await run([
-        "git", "-C", repository.folder, "log", "--all", `--since=${since}`, `--until=${until}`, "--date=short",
+        "git", "-C", repository.folder, "log", "--branches", "--remotes", "--tags", `--since=${since}`, `--until=${until}`, "--date=short",
         `--pretty=format:%ad${separator}%an <%ae>${separator}%s`, `--skip=${skip}`, "-n", `${count}`,
       ])
       return output.split("\n").filter(Boolean).map(line => {
