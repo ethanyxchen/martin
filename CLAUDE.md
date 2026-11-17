@@ -15,3 +15,7 @@ The build must stay free of compiler warnings. The pre-commit hook in `.githooks
 Run `swift test --package-path app`.
 
 Every bug fix and behaviour change comes with a regression test that fails without the change and passes with it; confirm both before committing. Logic in `MartinKit` is tested in `MartinKitTests`; app code in `app/Martin` (windows, views, the editor) is tested in `MartinTests` through `@testable import Martin`. Build any windows a test needs without ordering them on screen. Fall back to checking by hand in the built app only when a behaviour cannot be reached from a test, and say so in the PR.
+
+# Benchmarking the agent
+
+Run `bun run eval` in `agent/` with `claude-haiku-5-5` or `claude-sonnet-5-5` only. Never benchmark on Opus unless the owner asks for it in that conversation: on the full benchmark it scored within a few checks of Haiku at about fifteen times the agent cost.
