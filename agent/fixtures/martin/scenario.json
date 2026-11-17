@@ -2497,14 +2497,9 @@
             "updated": "2026-10-26"
           },
           {
-            "id": "the Markdown notes editor: the TextKit 2 source Markdown editor, inline markers, cobalt bullets and the @-mentions branch in progress",
+            "id": "the Markdown notes editor: the TextKit 2 source Markdown editor, including the TextKit 2 branch left on Oct 21, inline markers, cobalt bullets and the @-mentions branch in progress",
             "section": "now",
             "updated": "2026-10-26"
-          },
-          {
-            "id": "rebuilding the notes editor on TextKit 2, the branch left on Oct 21",
-            "section": "shelved",
-            "updated": "2026-10-21"
           },
           {
             "id": "one-line pull request summaries and talking points on the meeting page, the branch left on Oct 21",
@@ -2557,9 +2552,8 @@
             "updated": "2026-10-29"
           },
           {
-            "id": "rebuilding the notes editor on TextKit 2, the branch left on Oct 21",
-            "section": "shelved",
-            "updated": "2026-10-21"
+            "id": "the TextKit 2 notes editor branch left on Oct 21, which belongs to the finished editor work and must not be listed as shelved",
+            "section": "absent"
           },
           {
             "id": "one-line pull request summaries and talking points on the meeting page, the branch left on Oct 21",
@@ -2625,9 +2619,8 @@
             "updated": "2026-10-29"
           },
           {
-            "id": "rebuilding the notes editor on TextKit 2, the branch left on Oct 21",
-            "section": "shelved",
-            "updated": "2026-10-21"
+            "id": "the TextKit 2 notes editor branch left on Oct 21, which belongs to the finished editor work and must not be listed as shelved",
+            "section": "absent"
           },
           {
             "id": "one-line pull request summaries and talking points on the meeting page, the branch left on Oct 21",
@@ -2692,9 +2685,8 @@
             "updated": "2026-11-16"
           },
           {
-            "id": "rebuilding the notes editor on TextKit 2, the branch left on Oct 21",
-            "section": "shelved",
-            "updated": "2026-10-21"
+            "id": "the TextKit 2 notes editor branch left on Oct 21, which belongs to the finished editor work and must not be listed as shelved",
+            "section": "absent"
           },
           {
             "id": "one-line pull request summaries and talking points on the meeting page, the branch left on Oct 21",
