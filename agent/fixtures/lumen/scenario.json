@@ -1,0 +1,294 @@
+{
+  "project": "Lumen",
+  "owner": {
+    "name": "Me",
+    "emails": [
+      "me@example.com"
+    ],
+    "login": "me"
+  },
+  "repository": {
+    "folder": ".",
+    "slug": "example/lumen"
+  },
+  "commits": [
+    {
+      "date": "2026-10-02T14:00:00-07:00",
+      "author": "Me",
+      "email": "me@example.com",
+      "subject": "Add new welcome screens",
+      "branch": "onboarding-redesign"
+    },
+    {
+      "date": "2026-10-07T11:00:00-07:00",
+      "author": "Priya",
+      "email": "priya@example.com",
+      "subject": "Move billing webhooks to the new payments provider",
+      "branch": "priya/payments-provider"
+    },
+    {
+      "date": "2026-10-08T14:00:00-07:00",
+      "author": "Me",
+      "email": "me@example.com",
+      "subject": "Prototype album invite links",
+      "branch": "shared-albums"
+    },
+    {
+      "date": "2026-10-13T14:00:00-07:00",
+      "author": "Me",
+      "email": "me@example.com",
+      "subject": "Ship the new photo permissions prompt",
+      "branch": "onboarding-redesign"
+    },
+    {
+      "date": "2026-10-16T14:00:00-07:00",
+      "author": "Priya",
+      "email": "priya@example.com",
+      "subject": "Double-write invoices to both payment providers",
+      "branch": "priya/payments-provider"
+    },
+    {
+      "date": "2026-10-17T14:00:00-07:00",
+      "author": "Me",
+      "email": "me@example.com",
+      "subject": "Album feed and invite acceptance",
+      "branch": "shared-albums"
+    },
+    {
+      "date": "2026-10-21T14:00:00-07:00",
+      "author": "Me",
+      "email": "me@example.com",
+      "subject": "Measure photo upload timings",
+      "branch": "upload-performance"
+    }
+  ],
+  "pullRequests": [
+    {
+      "title": "Onboarding redesign",
+      "author": "me",
+      "branch": "onboarding-redesign",
+      "createdAt": "2026-10-02T15:00:00-07:00",
+      "mergedAt": "2026-10-14T17:00:00Z",
+      "closedAt": "2026-10-14T17:00:00Z",
+      "additions": 1240,
+      "deletions": 380,
+      "changedFiles": 22,
+      "commits": 2
+    },
+    {
+      "title": "Billing webhooks on the new provider",
+      "author": "priya",
+      "branch": "priya/payments-provider",
+      "createdAt": "2026-10-07T11:30:00-07:00",
+      "mergedAt": "2026-10-07T18:00:00Z",
+      "closedAt": "2026-10-07T18:00:00Z",
+      "additions": 410,
+      "deletions": 120,
+      "changedFiles": 9,
+      "commits": 1
+    },
+    {
+      "title": "Shared albums",
+      "author": "me",
+      "branch": "shared-albums",
+      "createdAt": "2026-10-08T15:00:00-07:00",
+      "mergedAt": null,
+      "closedAt": null,
+      "additions": 1630,
+      "deletions": 90,
+      "changedFiles": 27,
+      "commits": 2
+    }
+  ],
+  "stages": [
+    {
+      "name": "1-kickoff",
+      "cutoff": "2026-09-30T18:00:00-07:00",
+      "notes": [
+        {
+          "id": "kickoff",
+          "title": "Lumen planning kickoff",
+          "date": "2026-09-29T10:00:00-07:00",
+          "changedAt": "2026-09-29T11:00:00-07:00",
+          "file": "notes/kickoff.md"
+        }
+      ],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "onboarding redesign",
+            "section": "now"
+          },
+          {
+            "id": "shared albums",
+            "section": "next"
+          },
+          {
+            "id": "billing migration, which is Priya's",
+            "section": "absent"
+          }
+        ],
+        "tolerated": [
+          "Dark mode in Next, since the kickoff plans it after shared albums",
+          "The home screen widget in Next or Shelved, since the kickoff floats it without scheduling it"
+        ]
+      }
+    },
+    {
+      "name": "2-started-albums",
+      "cutoff": "2026-10-08T18:00:00-07:00",
+      "notes": [
+        {
+          "id": "kickoff",
+          "title": "Lumen planning kickoff",
+          "date": "2026-09-29T10:00:00-07:00",
+          "changedAt": "2026-09-29T11:00:00-07:00",
+          "file": "notes/kickoff.md"
+        },
+        {
+          "id": "sync",
+          "title": "Weekly sync",
+          "date": "2026-10-06T10:00:00-07:00",
+          "changedAt": "2026-10-06T10:40:00-07:00",
+          "file": "notes/sync.md"
+        }
+      ],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "onboarding redesign",
+            "section": "now"
+          },
+          {
+            "id": "shared albums",
+            "section": "now"
+          },
+          {
+            "id": "billing migration, which is Priya's",
+            "section": "absent"
+          }
+        ],
+        "tolerated": [
+          "Dark mode in Next, since the kickoff plans it after shared albums",
+          "The home screen widget in Next or Shelved, since the kickoff floats it without scheduling it"
+        ]
+      }
+    },
+    {
+      "name": "3-shipped-and-shelved",
+      "cutoff": "2026-10-15T18:00:00-07:00",
+      "notes": [
+        {
+          "id": "kickoff",
+          "title": "Lumen planning kickoff",
+          "date": "2026-09-29T10:00:00-07:00",
+          "changedAt": "2026-09-29T11:00:00-07:00",
+          "file": "notes/kickoff.md"
+        },
+        {
+          "id": "sync",
+          "title": "Weekly sync",
+          "date": "2026-10-06T10:00:00-07:00",
+          "changedAt": "2026-10-06T10:40:00-07:00",
+          "file": "notes/sync.md"
+        },
+        {
+          "id": "retro",
+          "title": "October retro",
+          "date": "2026-10-14T15:00:00-07:00",
+          "changedAt": "2026-10-14T16:30:00-07:00",
+          "file": "notes/retro.md"
+        }
+      ],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "onboarding redesign, shipped on Oct 14",
+            "section": "absent"
+          },
+          {
+            "id": "shared albums",
+            "section": "now"
+          },
+          {
+            "id": "home screen widget",
+            "section": "shelved"
+          },
+          {
+            "id": "billing migration, which is Priya's",
+            "section": "absent"
+          }
+        ],
+        "tolerated": [
+          "Dark mode in Next, since the kickoff plans it after shared albums",
+          "Notifications for new album photos in Next, since the retro says the owner is on them next"
+        ]
+      }
+    },
+    {
+      "name": "4-dropped-and-unchanged",
+      "cutoff": "2026-10-21T18:00:00-07:00",
+      "notes": [
+        {
+          "id": "kickoff",
+          "title": "Lumen planning kickoff",
+          "date": "2026-09-29T10:00:00-07:00",
+          "changedAt": "2026-10-20T09:00:00-07:00",
+          "file": "notes/kickoff-edited.md"
+        },
+        {
+          "id": "sync",
+          "title": "Weekly sync",
+          "date": "2026-10-06T10:00:00-07:00",
+          "changedAt": "2026-10-06T10:40:00-07:00",
+          "file": "notes/sync.md"
+        },
+        {
+          "id": "retro",
+          "title": "October retro",
+          "date": "2026-10-14T15:00:00-07:00",
+          "changedAt": "2026-10-14T16:30:00-07:00",
+          "file": "notes/retro.md"
+        },
+        {
+          "id": "performance",
+          "title": "Performance audit kickoff",
+          "date": "2026-10-21T11:00:00-07:00",
+          "changedAt": "2026-10-21T11:30:00-07:00",
+          "file": "notes/performance.md"
+        }
+      ],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "shared albums",
+            "section": "now"
+          },
+          {
+            "id": "photo upload performance audit",
+            "section": "now"
+          },
+          {
+            "id": "home screen widget",
+            "section": "shelved"
+          },
+          {
+            "id": "onboarding redesign, shipped on Oct 14",
+            "section": "absent"
+          },
+          {
+            "id": "dark mode, dropped on Oct 20",
+            "section": "absent"
+          },
+          {
+            "id": "billing migration, which is Priya's",
+            "section": "absent"
+          }
+        ],
+        "tolerated": [
+          "Notifications for new album photos in Next, since the retro says the owner is on them next"
+        ]
+      }
+    }
+  ]
+}

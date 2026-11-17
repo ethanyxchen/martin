@@ -7,23 +7,27 @@ import { provider } from "../src/providers"
 import type { Effort, Outcome, Usage } from "../src/providers/provider"
 import { runJob } from "../src/run"
 import type { Overview, OverviewResult, ProviderName } from "../src/schema"
+import { invariants, judge, judgeModel, type Kind, material, type Verdict } from "./judge"
 import { cost, priced } from "./prices"
-import { type Check, check, fixtures, library, type Stage, type Suite } from "./stages"
+import { connect, type Project, projects, type Stage } from "./scenario"
 
-type Run = { label: string, stage: string, seconds: number, calls: { tool: string, input: unknown }[] } & (
-  | { error: string }
-  | { outcome: Outcome<OverviewResult>, cost: number, checks: Check[] }
-)
-
-const usage = "Usage: bun run eval --provider anthropic|openai (--fixtures <folder> | --data <library> --project <name> --snapshots <YYYY-MM-DD,...>) [--scratch] [--model <id>] [--effort low|medium|high|xhigh] [--out <folder>]"
+type Run = {
+  project: string
+  label: string
+  stage: string
+  seconds: number
+  calls: { tool: string, input: unknown }[]
+  outcome?: Outcome<OverviewResult>
+  cost?: number
+  judge?: { cost: number, cached: boolean }
+  verdicts: Verdict[]
+  error?: string
+}
 
 const { values } = parseArgs({
   options: {
     provider: { type: "string", default: "anthropic" },
-    fixtures: { type: "string" },
-    data: { type: "string" },
     project: { type: "string" },
-    snapshots: { type: "string" },
     scratch: { type: "boolean", default: false },
     model: { type: "string" },
     effort: { type: "string" },
@@ -34,80 +38,115 @@ const { values } = parseArgs({
 const name = values.provider as ProviderName
 const model = values.model ?? models[name]
 if (!priced(model)) exit(`No price for ${model}, so its runs can't be costed. Add it to eval/prices.ts.`)
-const suite = await load()
+const selected = await projects(join(import.meta.dir, "..", "fixtures"), values.project)
+if (!selected.length) exit(values.project ? `No project named ${values.project}.` : "No projects in fixtures/.")
 const out = values.out ?? join(import.meta.dir, "out", `${new Date().toISOString().replace(/[:.]/g, "-")}-${model}`)
-await mkdir(out, { recursive: true })
-console.log(`${suite.kind} · ${suite.project} · ${model}${values.effort ? ` · ${values.effort}` : ""}\n`)
+const cache = join(import.meta.dir, "cache")
+const agent = provider(name)
+const grader = provider("anthropic")
+console.log(`${selected.map(project => project.scenario.project).join(", ")} · ${model}${values.effort ? ` · ${values.effort}` : ""} · judged by ${judgeModel}\n`)
 
-const runs: Run[] = []
-let previous: Overview | null = null
-for (const stage of suite.stages) {
-  const run = await attempt(stage, previous, "chained")
-  runs.push(run)
-  if ("error" in run) break
-  previous = { ...run.outcome.result, readAt: stage.cutoff }
-}
-const last = suite.stages.at(-1)
-if (values.scratch && last) runs.push(await attempt(last, null, "scratch"))
-
-await Bun.write(join(out, "summary.json"), JSON.stringify(runs, null, 2))
+const runs = (await Promise.all(selected.map(replay))).flat()
+await Bun.write(join(out, "summary.json"), JSON.stringify({ model, effort: values.effort ?? null, judge: judgeModel, runs }, null, 2))
 report(runs)
 
-async function load(): Promise<Suite> {
-  if (values.fixtures) return fixtures(values.fixtures)
-  if (values.data && values.project && values.snapshots) return library(values.data, values.project, values.snapshots.split(","))
-  return exit(usage)
+async function replay(project: Project): Promise<Run[]> {
+  await mkdir(join(out, project.id), { recursive: true })
+  const runs: Run[] = []
+  let previous: Overview | null = null
+  for (const stage of project.stages) {
+    const run = await attempt(project, stage, previous, "chained")
+    runs.push(run)
+    if (!run.outcome) break
+    previous = { ...run.outcome.result, readAt: stage.cutoff }
+  }
+  const last = project.stages.at(-1)
+  if (values.scratch && last) runs.push(await attempt(project, last, null, "scratch"))
+  return runs
 }
 
-async function attempt(stage: Stage, previous: Overview | null, label: string): Promise<Run> {
-  const calls: Run["calls"] = []
-  const job = { kind: "overview" as const, provider: name, project: { name: suite.project }, cutoff: stage.cutoff, previous, notes: stage.notes, repository: suite.repository }
+async function attempt(project: Project, stage: Stage, previous: Overview | null, label: string): Promise<Run> {
+  const { scenario } = project
+  const job = { kind: "overview" as const, provider: name, project: { name: scenario.project }, cutoff: stage.cutoff, previous, notes: stage.notes, repository: scenario.repository }
+  const run: Run = { project: scenario.project, label, stage: stage.name, seconds: 0, calls: [], verdicts: [] }
   const started = performance.now()
-  const seconds = () => (performance.now() - started) / 1000
-  let run: Run
   try {
-    const outcome = await runJob(job, provider(name), event => event.type === "progress" && calls.push({ tool: event.tool, input: event.input }), {
-      connect: suite.connect,
+    run.outcome = await runJob(job, agent, event => event.type === "progress" && run.calls.push({ tool: event.tool, input: event.input }), {
+      connect: connect(scenario),
       model,
       effort: values.effort as Effort | undefined,
     }) as Outcome<OverviewResult>
-    run = { label, stage: stage.name, seconds: seconds(), calls, outcome, cost: cost(outcome.model, outcome.requests), checks: check(outcome.result, stage.expect) }
+    run.cost = cost(run.outcome.model, run.outcome.requests)
   } catch (error) {
-    run = { label, stage: stage.name, seconds: seconds(), calls, error: error instanceof Failure ? error.message : String(error) }
+    run.error = message(error)
   }
-  await Bun.write(join(out, `${label}-${stage.name}.json`), JSON.stringify({ job, ...run }, null, 2))
+  run.seconds = (performance.now() - started) / 1000
+  if (run.outcome) {
+    run.verdicts = invariants(run.outcome.result, stage.cutoff)
+    try {
+      const judgement = await judge(stage.rubric, run.outcome.result, await material(project, stage), grader, cache)
+      run.judge = { cost: judgement.cost, cached: judgement.cached }
+      run.verdicts.push(...judgement.verdicts)
+    } catch (error) {
+      run.error = `The judge failed: ${message(error)}`
+    }
+  }
+  await Bun.write(join(out, project.id, `${label}-${stage.name}.json`), JSON.stringify({ job, ...run }, null, 2))
   console.log(line(run))
   return run
 }
 
 function line(run: Run): string {
-  const head = `${run.label.padEnd(8)} ${run.stage.padEnd(26)} ${run.seconds.toFixed(1).padStart(6)}s`
-  if ("error" in run) return `${head}  error: ${run.error}`
+  const head = `${run.project.padEnd(10)} ${run.label.padEnd(8)} ${run.stage.padEnd(26)} ${run.seconds.toFixed(1).padStart(6)}s`
+  if (!run.outcome) return `${head}  error: ${run.error}`
   const total = sum(run.outcome.requests)
-  const thousands = (value: number) => `${(value / 1000).toFixed(1)}k`
   return [
     head,
-    `$${run.cost.toFixed(4)}`,
+    `agent $${run.cost!.toFixed(4)}`,
+    run.judge ? `judge $${run.judge.cost.toFixed(4)}${run.judge.cached ? " cached" : ""}` : "",
     `${run.outcome.requests.length} req`,
-    `in ${thousands(total.input)}`,
-    `cached ${thousands(total.cacheRead + total.cacheWrite)}`,
+    `in ${thousands(total.input + total.cacheRead + total.cacheWrite)}`,
     `out ${thousands(total.output)}`,
     `${run.calls.length} calls`,
-    run.checks.length ? `${run.checks.filter(item => item.pass).length}/${run.checks.length} checks` : "",
+    `${passed(run.verdicts)}/${run.verdicts.length}`,
+    run.error ?? "",
   ].filter(Boolean).join("  ")
 }
 
 function report(runs: Run[]) {
-  const completed = runs.flatMap(run => "error" in run ? [] : [run])
-  const checks = completed.flatMap(run => run.checks)
-  const problems = runs.flatMap(run => "error" in run
-    ? [`${run.label} ${run.stage}: ${run.error}`]
-    : run.checks.filter(item => !item.pass).map(item => `${run.label} ${run.stage}: ${item.task} expected ${item.in}, found ${item.found}`))
+  const verdicts = runs.flatMap(run => run.verdicts)
+  const kinds: Kind[] = ["section", "caption", "date", "order", "precision", "invariant"]
+  const projectsLine = [...new Set(runs.map(run => run.project))].map(project => {
+    const group = runs.filter(run => run.project === project).flatMap(run => run.verdicts)
+    return `${project} ${passed(group)}/${group.length}`
+  })
+  const kindsLine = kinds.flatMap(kind => {
+    const group = verdicts.filter(verdict => verdict.kind === kind)
+    return group.length ? [`${kind} ${passed(group)}/${group.length}`] : []
+  })
+  const completed = runs.flatMap(run => run.outcome ? [run] : [])
+  const tokens = sum(completed.flatMap(run => run.outcome!.requests))
   const seconds = runs.reduce((total, run) => total + run.seconds, 0)
-  const dollars = completed.reduce((total, run) => total + run.cost, 0)
-  console.log(`\n${checks.filter(item => item.pass).length}/${checks.length} checks · ${seconds.toFixed(0)}s · $${dollars.toFixed(4)} · ${out}`)
+  const agentCost = completed.reduce((total, run) => total + run.cost!, 0)
+  const judgeCost = runs.reduce((total, run) => total + (run.judge?.cost ?? 0), 0)
+  const calls = runs.reduce((total, run) => total + run.calls.length, 0)
+  console.log(`\n${passed(verdicts)}/${verdicts.length} passed · ${projectsLine.join(" · ")}`)
+  console.log(kindsLine.join(" · "))
+  console.log(`${seconds.toFixed(0)}s · in ${thousands(tokens.input + tokens.cacheRead + tokens.cacheWrite)} out ${thousands(tokens.output)} · agent $${agentCost.toFixed(4)} · judge $${judgeCost.toFixed(4)} · ${calls} tool calls · ${out}`)
+  const problems = runs.flatMap(run => [
+    ...(run.error ? [`${run.project} ${run.label} ${run.stage}: ${run.error}`] : []),
+    ...run.verdicts.filter(verdict => !verdict.pass).map(verdict => `${run.project} ${run.label} ${run.stage}: ${verdict.item}: ${verdict.reason}`),
+  ])
   for (const problem of problems) console.log(`  ✗ ${problem}`)
   process.exitCode = problems.length ? 1 : 0
+}
+
+function passed(verdicts: Verdict[]): number {
+  return verdicts.filter(verdict => verdict.pass).length
+}
+
+function thousands(value: number): string {
+  return `${(value / 1000).toFixed(1)}k`
 }
 
 function sum(requests: Usage[]): Usage {
@@ -119,7 +158,11 @@ function sum(requests: Usage[]): Usage {
   }), { input: 0, cacheRead: 0, cacheWrite: 0, output: 0 })
 }
 
-function exit(message: string): never {
-  console.error(message)
+function message(error: unknown): string {
+  return error instanceof Failure ? error.message : String(error)
+}
+
+function exit(text: string): never {
+  console.error(text)
   process.exit(2)
 }
