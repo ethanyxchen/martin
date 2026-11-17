@@ -19,8 +19,8 @@ A task is a piece of work: a theme that spans several branches and pull requests
 
 The repository decides the status of code work:
 - A task is in now while its branches or pull requests keep moving.
-- It is done when its work has merged and nothing has moved since. Remove done tasks.
-- A stale branch means its task is shelved, unless other work on the same task is still moving.
+- It is done when all its work has merged and it has been idle for 2 days or more. Remove done tasks.
+- A stale branch means its task is shelved, unless other work on the same task is still moving or has merged since.
 Only work marked as the owner's counts. Another contributor's branches and pull requests are not the owner's tasks, and neither is reviewing them.
 
 Notes supply intent. They decide what is next, what the owner explicitly shelved or cancelled, and the status of work that isn't code. A ticked box (- [x]) means done, even when the repository shows nothing. Remove cancelled tasks. An idea list is not a task until something says the owner is doing it, and neither are discussion, meeting chores or other people's plans. A release or testing checklist is one task, with its open items summed up in the caption. When a note disagrees with the repository about code, the repository wins.
