@@ -42,6 +42,8 @@ if [[ "$(git rev-parse --absolute-git-dir)" != "$(git rev-parse --path-format=ab
   tile="${worktree_tiles[$(( $(printf '%s' "$worktree" | cksum | cut -d ' ' -f 1) % ${#worktree_tiles[@]} ))]}"
   swift scripts/render-icon.swift "$tile" "$staging_directory/Martin.iconset"
   iconutil --convert icns "$staging_directory/Martin.iconset" --output "$app_bundle/Contents/Resources/Martin.icns"
+elif [[ -n "${POSTHOG_PROJECT_TOKEN:-}" ]]; then
+  plutil -insert PostHogProjectToken -string "$POSTHOG_PROJECT_TOKEN" "$app_bundle/Contents/Info.plist"
 fi
 plutil -lint "$app_bundle/Contents/Info.plist"
 for code in "$sparkle/Versions/B/Autoupdate" "$sparkle/Versions/B/Updater.app" "$sparkle"; do

@@ -1,5 +1,6 @@
 import AppKit
 import MartinKit
+import PostHog
 import SwiftUI
 
 @main
@@ -65,7 +66,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let updater = Updater()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if let config = Telemetry.config() { PostHogSDK.shared.setup(config) }
         app.show()
+        PostHogSDK.shared.logger?.info("application launch completed", attributes: ["runtime": "macos"])
         Task { await app.suggestRepositories() }
     }
 
@@ -93,6 +96,7 @@ final class AppState {
     private(set) var suggestions: [Project.ID: RepositorySuggestion] = [:]
     @ObservationIgnored private var scouting: Task<[Repository], Never>?
     @ObservationIgnored private var lookupRound = 0
+    @ObservationIgnored private let aiSessionID = UUID().uuidString
     var page: HomePage {
         didSet { defaults.set(page.rawValue, forKey: Self.pageKey) }
     }
@@ -208,34 +212,38 @@ final class AppState {
     }
 
     func start(_ event: CalendarEvent) {
-        begin { try library.meeting(for: event) }
+        begin({ try library.meeting(for: event) }, source: "calendar")
     }
 
     func quickNote() {
-        begin(newQuickNote)
+        begin(newQuickNote, source: "quick_note")
     }
 
     func newQuickNote() throws -> Meeting {
         try library.create(project: focusedProject?.id)
     }
 
-    private func begin(_ make: () throws -> Meeting) {
+    private func begin(_ make: () throws -> Meeting, source: String) {
         do {
             let meeting = try make()
             reload()
             open(meeting)
+            PostHogSDK.shared.capture("note_created", properties: ["source": source])
+            PostHogSDK.shared.logger?.info("note creation completed", attributes: ["source": source])
         } catch {
             explain(error)
         }
     }
 
     func file(_ meeting: Meeting, in project: Project.ID?) {
-        try? library.file(self.meeting(meeting.id) ?? meeting, in: project)
+        guard (try? library.file(self.meeting(meeting.id) ?? meeting, in: project)) != nil else { return }
         reload()
+        PostHogSDK.shared.capture("note_moved_to_project", properties: ["assignment": project == nil ? "unassigned" : "project"])
     }
 
     func file(_ meeting: Meeting, inNewProjectNamed name: String) {
         guard let project = try? library.createProject(named: name) else { return }
+        PostHogSDK.shared.capture("project_created", properties: ["source": "note_filing"])
         file(meeting, in: project.id)
     }
 
@@ -255,27 +263,31 @@ final class AppState {
     func pin(_ meeting: Meeting, _ pinned: Bool) {
         var changed = self.meeting(meeting.id) ?? meeting
         changed.pinnedAt = pinned ? .now : nil
-        try? library.save(changed)
+        guard (try? library.save(changed)) != nil else { return }
         reload()
+        PostHogSDK.shared.capture("note_pin_changed", properties: ["pinned": pinned])
     }
 
     func archive(_ meeting: Meeting) {
         dismiss([meeting])
         var archived = self.meeting(meeting.id) ?? meeting
         archived.archivedAt = .now
-        try? library.save(archived)
+        guard (try? library.save(archived)) != nil else { return }
         reload()
+        PostHogSDK.shared.capture("note_archived")
     }
 
     func restore(_ meeting: Meeting) {
-        try? library.restore(self.meeting(meeting.id) ?? meeting)
+        guard (try? library.restore(self.meeting(meeting.id) ?? meeting)) != nil else { return }
         reload()
+        PostHogSDK.shared.capture("note_restored")
     }
 
     func delete(_ meeting: Meeting) {
         dismiss([meeting])
-        try? library.delete(meeting)
+        guard (try? library.delete(meeting)) != nil else { return }
         reload()
+        PostHogSDK.shared.capture("note_deleted")
     }
 
     func confirmDeletion(of meeting: Meeting) {
@@ -294,12 +306,13 @@ final class AppState {
     func link(_ project: Project, to repository: RepositoryLink?) {
         guard var linked = allProjects.first(where: { $0.id == project.id }), linked.repository != repository else { return }
         linked.repository = repository
-        try? library.save(linked)
+        guard (try? library.save(linked)) != nil else { return }
         if let folder = repository?.folder {
             try? library.save(RepositoryLookup(folder: folder), for: project.id)
             suggestions[project.id] = .found(Repository(at: folder))
         }
         reload()
+        PostHogSDK.shared.capture("repository_link_changed", properties: ["link_state": repository == nil ? "removed" : "linked"])
     }
 
     func chooseRepository(for project: Project) {
@@ -345,11 +358,39 @@ final class AppState {
         if scouting == nil { await scoutRepositories() }
         let candidates = await scouting?.value ?? []
         let notes = notes(in: project).prefix(Agent.noteLimit).map { "# \($0.displayTitle)\n\(library.note(of: $0) ?? "")" }
-        let matches = await finder.match(project, notes, candidates, assistant)
+        let session = aiSessionID
+        let trace = UUID().uuidString
+        let matches = await Assistant.$generationObserver.withValue({ Self.capture($0, trace: trace, session: session) }) {
+            await finder.match(project, notes, candidates, assistant)
+        }
         let repository = await Task.detached { Agent.pick(for: project, matches: matches ?? [], among: candidates) }.value
         guard round == lookupRound, allProjects.contains(where: { $0.id == project.id }) else { return }
         if matches != nil { try? library.save(RepositoryLookup(folder: repository?.folder), for: project.id) }
         found(repository, for: project)
+        PostHogSDK.shared.logger?.info("repository suggestion completed", attributes: [
+            "assistant": assistant.rawValue,
+            "result": repository == nil ? "not_found" : "found",
+        ])
+    }
+
+    nonisolated private static func capture(_ generation: Assistant.Generation, trace: String, session: String) {
+        var properties: [String: Any] = [
+            "$ai_trace_id": trace,
+            "$ai_session_id": session,
+            "$ai_span_name": "repository_match",
+            "$ai_model": generation.model,
+            "$ai_provider": generation.provider,
+            "$ai_latency": generation.latency,
+            "$ai_is_error": generation.isError,
+            "$ai_input": [
+                ["role": "system", "content": generation.instructions],
+                ["role": "user", "content": generation.prompt],
+            ],
+        ]
+        if let output = generation.output {
+            properties["$ai_output_choices"] = [["role": "assistant", "content": output]]
+        }
+        PostHogSDK.shared.capture("$ai_generation", properties: properties)
     }
 
     private func found(_ repository: Repository?, for project: Project) {
@@ -366,6 +407,7 @@ final class AppState {
     func use(_ assistant: Assistant) {
         self.assistant = assistant
         navigate(to: path.filter { $0 != .assistant })
+        PostHogSDK.shared.capture("assistant_configured", properties: ["assistant": assistant.rawValue])
         Task { await suggestRepositories() }
     }
 
@@ -379,20 +421,23 @@ final class AppState {
 
     func archive(_ project: Project) {
         dismiss(notes(in: project))
-        try? library.archive(project)
+        guard (try? library.archive(project)) != nil else { return }
         reload()
+        PostHogSDK.shared.capture("project_archived")
     }
 
     func restore(_ project: Project) {
-        try? library.restore(project)
+        guard (try? library.restore(project)) != nil else { return }
         reload()
+        PostHogSDK.shared.capture("project_restored")
     }
 
     func delete(_ project: Project) {
         dismiss(notes(in: project))
         suggestions[project.id] = nil
-        try? library.delete(project)
+        guard (try? library.delete(project)) != nil else { return }
         reload()
+        PostHogSDK.shared.capture("project_deleted")
     }
 
     func confirmDeletion(of project: Project) {
