@@ -170,6 +170,11 @@ public struct MeetingLibrary: Sendable {
         try note.write(to: noteURL(of: meeting), atomically: true, encoding: .utf8)
     }
 
+    public func noteFile(of meeting: Meeting) -> URL? {
+        let file = noteURL(of: meeting)
+        return FileManager.default.fileExists(atPath: file.path(percentEncoded: false)) ? file : nil
+    }
+
     private func noteURL(of meeting: Meeting) -> URL {
         folder(of: meeting).appending(path: "note.md")
     }

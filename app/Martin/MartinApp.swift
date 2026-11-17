@@ -96,7 +96,6 @@ final class AppState {
     private(set) var suggestions: [Project.ID: RepositorySuggestion] = [:]
     @ObservationIgnored private var scouting: Task<[Repository], Never>?
     @ObservationIgnored private var lookupRound = 0
-    @ObservationIgnored private let aiSessionID = UUID().uuidString
     var page: HomePage {
         didSet { defaults.set(page.rawValue, forKey: Self.pageKey) }
     }
@@ -358,12 +357,10 @@ final class AppState {
         let round = lookupRound
         if scouting == nil { await scoutRepositories() }
         let candidates = await scouting?.value ?? []
-        let notes = notes(in: project).prefix(Agent.noteLimit).map { "# \($0.displayTitle)\n\(library.note(of: $0) ?? "")" }
-        let session = aiSessionID
-        let trace = UUID().uuidString
-        let matches = await Provider.$generationObserver.withValue({ Self.capture($0, trace: trace, session: session) }) {
-            await finder.match(project, notes, candidates, credential)
-        }
+        let notes = notes(in: project).lazy.compactMap { meeting in
+            self.library.noteFile(of: meeting).map { Agent.Note(title: meeting.displayTitle, file: $0) }
+        }.prefix(Agent.noteLimit)
+        let matches = await finder.match(project, Array(notes), candidates, credential)
         let repository = await Task.detached { Agent.pick(for: project, matches: matches ?? [], among: candidates) }.value
         guard round == lookupRound, allProjects.contains(where: { $0.id == project.id }) else { return }
         if matches != nil { try? library.save(RepositoryLookup(folder: repository?.folder), for: project.id) }
@@ -372,26 +369,6 @@ final class AppState {
             "provider": credential.provider.rawValue,
             "result": repository == nil ? "not_found" : "found",
         ])
-    }
-
-    nonisolated private static func capture(_ generation: Provider.Generation, trace: String, session: String) {
-        var properties: [String: Any] = [
-            "$ai_trace_id": trace,
-            "$ai_session_id": session,
-            "$ai_span_name": "repository_match",
-            "$ai_model": generation.model,
-            "$ai_provider": generation.provider.rawValue,
-            "$ai_latency": generation.latency,
-            "$ai_is_error": generation.isError,
-            "$ai_input": [
-                ["role": "system", "content": generation.instructions],
-                ["role": "user", "content": generation.prompt],
-            ],
-        ]
-        if let output = generation.output {
-            properties["$ai_output_choices"] = [["role": "assistant", "content": output]]
-        }
-        PostHogSDK.shared.capture("$ai_generation", properties: properties)
     }
 
     private func found(_ repository: Repository?, for project: Project) {
@@ -567,7 +544,7 @@ extension Meeting {
 
 struct RepositoryFinder: Sendable {
     var nearby: @Sendable ([URL]) async -> [Repository] = Repository.nearby
-    var match: @Sendable (Project, [String], [Repository], Credential) async -> Set<String>? = Agent.match
+    var match: @Sendable (Project, [Agent.Note], [Repository], Credential) async -> Set<String>? = Agent.match
 }
 
 enum RepositorySuggestion: Equatable {

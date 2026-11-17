@@ -71,7 +71,7 @@ Swift owns the data, the UI and the keys. The agent owns everything that talks t
 - [x] (2026-11-17) Milestone 2: Anthropic provider; live sample passes.
 - [x] (2026-11-17) Milestone 3: OpenAI provider; live sample passes.
 - [x] (2026-11-17) Evaluation runner and tracking fixtures from Milestone 6, brought forward for benchmarking: 22/22 checks on both providers.
-- [x] (2026-11-17) Settings take a Claude or OpenAI API key, kept in the Keychain, in place of the Claude Code and Codex logins. Repository lookup calls the provider's API from Swift until `AgentClient` replaces it.
+- [x] (2026-11-17) Settings take a Claude or OpenAI API key, kept in the Keychain, in place of the Claude Code and Codex logins. `build-app.sh` bundles and signs `martin-agent`, which runs under the hardened runtime with no extra entitlements, and repository lookup runs its `repositoryLookup` job with the key in `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`. Remaining: `AgentClient`'s typed failures and cancellation.
 - [ ] Milestone 4: bundle and sign the agent, Swift settings, keys, `AgentClient`, repository lookup on the agent.
 - [ ] Milestone 5: overview storage, scheduled and manual refresh, request lifecycle and Overview section.
 - [ ] Milestone 6: hook, CI, release and evaluation.

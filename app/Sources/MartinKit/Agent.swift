@@ -10,55 +10,75 @@ public struct RepositoryLookup: Codable, Hashable, Sendable {
 
 public enum Agent {
     public static let noteLimit = 5
-    static let excerpt = 600
-    static let summaryLimit = 600
-    static let matchLimit = 3
+    private static let timeout: TimeInterval = 120
 
-    static let instructions = """
-        List the GitHub repositories that hold this project's code: every one whose name or README names the project, or the product its notes discuss. \
-        A repository that is merely about a similar topic does not count. \
-        First quote the evidence, then list at most \(matchLimit) slugs exactly as written, or none when nothing names the project.
-        """
+    public struct Note: Encodable, Sendable {
+        let title: String
+        let path: String
 
-    static let schema = """
-        {"type":"object","properties":{"evidence":{"type":"string"},"slugs":{"type":"array","items":{"type":"string"}}},"required":["evidence","slugs"],"additionalProperties":false}
-        """
+        public init(title: String, file: URL) {
+            self.title = title
+            path = file.path(percentEncoded: false)
+        }
+    }
 
-    public static func match(_ project: Project, notes: [String], among candidates: [Repository], using credential: Credential) async -> Set<String>? {
+    struct LookupJob: Encodable {
+        struct Name: Encodable {
+            let name: String
+        }
+
+        struct Candidate: Encodable {
+            let slug: String
+            let summary: String?
+
+            enum CodingKeys: CodingKey {
+                case slug, summary
+            }
+
+            func encode(to encoder: any Encoder) throws {
+                var container = encoder.container(keyedBy: CodingKeys.self)
+                try container.encode(slug, forKey: .slug)
+                try container.encode(summary, forKey: .summary)
+            }
+        }
+
+        let kind = "repositoryLookup"
+        let provider: Provider
+        let project: Name
+        let notes: [Note]
+        let candidates: [Candidate]
+
+        init(for project: Project, notes: [Note], among candidates: [Repository], provider: Provider) {
+            self.provider = provider
+            self.project = Name(name: project.name)
+            self.notes = notes
+            self.candidates = candidates.map { Candidate(slug: $0.slug, summary: $0.summary) }
+        }
+    }
+
+    public static func match(_ project: Project, notes: [Note], among candidates: [Repository], using credential: Credential) async -> Set<String>? {
         guard !candidates.isEmpty else { return [] }
-        return await credential.answer(prompt(for: project, notes: notes, among: candidates), instructions: instructions, schema: schema).flatMap(matches(in:))
+        guard let agent = Bundle.main.url(forAuxiliaryExecutable: "martin-agent"),
+              let job = try? JSONEncoder().encode(LookupJob(for: project, notes: notes, among: candidates, provider: credential.provider)) else { return nil }
+        let output = await Command.run(agent.path(percentEncoded: false), [], input: String(decoding: job, as: UTF8.self), environment: credential.environment, timeout: timeout)
+        return output.flatMap(matches(in:))
     }
 
     public static func pick(for project: Project, matches: Set<String>, among candidates: [Repository]) -> Repository? {
         candidates.first { matches.contains($0.slug.lowercased()) || names(project, $0) }
     }
 
-    static func prompt(for project: Project, notes: [String], among candidates: [Repository]) -> String {
-        """
-        Project: \(project.name)
+    static func matches(in output: String) -> Set<String>? {
+        struct Event: Decodable {
+            struct Answer: Decodable {
+                let slugs: [String]
+            }
 
-        Notes:
-        \(excerpts(of: notes))
-
-        Repositories:
-        \(lines(for: candidates).joined(separator: "\n"))
-        """
-    }
-
-    private static func excerpts(of notes: [String]) -> String {
-        notes.isEmpty ? "No notes yet." : notes.map { String($0.prefix(excerpt)) }.joined(separator: "\n\n")
-    }
-
-    private static func lines(for candidates: [Repository]) -> [String] {
-        candidates.map { [$0.slug, $0.summary.map { String($0.prefix(summaryLimit)) }].compactMap(\.self).joined(separator: ": ") }
-    }
-
-    static func matches(in answer: Data) -> Set<String>? {
-        struct Answer: Decodable {
-            let slugs: [String]
+            let type: String
+            let result: Answer?
         }
-        guard let slugs = (try? JSONDecoder().decode(Answer.self, from: answer))?.slugs else { return nil }
-        return slugs.count <= matchLimit ? Set(slugs.map { $0.lowercased() }) : []
+        let events = output.split(whereSeparator: \.isNewline).compactMap { try? JSONDecoder().decode(Event.self, from: Data($0.utf8)) }
+        return events.first { $0.type == "result" }?.result.map { Set($0.slugs) }
     }
 
     static func names(_ project: Project, _ repository: Repository) -> Bool {
