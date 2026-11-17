@@ -26,6 +26,14 @@ struct CommandTests {
         #expect(!FileManager.default.fileExists(atPath: mark.path(percentEncoded: false)))
     }
 
+    @Test func aHelperIsStoppedBeforeItSeesItsOwnChildKilledAtTheTimeout() async throws {
+        let mark = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString).path(percentEncoded: false)
+        let script = "sh -c 'sleep 1; sleep 30; : > \(mark)' & for i in $(seq 300); do sleep 30 & done; wait"
+        #expect(await Command.run("sh", ["-c", script], timeout: 1.5) == nil)
+        try await Task.sleep(for: .seconds(0.5))
+        #expect(!FileManager.default.fileExists(atPath: mark))
+    }
+
     @Test func aToolThatSucceededIsJudgedByItsExitEvenWhenAHelperOutlivesTheDeadline() async {
         let start = ContinuousClock.now
         #expect(await Command.run("sh", ["-c", "sleep 30 & echo ok"], timeout: 0.5) == "ok\n")
