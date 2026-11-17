@@ -11,7 +11,7 @@ final class NotePageTests: Sandbox {
         let meeting = try library.create(title: "Standup")
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 640), styleMask: [.titled, .fullSizeContentView], backing: .buffered, defer: false)
         window.titleVisibility = .hidden
-        window.contentView = NSHostingView(rootView: NoteView(app: AppState(library: library, defaults: defaults), meeting: meeting))
+        window.contentView = NSHostingView(rootView: NoteView(app: AppState(library: library, defaults: defaults, credentials: credentials), meeting: meeting))
         for _ in 0..<100 where window.toolbar == nil {
             try await Task.sleep(for: .milliseconds(20))
         }
@@ -23,7 +23,7 @@ final class NotePageTests: Sandbox {
 
     @Test func theNoteMenuActsOnTheNoteOnScreen() throws {
         let meeting = try library.create(title: "Standup")
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         #expect(app.focusedNote == nil)
         app.open(meeting)
         #expect(app.focusedNote == meeting)
@@ -35,7 +35,7 @@ final class NotePageTests: Sandbox {
     }
 
     @Test func theProjectMenuActsOnTheProjectOpenOnHome() throws {
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         app.file(try library.create(), inNewProjectNamed: "Atlas")
         let atlas = try #require(app.projects.first)
         app.page = .projects
@@ -55,7 +55,7 @@ final class NotePageTests: Sandbox {
     }
 
     @Test func aQuickNoteLandsInTheProjectOpenOnHome() throws {
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         app.file(try library.create(), inNewProjectNamed: "Atlas")
         let atlas = try #require(app.projects.first)
         app.page = .projects
@@ -64,7 +64,7 @@ final class NotePageTests: Sandbox {
     }
 
     @Test func makingAProjectSecretLeavesItsNotesUnlessSecretsAreShown() throws {
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         let meeting = try library.create()
         app.file(meeting, inNewProjectNamed: "Atlas")
         let atlas = try #require(app.projects.first)

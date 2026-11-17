@@ -1,5 +1,4 @@
 import Foundation
-import MartinKit
 import PostHog
 
 enum Telemetry {
@@ -16,21 +15,5 @@ enum Telemetry {
         guard sharing else { return PostHogSDK.shared.optOut() }
         if let config = config() { PostHogSDK.shared.setup(config) }
         PostHogSDK.shared.optIn()
-    }
-
-    static func capture(_ generation: Assistant.Generation, trace: String, session: String) {
-        PostHogSDK.shared.capture("$ai_generation", properties: properties(of: generation, trace: trace, session: session))
-    }
-
-    static func properties(of generation: Assistant.Generation, trace: String, session: String) -> [String: Any] {
-        [
-            "$ai_trace_id": trace,
-            "$ai_session_id": session,
-            "$ai_span_name": "repository_match",
-            "$ai_model": generation.model,
-            "$ai_provider": generation.provider,
-            "$ai_latency": generation.latency,
-            "$ai_is_error": generation.isError,
-        ]
     }
 }

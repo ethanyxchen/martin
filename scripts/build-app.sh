@@ -20,6 +20,9 @@ trap 'rm -rf "$staging_directory"' EXIT
 app_bundle="$staging_directory/Martin.app"
 mkdir -p "$app_bundle/Contents/MacOS"
 cp "$binary_directory/Martin" "$app_bundle/Contents/MacOS/Martin"
+bun install --frozen-lockfile --cwd agent >/dev/null
+bun run --cwd agent build
+cp agent/dist/martin-agent "$app_bundle/Contents/MacOS/martin-agent"
 sparkle="$app_bundle/Contents/Frameworks/Sparkle.framework"
 ditto "$binary_directory/Sparkle.framework" "$sparkle"
 rm -rf "$sparkle/XPCServices" "$sparkle/Versions/B/XPCServices"
@@ -46,7 +49,7 @@ elif [[ -n "${POSTHOG_PROJECT_TOKEN:-}" ]]; then
   plutil -insert PostHogProjectToken -string "$POSTHOG_PROJECT_TOKEN" "$app_bundle/Contents/Info.plist"
 fi
 plutil -lint "$app_bundle/Contents/Info.plist"
-for code in "$sparkle/Versions/B/Autoupdate" "$sparkle/Versions/B/Updater.app" "$sparkle"; do
+for code in "$app_bundle/Contents/MacOS/martin-agent" "$sparkle/Versions/B/Autoupdate" "$sparkle/Versions/B/Updater.app" "$sparkle"; do
   codesign --force --options runtime --timestamp --sign "$identity" "$code"
 done
 codesign --force --options runtime --timestamp --entitlements app/Resources/Martin.entitlements --sign "$identity" "$app_bundle"

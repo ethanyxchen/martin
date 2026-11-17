@@ -5,7 +5,7 @@ import Testing
 
 @MainActor
 final class WorkflowTests: Sandbox {
-    private lazy var app = AppState(library: library, defaults: defaults)
+    private lazy var app = AppState(library: library, defaults: defaults, credentials: credentials)
 
     private func open(_ meeting: Meeting, in app: AppState? = nil) async throws -> (NSWindow, NoteTextView) {
         let app = app ?? self.app
@@ -45,7 +45,7 @@ final class WorkflowTests: Sandbox {
         #expect(try await saved(meeting, as: "# Standup\nTasks:\n- shipped icons\n"))
         #expect(app.previews[meeting.id] == "Standup")
         app.back()
-        let relaunched = AppState(library: library, defaults: defaults)
+        let relaunched = AppState(library: library, defaults: defaults, credentials: credentials)
         let (reopened, again) = try await open(meeting, in: relaunched)
         #expect(again.string == "# Standup\nTasks:\n- shipped icons\n")
         #expect(reopened === relaunched.window)

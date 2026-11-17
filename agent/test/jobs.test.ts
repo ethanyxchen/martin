@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test"
+import { join } from "node:path"
 import { overview, prompt as overviewPrompt, system } from "../src/jobs/overview"
 import { prompt as lookupPrompt, repositoryLookup } from "../src/jobs/repositoryLookup"
 import type { LookupJob } from "../src/schema"
@@ -67,6 +68,11 @@ describe("repository lookup job", () => {
     const spec = await repositoryLookup(job([{ title: "Kickoff", path: long.path }]))
     expect(spec.prompt).toContain(`# Kickoff\n${"z".repeat(600)}\n`)
     expect(spec.prompt).toContain("Repositories:\nann/lumen: A photo app\nann/dots")
+  })
+
+  test("names a meeting whose note isn't written yet by its title", async () => {
+    const spec = await repositoryLookup(job([{ title: "Lumen sync", path: join(await folder(), "missing.md") }]))
+    expect(spec.prompt).toContain("Notes:\n# Lumen sync\n\n\nRepositories:")
   })
 
   test("says there are no notes", () => {
