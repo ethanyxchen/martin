@@ -1,7 +1,8 @@
 import { z } from "zod"
-import type { Activity } from "./activity"
-import type { Note } from "./schema"
-import { characters, prefix } from "./text"
+import type { Activity, PullRequest } from "./activity"
+import { idleDays, staleDays } from "./idle"
+import type { Commit, Note, Owner } from "./schema"
+import { characters, day, prefix } from "./text"
 
 export type Tool = {
   name: string
@@ -78,8 +79,22 @@ export function readNote(notes: Note[], sources: Sources): Tool {
   })
 }
 
-export function repoActivity(activity: Activity, sources: Sources): Tool {
+export type Context = { owner: Owner, cutoff: string }
+
+export function ownership(owner: Owner) {
+  const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
+  return {
+    commit: (commit: Pick<Commit, "author" | "email">) => same(commit.author, owner.name) || owner.emails.some(email => same(email, commit.email)),
+    pull: (login: string) => same(login, owner.login),
+  }
+}
+
+export function repoActivity(activity: Activity, { owner, cutoff }: Context, sources: Sources): Tool {
   const cursors = new Map<string, number>()
+  const owns = ownership(owner)
+  const committer = (commit: Pick<Commit, "author" | "email">) => owns.commit(commit) ? "owner" : `${commit.author} <${commit.email}>`
+  const opener = (pull: PullRequest) => owns.pull(pull.author) ? "owner" : pull.author
+  const size = (pull: PullRequest) => `+${pull.additions} −${pull.deletions} in ${pull.changedFiles} files, ${pull.commits} commits`
 
   async function commits(cursor: string | null): Promise<string> {
     const skip = cursor === null ? 0 : cursors.get(cursor)
@@ -87,7 +102,7 @@ export function repoActivity(activity: Activity, sources: Sources): Tool {
     const batch = await sources.read(`commits ${skip}`, "the repository's commits", () => activity.commits(skip, commitBatch))
     if (!batch) return "The repository's commits couldn't be read."
     if (!batch.length) return skip === 0 ? "No commits in this window." : "No more commits."
-    const lines = fit(batch.map(commit => `${commit.date} ${commit.author}: ${commit.subject}`))
+    const lines = fit(batch.map(commit => `${day(commit.date)} on ${commit.branch}, ${committer(commit)}: ${commit.subject}`))
     if (lines.length === batch.length && batch.length < commitBatch) return `${lines.join("\n")}\nEnd of commits.`
     const next = crypto.randomUUID().slice(0, 8)
     cursors.set(next, skip + lines.length)
@@ -98,7 +113,7 @@ export function repoActivity(activity: Activity, sources: Sources): Tool {
     const pulls = await sources.read("pull requests", "the repository's pull requests", () => activity.pullRequests(pullRequestLimit))
     if (!pulls) return "The repository's pull requests couldn't be read."
     if (!pulls.length) return "No pull requests updated in this window."
-    const lines = fit(pulls.map(pull => `${pull.updatedAt.slice(0, 10)} ${pull.state.toLowerCase()} by ${pull.author}: ${pull.title}`))
+    const lines = fit(pulls.map(pull => `${day(pull.updatedAt)} ${pull.state.toLowerCase()} by ${opener(pull)}, branch ${pull.branch}, ${size(pull)}: ${pull.title}`))
     const hidden = pulls.length - lines.length
     const notes = [
       hidden > 0 ? `${hidden} more pull requests are not shown.` : null,
@@ -107,11 +122,40 @@ export function repoActivity(activity: Activity, sources: Sources): Tool {
     return [...lines, ...notes.filter(Boolean)].join("\n")
   }
 
+  async function branches(): Promise<string> {
+    const listed = await sources.read("branches", "the repository's branches", () => activity.branches())
+    if (!listed) return "The repository's branches couldn't be read."
+    if (!listed.length) return "No branches other than main had commits in the last 30 days."
+    const lines = fit(listed
+      .toSorted((a, b) => Date.parse(b.lastCommit) - Date.parse(a.lastCommit))
+      .map(branch => {
+        const idle = idleDays(branch.lastCommit, cutoff)
+        const pull = branch.pullRequest
+        const mine = pull ? owns.pull(pull.author) : owns.commit(branch)
+        const who = mine ? "owner" : pull?.author ?? committer(branch)
+        return [
+          `${branch.name}, ${who}`,
+          `last commit ${day(branch.lastCommit)}`,
+          `idle ${idle.toFixed(1)} days${!branch.merged && idle >= staleDays ? ", stale" : ""}`,
+          branch.merged ? "merged" : `${branch.ahead} commits ahead of main, not merged`,
+          pull ? `pull request ${pull.state.toLowerCase()}, ${size(pull)}: ${pull.title}` : "no pull request",
+        ].join(" · ")
+      }))
+    const hidden = listed.length - lines.length
+    return [...lines, ...(hidden > 0 ? [`${hidden} older branches are not shown.`] : [])].join("\n")
+  }
+
   return tool({
     name: "repo_activity",
-    description: "Read the linked repository's activity since the last read. Source commits pages through commits on local branches, remote branches and tags, with dates and authors; pass cursor null to start and the cursor it reports to continue. Source pullRequests lists recently updated pull requests with their current state and author; its cursor is ignored.",
-    input: z.strictObject({ source: z.enum(["commits", "pullRequests"]), cursor: z.string().nullable() }),
-    run: ({ source, cursor }) => source === "commits" ? commits(cursor) : pullRequests(),
+    description: [
+      "Read the linked repository. Activity by the owner is marked “owner”.",
+      "Source commits pages through commits since the last read on local branches, remote branches and tags, newest first, each with its branch and author; pass cursor null to start and the cursor it reports to continue.",
+      "Source pullRequests lists pull requests updated since the last read with their state, author, branch and size.",
+      `Source branches lists every branch other than main with a commit in the last 30 days: its last commit, how long it has been idle (weekend days count half), whether it is stale (idle ${staleDays} days or more and not merged), how far it is ahead of main, whether it has merged, and its pull request.`,
+      "The cursor is ignored except for commits.",
+    ].join(" "),
+    input: z.strictObject({ source: z.enum(["commits", "pullRequests", "branches"]), cursor: z.string().nullable() }),
+    run: ({ source, cursor }) => ({ commits: () => commits(cursor), pullRequests, branches })[source](),
   })
 }
 

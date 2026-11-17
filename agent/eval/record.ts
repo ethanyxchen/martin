@@ -1,9 +1,8 @@
 import { join } from "node:path"
 import { parseArgs } from "node:util"
-import { execute } from "../src/activity"
-import { type Commit, main, type PullRequest, Scenario } from "./scenario"
-
-const separator = "\u001f"
+import { execute, history } from "../src/activity"
+import type { Commit } from "../src/schema"
+import { type PullRequest, Scenario } from "./scenario"
 
 type Recorded = { commits: Commit[], pullRequests: PullRequest[] }
 
@@ -15,15 +14,7 @@ export async function record(folder: string, slug: string, since: Date, until: D
     "--json", "title,author,headRefName,createdAt,mergedAt,closedAt,additions,deletions,changedFiles,commits",
   ]))
   const heads = new Map(pulls.flatMap(pull => pull.commits.map(commit => [commit.oid, pull.headRefName] as const)))
-  const log = await run([
-    "git", "-C", folder, "log", "--branches", "--exclude=*/HEAD", "--remotes", "--tags", "--source",
-    `--since=${iso(since)}`, `--until=${iso(until)}`, `--pretty=format:%H${separator}%aI${separator}%an${separator}%ae${separator}%s${separator}%S`,
-  ])
-  const trunk = new Set((await run(["git", "-C", folder, "rev-list", `--branches=${main}`, `--remotes=*/${main}`, `--since=${iso(since)}`])).split("\n"))
-  const commits = log.split("\n").filter(Boolean).map(line => {
-    const [hash = "", date = "", author = "", email = "", subject = "", ref = ""] = line.split(separator)
-    return { date, author, email, subject, branch: heads.get(hash) ?? (trunk.has(hash) ? main : branch(ref)) }
-  })
+  const commits = (await history(folder, { since, until }, run)).map(({ hash, commit }) => ({ ...commit, branch: heads.get(hash) ?? commit.branch }))
   const pullRequests = pulls
     .filter(pull => !pull.closedAt || new Date(pull.closedAt) >= since)
     .map(({ author, headRefName, commits: pushed, ...pull }) => ({ ...pull, author: author?.login ?? "unknown", branch: headRefName, commits: pushed.length }))
@@ -31,10 +22,6 @@ export async function record(folder: string, slug: string, since: Date, until: D
     commits: commits.toSorted((a, b) => Date.parse(a.date) - Date.parse(b.date)),
     pullRequests: pullRequests.toSorted((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt)),
   }
-}
-
-function branch(ref: string): string {
-  return ref.replace(/^refs\/(heads|tags)\//, "").replace(/^refs\/remotes\/[^/]+\//, "")
 }
 
 function iso(date: Date): string {

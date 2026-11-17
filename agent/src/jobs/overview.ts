@@ -1,4 +1,4 @@
-import { type Connect, github } from "../activity"
+import { type Connect, github, lookback } from "../activity"
 import { Failure } from "../failure"
 import type { JobSpec } from "./spec"
 import { type Overview, type OverviewJob, OverviewResult, type Task } from "../schema"
@@ -7,32 +7,39 @@ import { day, prefix } from "../text"
 
 export const limits = { now: 3, next: 6, shelved: 6, title: 80, caption: 160 }
 export const models = { anthropic: "claude-haiku-5-5", openai: "gpt-6-luna" }
-const defaultWindow = 30 * 24 * 60 * 60 * 1000
 
 export const system = `You keep a short, friendly overview of one project for the person who owns it.
 
 The overview has three sections, most important first:
-- now: what they are working on right now, at most ${limits.now} tasks, most recently updated first.
+- now: what the owner is working on right now, at most ${limits.now} tasks, most recently updated first.
 - next: what they will work on next, at most ${limits.next} tasks.
-- shelved: work they have explicitly paused or set aside, at most ${limits.shelved} tasks. Never shelve a task only because nothing was said about it.
+- shelved: work they have paused or set aside, at most ${limits.shelved} tasks.
 
-A task is a title and a caption. The title names the overall task in a few words. The caption is one short sentence on where it stands. Never mention pull request numbers, commit hashes or file names. Set "updated" to the YYYY-MM-DD date of the latest note or activity about the task, or null when unknown.
+A task is a piece of work: a theme that spans several branches and pull requests, or one large pull request on its own. Judge a pull request's size from its lines added and removed, files changed and commits. Group small pull requests and branches into the theme they belong to and never list one on its own. A large one can stand alone or anchor a theme.
 
-Start from the previous overview: keep what still holds and change only what the new material changes. The previous overview is a draft, not evidence; check its claims against the notes and repository. Remove tasks that were completed or cancelled. Move a task between sections when the material says its status changed, and let a later note override an earlier one.
+The repository decides the status of code work:
+- A task is in now while its branches or pull requests keep moving.
+- It is done when its work has merged and nothing has moved since. Remove done tasks.
+- A stale branch means its task is shelved, unless other work on the same task is still moving.
+Only work marked as the owner's counts. Another contributor's branches and pull requests are not the owner's tasks, and neither is reviewing them.
 
-Repository activity gives context about the project. Do not make another contributor's work the owner's task only because it appears in the activity.
+Notes supply intent. They decide what is next, what the owner explicitly shelved or cancelled, and the status of work that isn't code. A ticked box (- [x]) means done, even when the repository shows nothing. Remove cancelled tasks. An idea list is not a task until something says the owner is doing it, and neither are discussion, meeting chores or other people's plans. A release or testing checklist is one task, with its open items summed up in the caption. When a note disagrees with the repository about code, the repository wins.
 
-Read only what you need. You may read several notes at once. When a note continues past the page you read and the rest may settle a task, read on. When a repository is linked, look at its activity even if no note changed. If a source couldn't be read, do not describe it as having no activity. Leave out anything the material does not support.`
+The title names the task in a few words. The caption is one short sentence on where it stands. Never mention pull request numbers, commit hashes, branch names or file names. Set "updated" to the YYYY-MM-DD date of the latest note or activity about the task, or null when unknown.
+
+Start from the previous overview: keep what still holds and change only what the new material changes. The previous overview is a draft, not evidence; check its claims against the notes and repository, and let later material override earlier.
+
+Read only what you need. You may read several notes at once. When a note continues past the page you read and the rest may settle a task, read on. When a repository is linked, read its branches every time, and its commits and pull requests as needed, even if no note changed. If a source couldn't be read, do not describe it as having no activity. Leave out anything the material does not support.`
 
 export function overview(job: OverviewJob, connect: Connect = github): JobSpec<OverviewResult> {
   const sources = new Sources()
   const today = day(job.cutoff)
-  const since = job.previous ? new Date(job.previous.readAt) : new Date(new Date(job.cutoff).getTime() - defaultWindow)
+  const since = job.previous ? new Date(job.previous.readAt) : new Date(new Date(job.cutoff).getTime() - lookback)
   const repository = job.repository && connect(job.repository, { since, until: new Date(job.cutoff) })
   return {
     system,
     prompt: prompt(job),
-    tools: [readNote(job.notes, sources), ...(repository ? [repoActivity(repository, sources)] : [])],
+    tools: [readNote(job.notes, sources), ...(repository ? [repoActivity(repository, { owner: job.owner, cutoff: job.cutoff }, sources)] : [])],
     result: OverviewResult,
     model: models,
     effort: "high",
@@ -57,6 +64,7 @@ export function prompt(job: OverviewJob): string {
     })
   return [
     `Project: ${job.project.name}`,
+    `Owner: ${job.owner.name}`,
     `Today: ${day(job.cutoff)}`,
     `Material up to: ${job.cutoff}`,
     `Last read: ${job.previous?.readAt ?? "never"}`,

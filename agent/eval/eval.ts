@@ -67,7 +67,7 @@ async function replay(project: Project): Promise<Run[]> {
 
 async function attempt(project: Project, stage: Stage, previous: Overview | null, label: string): Promise<Run> {
   const { scenario } = project
-  const job = { kind: "overview" as const, provider: name, project: { name: scenario.project }, cutoff: stage.cutoff, previous, notes: stage.notes, repository: scenario.repository }
+  const job = { kind: "overview" as const, provider: name, project: { name: scenario.project }, owner: scenario.owner, cutoff: stage.cutoff, previous, notes: stage.notes, repository: scenario.repository }
   const run: Run = { project: scenario.project, label, stage: stage.name, seconds: 0, calls: [], verdicts: [] }
   const started = performance.now()
   try {

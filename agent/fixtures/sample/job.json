@@ -2,6 +2,7 @@
   "kind": "overview",
   "provider": "anthropic",
   "project": { "name": "Juniper" },
+  "owner": { "name": "Ada Park", "emails": ["ada@example.com"], "login": "ada" },
   "cutoff": "2026-11-10T09:00:00-08:00",
   "previous": null,
   "notes": [

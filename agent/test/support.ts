@@ -18,6 +18,7 @@ export function overviewJob(fields: Partial<OverviewJob> = {}): OverviewJob {
     kind: "overview",
     provider: "anthropic",
     project: { name: "Lumen" },
+    owner: { name: "Ada Park", emails: ["ada@example.com"], login: "ada" },
     cutoff: "2026-11-17T20:00:00-08:00",
     previous: null,
     notes: [],
