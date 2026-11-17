@@ -17,3 +17,20 @@ jobs:
       - run: swift build -c release --package-path app -Xswiftc -warnings-as-errors
 
       - run: swift test --package-path app
+
+  agent:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, macOS, ARM64]
+    defaults:
+      run:
+        working-directory: agent
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: 1.4.3
+
+      - run: bun install --frozen-lockfile
+
+      - run: bun run check
