@@ -1,7 +1,7 @@
 import Foundation
 
 public struct Overview: Codable, Hashable, Sendable {
-    public struct Task: Codable, Hashable, Sendable {
+    public struct Item: Codable, Hashable, Sendable {
         public let title: String
         public let caption: String
         public let updated: String?
@@ -13,9 +13,9 @@ public struct Overview: Codable, Hashable, Sendable {
         }
 
         public func day(in calendar: Calendar) -> Date? {
-            let parts = updated?.split(separator: "-").compactMap { Int($0) } ?? []
-            guard parts.count == 3 else { return nil }
-            return calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
+            let style = Date.ISO8601FormatStyle(timeZone: calendar.timeZone).year().month().day()
+            guard let updated, let day = try? Date(updated, strategy: style), day.formatted(style) == updated else { return nil }
+            return day
         }
     }
 
@@ -25,19 +25,19 @@ public struct Overview: Codable, Hashable, Sendable {
         case shelved
     }
 
-    public let now: [Task]
-    public let next: [Task]
-    public let shelved: [Task]
+    public let now: [Item]
+    public let next: [Item]
+    public let shelved: [Item]
     public let readAt: Date
 
-    public init(now: [Task], next: [Task], shelved: [Task], readAt: Date) {
+    public init(now: [Item], next: [Item], shelved: [Item], readAt: Date) {
         self.now = now
         self.next = next
         self.shelved = shelved
         self.readAt = readAt
     }
 
-    public subscript(section: Section) -> [Task] {
+    public subscript(section: Section) -> [Item] {
         switch section {
         case .now: now
         case .next: next

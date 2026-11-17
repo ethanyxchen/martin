@@ -42,7 +42,7 @@ struct OverviewSection: View {
         .padding(.bottom, 14)
     }
 
-    private func group(_ section: Overview.Section, _ tasks: [Overview.Task], first: Bool) -> some View {
+    private func group(_ section: Overview.Section, _ tasks: [Overview.Item], first: Bool) -> some View {
         let shown = Self.shown(tasks, in: section, unfolded: unfolded)
         return VStack(alignment: .leading, spacing: 0) {
             Text(section == .shelved ? "\(section.title) · \(tasks.count)" : section.title)
@@ -61,8 +61,8 @@ struct OverviewSection: View {
                         }
                     }
             }
-            if shown.count < tasks.count {
-                Button("Show \(tasks.count - shown.count) more") { unfolded = true }
+            if Self.folds(tasks, in: section) {
+                Button(unfolded ? "Show less" : "Show \(tasks.count - Self.folded) more") { unfolded.toggle() }
                     .buttonStyle(.plain)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Theme.secondary)
@@ -79,12 +79,22 @@ struct OverviewSection: View {
                 ProgressView().controlSize(.mini)
                 Text("Refreshing…")
             } else if let overview {
-                Text("Updated \(overview.readAt.formatted(.relative(presentation: .named)))")
+                Text("Updated \(Self.age(of: overview.readAt, now: now))")
             }
             Spacer(minLength: 0)
-            Button(status.action, systemImage: "arrow.clockwise", action: refresh)
-                .buttonStyle(Pill())
-                .disabled(status == .refreshing)
+            Button(action: refresh) {
+                Label(status.action, systemImage: "arrow.clockwise")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Theme.secondary)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 3)
+                    .background(Theme.well, in: .capsule)
+                    .contentShape(.capsule)
+            }
+            .buttonStyle(Pressable())
+            .pointerStyle(.link)
+            .disabled(status == .refreshing)
+            .opacity(status == .refreshing ? 0.5 : 1)
         }
         .font(Theme.meta)
         .foregroundStyle(Theme.tertiary)
@@ -92,25 +102,34 @@ struct OverviewSection: View {
         .padding(.top, overview == nil ? 0 : 10)
     }
 
-    static func shown(_ tasks: [Overview.Task], in section: Overview.Section, unfolded: Bool) -> [Overview.Task] {
-        let folds = section == .shelved && !unfolded && tasks.count > folded + 1
-        return folds ? Array(tasks.prefix(folded)) : tasks
+    static func shown(_ tasks: [Overview.Item], in section: Overview.Section, unfolded: Bool) -> [Overview.Item] {
+        folds(tasks, in: section) && !unfolded ? Array(tasks.prefix(folded)) : tasks
+    }
+
+    static func folds(_ tasks: [Overview.Item], in section: Overview.Section) -> Bool {
+        section == .shelved && tasks.count > folded + 1
     }
 
     static func stamp(_ day: Date, now: Date, calendar: Calendar = .current) -> String {
-        switch calendar.dateComponents([.day], from: calendar.startOfDay(for: day), to: calendar.startOfDay(for: now)).day ?? 0 {
-        case 0: return "Today"
+        var style = Date.FormatStyle(calendar: calendar, timeZone: calendar.timeZone)
+        switch calendar.days(from: day, to: now) {
+        case ...0: return "Today"
         case 1: return "Yesterday"
+        case 2..<7: return day.formatted(style.weekday(.wide))
         default:
-            let date = Date.FormatStyle.dateTime.month(.abbreviated).day()
-            return day.formatted(calendar.isDate(day, equalTo: now, toGranularity: .year) ? date : date.year())
+            style = style.month(.abbreviated).day()
+            return day.formatted(calendar.isDate(day, equalTo: now, toGranularity: .year) ? style : style.year())
         }
+    }
+
+    static func age(of date: Date, now: Date) -> String {
+        RelativeDateTimeFormatter().localizedString(for: min(date, now), relativeTo: now)
     }
 }
 
 private struct TaskRow: View {
     static let inset: CGFloat = 10
-    let task: Overview.Task
+    let task: Overview.Item
     let section: Overview.Section
     let stamp: String?
 
@@ -159,23 +178,6 @@ private struct Notice: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.well, in: .rect(cornerRadius: 9))
             .padding(.bottom, 10)
-    }
-}
-
-private struct Pill: ButtonStyle {
-    @Environment(\.isEnabled) private var enabled
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(Theme.secondary)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 3)
-            .background(Theme.well, in: .capsule)
-            .contentShape(.capsule)
-            .opacity(enabled ? 1 : 0.5)
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }
 

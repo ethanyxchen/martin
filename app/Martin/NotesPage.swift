@@ -504,10 +504,15 @@ extension Shelf {
     var title: String { project?.name ?? Self.unassigned }
 }
 
+extension Calendar {
+    func days(from date: Date, to now: Date) -> Int {
+        dateComponents([.day], from: startOfDay(for: date), to: startOfDay(for: now)).day ?? 0
+    }
+}
+
 extension Date {
     func stamp(at now: Date) -> String {
-        let calendar = Calendar.current
-        switch calendar.dateComponents([.day], from: calendar.startOfDay(for: self), to: calendar.startOfDay(for: now)).day ?? 0 {
+        switch Calendar.current.days(from: self, to: now) {
         case 0: return formatted(date: .omitted, time: .shortened)
         case 1: return "Yesterday"
         case 2..<7: return formatted(.dateTime.weekday(.wide))
