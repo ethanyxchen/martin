@@ -5,6 +5,7 @@ cd "$(dirname "$0")/.."
 : "${NOTARY_KEY_ID:?Set NOTARY_KEY_ID to the API key ID.}"
 : "${NOTARY_ISSUER_ID:?Set NOTARY_ISSUER_ID to the API key issuer ID.}"
 : "${SPARKLE_KEY_PATH:?Set SPARKLE_KEY_PATH to the Sparkle EdDSA private key file.}"
+: "${POSTHOG_PROJECT_TOKEN:?Set POSTHOG_PROJECT_TOKEN to the PostHog project token.}"
 identity="${CODESIGN_IDENTITY:-Developer ID Application}"
 CODESIGN_IDENTITY="$identity" ./scripts/build-app.sh
 app="build/Martin.app"

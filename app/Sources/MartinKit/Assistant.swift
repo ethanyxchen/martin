@@ -10,6 +10,18 @@ public enum Assistant: String, CaseIterable, Identifiable, Sendable {
         case ready
     }
 
+    public struct Generation: Sendable {
+        public let provider: String
+        public let model: String
+        public let prompt: String
+        public let instructions: String
+        public let output: String?
+        public let latency: TimeInterval
+        public let isError: Bool
+    }
+
+    @TaskLocal public static var generationObserver: (@Sendable (Generation) -> Void)? = nil
+
     public var id: Self { self }
 
     private static let probeTimeout: TimeInterval = 30
@@ -44,21 +56,41 @@ public enum Assistant: String, CaseIterable, Identifiable, Sendable {
     }
 
     func answer(_ prompt: String, instructions: String, schema: String) async -> Data? {
+        let startedAt = Date()
+        let output: Data?
+        let provider: String
+        let model: String
+
         switch self {
         case .claude:
-            let arguments = ["-p", "--model", "haiku", "--tools", "", "--setting-sources", "", "--no-session-persistence",
+            provider = "anthropic"
+            model = "haiku"
+            let arguments = ["-p", "--model", model, "--tools", "", "--setting-sources", "", "--no-session-persistence",
                              "--system-prompt", instructions, "--output-format", "json", "--json-schema", schema]
-            return await Command.run(tool, arguments, input: prompt, timeout: Self.answerTimeout).flatMap(structuredOutput(of:))
+            output = await Command.run(tool, arguments, input: prompt, timeout: Self.answerTimeout).flatMap(structuredOutput(of:))
         case .codex:
+            provider = "openai"
+            model = "gpt-6-luna"
             let scratch = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory)
             defer { try? FileManager.default.removeItem(at: scratch) }
             let schemaFile = scratch.appending(path: "schema.json")
             guard (try? FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)) != nil,
                   (try? schema.write(to: schemaFile, atomically: true, encoding: .utf8)) != nil else { return nil }
             let arguments = ["exec", "--ephemeral", "--skip-git-repo-check", "--ignore-user-config", "--ignore-rules", "--sandbox", "read-only",
-                             "--color", "never", "--model", "gpt-6-luna", "--config", "model_reasoning_effort=\"low\"", "--cd", scratch.path(percentEncoded: false), "--output-schema", schemaFile.path(percentEncoded: false), "-"]
-            return await Command.run(tool, arguments, input: "\(instructions)\n\n\(prompt)", timeout: Self.answerTimeout).flatMap(structuredOutput(of:))
+                             "--color", "never", "--model", model, "--config", "model_reasoning_effort=\"low\"", "--cd", scratch.path(percentEncoded: false), "--output-schema", schemaFile.path(percentEncoded: false), "-"]
+            output = await Command.run(tool, arguments, input: "\(instructions)\n\n\(prompt)", timeout: Self.answerTimeout).flatMap(structuredOutput(of:))
         }
+
+        Self.generationObserver?(Generation(
+            provider: provider,
+            model: model,
+            prompt: prompt,
+            instructions: instructions,
+            output: output.map { String(decoding: $0, as: UTF8.self) },
+            latency: Date().timeIntervalSince(startedAt),
+            isError: output == nil
+        ))
+        return output
     }
 
     func structuredOutput(of output: String) -> Data? {
