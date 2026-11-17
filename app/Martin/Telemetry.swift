@@ -1,6 +1,5 @@
 import Foundation
 import PostHog
-import RegexBuilder
 
 enum Telemetry {
     static func config(in bundle: Bundle = .main) -> PostHogConfig? {
@@ -10,13 +9,13 @@ enum Telemetry {
         config.disableGeoIp = true
         config.errorTrackingConfig.autoCapture = true
         config.setBeforeSend { event in
-            event.properties = scrubbingHome(event.properties)
+            event.properties = home.scrubbing(event.properties)
             return event
         }
         config.logs.serviceName = "martin"
         config.logs.setBeforeSend { record in
-            record.body = scrubbingHome(record.body)
-            record.attributes = scrubbingHome(record.attributes)
+            record.body = home.scrubbing(record.body)
+            record.attributes = home.scrubbing(record.attributes)
             return record
         }
         return config
@@ -28,19 +27,32 @@ enum Telemetry {
         PostHogSDK.shared.optIn()
     }
 
-    static func scrubbingHome<Value>(_ value: Value, home: String = NSHomeDirectory()) -> Value {
-        let path = Regex {
-            home
-            NegativeLookahead { CharacterClass(.word, .anyOf(".-")) }
-        }
-        return scrubbing(value, path: path) as? Value ?? value
+    private static let home = HomePath(NSHomeDirectory())
+}
+
+struct HomePath: Sendable {
+    private let forms: [String]
+    private let pattern: String
+
+    init(_ home: String) {
+        forms = [home, home.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? home]
+        pattern = "(?:" + forms.map(NSRegularExpression.escapedPattern(for:)).joined(separator: "|") + ")(?![\\p{L}\\p{N}])"
     }
 
-    private static func scrubbing(_ value: Any, path: some RegexComponent) -> Any {
+    func scrubbing(_ string: String) -> String {
+        guard forms.contains(where: { string.range(of: $0, options: .caseInsensitive) != nil }) else { return string }
+        return string.replacingOccurrences(of: pattern, with: "~", options: [.regularExpression, .caseInsensitive])
+    }
+
+    func scrubbing(_ properties: [String: Any]) -> [String: Any] {
+        properties.mapValues(scrubbing(any:))
+    }
+
+    private func scrubbing(any value: Any) -> Any {
         switch value {
-        case let string as String: string.replacing(path, with: "~")
-        case let dictionary as [String: Any]: dictionary.mapValues { scrubbing($0, path: path) }
-        case let array as [Any]: array.map { scrubbing($0, path: path) }
+        case let string as String: scrubbing(string)
+        case let dictionary as [String: Any]: scrubbing(dictionary)
+        case let array as [Any]: array.map(scrubbing(any:))
         default: value
         }
     }
