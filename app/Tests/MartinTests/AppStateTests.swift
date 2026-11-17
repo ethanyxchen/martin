@@ -14,6 +14,15 @@ final class AppStateTests: Sandbox {
         #expect(relaunched.hiddenPages == [.upcoming])
     }
 
+    @Test func usageIsSharedUntilTurnedOffAndStaysOffAcrossLaunches() {
+        var shared: [Bool] = []
+        let app = AppState(library: library, defaults: defaults, share: { shared.append($0) })
+        #expect(app.sharesUsage)
+        app.sharesUsage = false
+        #expect(shared == [false])
+        #expect(!AppState(library: library, defaults: defaults, share: { _ in }).sharesUsage)
+    }
+
     @Test func pageShortcutsNumberTheShownPagesAndStayPutOnAHiddenPage() {
         let app = AppState(library: library, defaults: defaults)
         app.hiddenPages = [.notes]

@@ -25,6 +25,15 @@ struct SettingsView: View {
                     }
                     .flush()
                 }
+                SettingsSection(title: "Privacy", detail: "Usage events, logs and crash reports help improve Martin. They never include what your notes say.") {
+                    Toggle(isOn: $app.sharesUsage) {
+                        Text("Share anonymous usage data")
+                            .font(.system(size: 13))
+                            .foregroundStyle(Theme.ink)
+                    }
+                    .toggleStyle(.checkbox)
+                        .flush()
+                }
                 SettingsSection(title: "Calendars", detail: "Martin shows events and takes notes for the calendars you tick.") {
                     CalendarFeed(query: true, promise: "you can choose which of them Martin follows") { _ in
                         CalendarLookup.accounts()

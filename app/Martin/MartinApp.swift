@@ -66,7 +66,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let updater = Updater()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        if let config = Telemetry.config() { PostHogSDK.shared.setup(config) }
+        if let config = Telemetry.config(sharing: app.sharesUsage) { PostHogSDK.shared.setup(config) }
         app.show()
         PostHogSDK.shared.logger?.info("application launch completed", attributes: ["runtime": "macos"])
         Task { await app.suggestRepositories() }
@@ -86,9 +86,11 @@ final class AppState {
     private static let pageKey = "page"
     private static let hiddenPagesKey = "hiddenPages"
     private static let assistantKey = "assistant"
+    private static let sharesUsageKey = "sharesUsage"
     let library: MeetingLibrary
     private let defaults: UserDefaults
     private let finder: RepositoryFinder
+    private let share: (Bool) -> Void
     private(set) var meetings: [Meeting] = []
     private(set) var allProjects: [Project] = []
     private(set) var previews: [Meeting.ID: String] = [:]
@@ -110,6 +112,12 @@ final class AppState {
             lookupRound += 1
         }
     }
+    var sharesUsage: Bool {
+        didSet {
+            defaults.set(sharesUsage, forKey: Self.sharesUsageKey)
+            share(sharesUsage)
+        }
+    }
     private(set) var path: [Screen] = []
     private(set) var motion = Motion.push
     var selectedShelf: Shelf.ID?
@@ -120,14 +128,16 @@ final class AppState {
     @ObservationIgnored private var grown: CGFloat = 0
     @ObservationIgnored private(set) lazy var window = makeWindow()
 
-    init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = .standard, finder: RepositoryFinder = RepositoryFinder()) {
+    init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = .standard, finder: RepositoryFinder = RepositoryFinder(), share: @escaping (Bool) -> Void = Telemetry.share) {
         self.library = library
         self.defaults = defaults
         self.finder = finder
+        self.share = share
         page = defaults.string(forKey: Self.pageKey).flatMap(HomePage.init) ?? .upcoming
         hiddenPages = Set((defaults.stringArray(forKey: Self.hiddenPagesKey) ?? []).compactMap(HomePage.init))
         assistant = defaults.string(forKey: Self.assistantKey).flatMap(Assistant.init)
         hiddenCalendars = Set(defaults.stringArray(forKey: Self.hiddenCalendarsKey) ?? [])
+        sharesUsage = defaults.object(forKey: Self.sharesUsageKey) as? Bool ?? true
         reload()
     }
 
