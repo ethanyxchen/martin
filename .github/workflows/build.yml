@@ -19,7 +19,8 @@ jobs:
       - run: swift test --package-path app
 
   agent:
-    runs-on: macos-26
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, macOS, ARM64]
     defaults:
       run:
         working-directory: agent
