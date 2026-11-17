@@ -85,9 +85,9 @@ final class AppState {
     private static let hiddenCalendarsKey = "hiddenCalendars"
     private static let pageKey = "page"
     private static let hiddenPagesKey = "hiddenPages"
-    private static let assistantKey = "assistant"
     let library: MeetingLibrary
     private let defaults: UserDefaults
+    private let credentials: CredentialStore
     private let finder: RepositoryFinder
     private(set) var meetings: [Meeting] = []
     private(set) var allProjects: [Project] = []
@@ -103,9 +103,9 @@ final class AppState {
     var hiddenPages: Set<HomePage> {
         didSet { defaults.set(hiddenPages.map(\.rawValue).sorted(), forKey: Self.hiddenPagesKey) }
     }
-    var assistant: Assistant? {
+    var credential: Credential? {
         didSet {
-            defaults.set(assistant?.rawValue, forKey: Self.assistantKey)
+            credentials.save(credential)
             suggestions = [:]
             lookupRound += 1
         }
@@ -120,13 +120,14 @@ final class AppState {
     @ObservationIgnored private var grown: CGFloat = 0
     @ObservationIgnored private(set) lazy var window = makeWindow()
 
-    init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = .standard, finder: RepositoryFinder = RepositoryFinder()) {
+    init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = .standard, credentials: CredentialStore = .keychain(service: Bundle.main.bundleIdentifier ?? "Martin"), finder: RepositoryFinder = RepositoryFinder()) {
         self.library = library
         self.defaults = defaults
+        self.credentials = credentials
         self.finder = finder
         page = defaults.string(forKey: Self.pageKey).flatMap(HomePage.init) ?? .upcoming
         hiddenPages = Set((defaults.stringArray(forKey: Self.hiddenPagesKey) ?? []).compactMap(HomePage.init))
-        assistant = defaults.string(forKey: Self.assistantKey).flatMap(Assistant.init)
+        credential = credentials.load()
         hiddenCalendars = Set(defaults.stringArray(forKey: Self.hiddenCalendarsKey) ?? [])
         reload()
     }
@@ -352,7 +353,7 @@ final class AppState {
         if let saved = (try? library.lookups())?[project.id] {
             return found(saved.folder.flatMap(Repository.init(at:)), for: project)
         }
-        guard let assistant else { return }
+        guard let credential else { return }
         suggestions[project.id] = .thinking
         let round = lookupRound
         if scouting == nil { await scoutRepositories() }
@@ -360,26 +361,26 @@ final class AppState {
         let notes = notes(in: project).prefix(Agent.noteLimit).map { "# \($0.displayTitle)\n\(library.note(of: $0) ?? "")" }
         let session = aiSessionID
         let trace = UUID().uuidString
-        let matches = await Assistant.$generationObserver.withValue({ Self.capture($0, trace: trace, session: session) }) {
-            await finder.match(project, notes, candidates, assistant)
+        let matches = await Provider.$generationObserver.withValue({ Self.capture($0, trace: trace, session: session) }) {
+            await finder.match(project, notes, candidates, credential)
         }
         let repository = await Task.detached { Agent.pick(for: project, matches: matches ?? [], among: candidates) }.value
         guard round == lookupRound, allProjects.contains(where: { $0.id == project.id }) else { return }
         if matches != nil { try? library.save(RepositoryLookup(folder: repository?.folder), for: project.id) }
         found(repository, for: project)
         PostHogSDK.shared.logger?.info("repository suggestion completed", attributes: [
-            "assistant": assistant.rawValue,
+            "provider": credential.provider.rawValue,
             "result": repository == nil ? "not_found" : "found",
         ])
     }
 
-    nonisolated private static func capture(_ generation: Assistant.Generation, trace: String, session: String) {
+    nonisolated private static func capture(_ generation: Provider.Generation, trace: String, session: String) {
         var properties: [String: Any] = [
             "$ai_trace_id": trace,
             "$ai_session_id": session,
             "$ai_span_name": "repository_match",
             "$ai_model": generation.model,
-            "$ai_provider": generation.provider,
+            "$ai_provider": generation.provider.rawValue,
             "$ai_latency": generation.latency,
             "$ai_is_error": generation.isError,
             "$ai_input": [
@@ -400,14 +401,9 @@ final class AppState {
         }
     }
 
-    func openAssistantSetup() {
-        push(.assistant)
-    }
-
-    func use(_ assistant: Assistant) {
-        self.assistant = assistant
-        navigate(to: path.filter { $0 != .assistant })
-        PostHogSDK.shared.capture("assistant_configured", properties: ["assistant": assistant.rawValue])
+    func use(_ credential: Credential) {
+        self.credential = credential
+        PostHogSDK.shared.capture("assistant_configured", properties: ["provider": credential.provider.rawValue])
         Task { await suggestRepositories() }
     }
 
@@ -571,7 +567,7 @@ extension Meeting {
 
 struct RepositoryFinder: Sendable {
     var nearby: @Sendable ([URL]) async -> [Repository] = Repository.nearby
-    var match: @Sendable (Project, [String], [Repository], Assistant) async -> Set<String>? = Agent.match
+    var match: @Sendable (Project, [String], [Repository], Credential) async -> Set<String>? = Agent.match
 }
 
 enum RepositorySuggestion: Equatable {

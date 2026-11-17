@@ -24,9 +24,9 @@ public enum Agent {
         {"type":"object","properties":{"evidence":{"type":"string"},"slugs":{"type":"array","items":{"type":"string"}}},"required":["evidence","slugs"],"additionalProperties":false}
         """
 
-    public static func match(_ project: Project, notes: [String], among candidates: [Repository], using assistant: Assistant) async -> Set<String>? {
+    public static func match(_ project: Project, notes: [String], among candidates: [Repository], using credential: Credential) async -> Set<String>? {
         guard !candidates.isEmpty else { return [] }
-        return await assistant.answer(prompt(for: project, notes: notes, among: candidates), instructions: instructions, schema: schema).flatMap(matches(in:))
+        return await credential.answer(prompt(for: project, notes: notes, among: candidates), instructions: instructions, schema: schema).flatMap(matches(in:))
     }
 
     public static func pick(for project: Project, matches: Set<String>, among candidates: [Repository]) -> Repository? {

@@ -4,7 +4,6 @@ import SwiftUI
 enum Screen: Hashable {
     case note(Meeting.ID)
     case archive
-    case assistant
 }
 
 enum Motion {
@@ -41,7 +40,6 @@ struct Navigator: View {
         case nil: HomeView(app: app)
         case .note(let id): app.meeting(id).map { NoteView(app: app, meeting: $0) }
         case .archive: ArchiveView(app: app)
-        case .assistant: AssistantSetup(app: app)
         }
     }
 }

@@ -8,7 +8,7 @@ import Testing
 final class ProjectsViewTests: Sandbox {
     @Test func closingAProjectLetsTheWindowNarrowAgain() async throws {
         let meeting = try library.create(title: "Kickoff")
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         app.file(meeting, inNewProjectNamed: "Atlas")
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 860, height: 600), styleMask: [.titled, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
         window.contentView = NSHostingView(rootView: ProjectsView(app: app))
@@ -30,7 +30,7 @@ final class ProjectsViewTests: Sandbox {
 
     @Test func aProjectHiddenWhileAwayIsNoLongerOpenOnReturn() async throws {
         let meeting = try library.create(title: "Kickoff")
-        let app = AppState(library: library, defaults: defaults)
+        let app = AppState(library: library, defaults: defaults, credentials: credentials)
         app.file(meeting, inNewProjectNamed: "Atlas")
         let atlas = try #require(app.projects.first)
         app.page = .projects
