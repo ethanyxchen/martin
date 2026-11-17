@@ -66,7 +66,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let updater = Updater()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        if let config = Telemetry.config(sharing: app.sharesUsage) { PostHogSDK.shared.setup(config) }
         app.show()
         PostHogSDK.shared.logger?.info("application launch completed", attributes: ["runtime": "macos"])
         Task { await app.suggestRepositories() }
@@ -138,6 +137,7 @@ final class AppState {
         assistant = defaults.string(forKey: Self.assistantKey).flatMap(Assistant.init)
         hiddenCalendars = Set(defaults.stringArray(forKey: Self.hiddenCalendarsKey) ?? [])
         sharesUsage = defaults.object(forKey: Self.sharesUsageKey) as? Bool ?? true
+        share(sharesUsage)
         reload()
     }
 
@@ -370,7 +370,7 @@ final class AppState {
         let notes = notes(in: project).prefix(Agent.noteLimit).map { "# \($0.displayTitle)\n\(library.note(of: $0) ?? "")" }
         let session = aiSessionID
         let trace = UUID().uuidString
-        let matches = await Assistant.$generationObserver.withValue({ PostHogSDK.shared.capture("$ai_generation", properties: Telemetry.generation($0, trace: trace, session: session)) }) {
+        let matches = await Assistant.$generationObserver.withValue({ Telemetry.capture($0, trace: trace, session: session) }) {
             await finder.match(project, notes, candidates, assistant)
         }
         let repository = await Task.detached { Agent.pick(for: project, matches: matches ?? [], among: candidates) }.value

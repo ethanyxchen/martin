@@ -19,8 +19,9 @@ final class AppStateTests: Sandbox {
         let app = AppState(library: library, defaults: defaults, share: { shared.append($0) })
         #expect(app.sharesUsage)
         app.sharesUsage = false
-        #expect(shared == [false])
-        #expect(!AppState(library: library, defaults: defaults, share: { _ in }).sharesUsage)
+        let relaunched = AppState(library: library, defaults: defaults, share: { shared.append($0) })
+        #expect(!relaunched.sharesUsage)
+        #expect(shared == [true, false, false])
     }
 
     @Test func pageShortcutsNumberTheShownPagesAndStayPutOnAHiddenPage() {

@@ -3,21 +3,26 @@ import MartinKit
 import PostHog
 
 enum Telemetry {
-    static func config(in bundle: Bundle = .main, sharing: Bool) -> PostHogConfig? {
+    static func config(in bundle: Bundle = .main) -> PostHogConfig? {
         guard let token = bundle.object(forInfoDictionaryKey: "PostHogProjectToken") as? String,
               let host = bundle.object(forInfoDictionaryKey: "PostHogHost") as? String else { return nil }
         let config = PostHogConfig(projectToken: token, host: host)
         config.errorTrackingConfig.autoCapture = true
         config.logs.serviceName = "martin"
-        config.optOut = !sharing
         return config
     }
 
     static func share(_ sharing: Bool) {
-        sharing ? PostHogSDK.shared.optIn() : PostHogSDK.shared.optOut()
+        guard sharing else { return PostHogSDK.shared.optOut() }
+        if let config = config() { PostHogSDK.shared.setup(config) }
+        PostHogSDK.shared.optIn()
     }
 
-    static func generation(_ generation: Assistant.Generation, trace: String, session: String) -> [String: Any] {
+    static func capture(_ generation: Assistant.Generation, trace: String, session: String) {
+        PostHogSDK.shared.capture("$ai_generation", properties: properties(of: generation, trace: trace, session: session))
+    }
+
+    static func properties(of generation: Assistant.Generation, trace: String, session: String) -> [String: Any] {
         [
             "$ai_trace_id": trace,
             "$ai_session_id": session,
