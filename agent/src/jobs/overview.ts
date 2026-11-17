@@ -33,7 +33,7 @@ export function overview(job: OverviewJob, connect: Connect = github): JobSpec<O
     prompt: prompt(job),
     tools: [readNote(job.notes, sources), ...(repository ? [repoActivity(repository, sources)] : [])],
     result: OverviewResult,
-    model: { anthropic: "claude-opus-5-5", openai: "gpt-6-luna" },
+    model: { anthropic: "claude-haiku-5-5", openai: "gpt-6-luna" },
     effort: "high",
     finish: result => {
       if (sources.unresolved.length) throw new Failure(`Couldn't read ${sources.unresolved.join(", ")}.`)
