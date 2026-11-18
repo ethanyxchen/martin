@@ -31,7 +31,7 @@ struct CommandTests {
     @Test func aHelperIsStoppedBeforeItSeesItsOwnChildKilledAtTheTimeout() async throws {
         let mark = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString).path(percentEncoded: false)
         let script = "sh -c 'sleep 1; sleep 30; : > \(mark)' & for i in $(seq 300); do sleep 30 & done; wait"
-        #expect(await Command.run("sh", ["-c", script], timeout: 1.5).ending == .stopped)
+        #expect(await Command.run("sh", ["-c", script], timeout: 1.5).success == nil)
         try await Task.sleep(for: .seconds(0.5))
         #expect(!FileManager.default.fileExists(atPath: mark))
     }
