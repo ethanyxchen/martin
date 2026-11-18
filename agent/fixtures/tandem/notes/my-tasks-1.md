@@ -3,3 +3,4 @@
 - [ ] action items: reminders
 - [ ] calendar reconnect (google tokens expiring for ppl)
 - [ ] 2.4 release testing
+- [ ] typed notes missing from summaries (from 2.3 testing)

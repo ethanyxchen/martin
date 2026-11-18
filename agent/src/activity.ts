@@ -12,11 +12,15 @@ export type PullRequest = {
   commits: number
 }
 export type Branch = { name: string, lastCommit: string, author: string, email: string, ahead: number, merged: boolean, pullRequest: PullRequest | null }
+export type Release = { name: string, date: string }
+export type Found = { commits: Commit[], pullRequests: PullRequest[] }
 
 export type Activity = {
   commits: (skip: number, count: number) => Promise<Commit[]>
   pullRequests: (limit: number) => Promise<PullRequest[]>
   branches: () => Promise<Branch[]>
+  releases: () => Promise<Release[]>
+  search: (words: string[]) => Promise<Found>
 }
 
 export type Window = { since: Date, until: Date }
@@ -25,6 +29,9 @@ export type Connect = (repository: Repository, window: Window) => Activity
 
 export const main = "main"
 export const lookback = 30 * 24 * 60 * 60 * 1000
+export const searchDays = 90
+export const searchLookback = searchDays * 24 * 60 * 60 * 1000
+export const searchLimit = 20
 
 const branchPullLimit = 40
 const timeout = 30_000
@@ -58,9 +65,9 @@ export async function history(folder: string, window: Window, run = execute, pag
 export function github(repository: Repository, window: Window, run = execute): Activity {
   const { folder, slug } = repository
   const until = window.until
-  const pulls = async (since: Date, limit: number) => {
+  const pulls = async (since: Date, limit: number, words: string[] = []) => {
     const output = await run([
-      "gh", "pr", "list", "--repo", slug, "--state", "all", "--limit", `${limit}`, "--search", `updated:>=${seconds(since)}`,
+      "gh", "pr", "list", "--repo", slug, "--state", "all", "--limit", `${limit}`, "--search", [...words.map(word => `"${word}"`), `updated:>=${seconds(since)}`].join(" "),
       "--json", "title,state,updatedAt,mergedAt,author,headRefName,additions,deletions,changedFiles,commits",
     ])
     const listed: (Omit<PullRequest, "author" | "branch" | "commits"> & { mergedAt: string | null, author: { login: string } | null, headRefName: string, commits: unknown[] })[] = JSON.parse(output)
@@ -98,6 +105,24 @@ export function github(repository: Repository, window: Window, run = execute): A
         const merged = ahead === 0 || (!!found?.mergedAt && Date.parse(found.mergedAt) >= Date.parse(tip.lastCommit))
         return { ...tip, ahead: merged ? 0 : ahead, merged, pullRequest: found?.pull ?? null }
       }))
+    },
+    releases: async () => {
+      const [refs, remotes] = await Promise.all([
+        run(["git", "-C", folder, "for-each-ref", `--format=%(refname)${separator}%(creatordate:iso-strict)`, "refs/tags", "refs/heads/release/**", "refs/remotes/*/release/**"]),
+        run(["git", "-C", folder, "remote"]),
+      ])
+      return refs.split("\n").filter(Boolean).flatMap(line => {
+        const [ref = "", date = ""] = line.split(separator)
+        return new Date(date) <= until ? [{ name: branchName(ref, remotes), date }] : []
+      })
+    },
+    search: async words => {
+      const since = new Date(until.getTime() - searchLookback)
+      const [commits, found] = await Promise.all([
+        history(folder, { since, until }, run, ["-i", "--fixed-strings", "--all-match", ...words.map(word => `--grep=${word}`), "-n", `${searchLimit}`]),
+        pulls(since, searchLimit, words),
+      ])
+      return { commits: commits.map(({ commit }) => commit), pullRequests: found.map(({ pull }) => pull) }
     },
   }
 }

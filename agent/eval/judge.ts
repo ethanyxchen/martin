@@ -11,8 +11,8 @@ import { type Project, type Rubric, type Stage, state } from "./scenario"
 export const judgeModel = "claude-sonnet-5-5"
 
 export type Kind = "section" | "caption" | "date" | "order" | "precision" | "invariant"
-export type Item = { key: string, kind: Kind, expect: string }
-export type Verdict = { item: string, kind: Kind, pass: boolean, reason: string }
+export type Item = { key: string, kind: Kind, expect: string, skills: string[] }
+export type Verdict = { item: string, kind: Kind, skills: string[], pass: boolean, reason: string }
 export type Judgement = { verdicts: Verdict[], cost: number, cached: boolean }
 
 export function scored(verdicts: Verdict[]): Verdict[] {
@@ -27,22 +27,24 @@ The precision item fails when the overview has a task that matches no rubric tas
 
 export function items(rubric: Rubric): Item[] {
   const tasks = rubric.tasks.flatMap((task): Item[] => {
-    if (task.section === "absent") return [{ key: `${task.id} · section`, kind: "section", expect: `No task in the overview is about “${task.id}”.` }]
+    const skills = task.skills ?? []
+    if (task.section === "absent") return [{ key: `${task.id} · section`, kind: "section", expect: `No task in the overview is about “${task.id}”.`, skills }]
     return [
-      { key: `${task.id} · section`, kind: "section", expect: `A task about “${task.id}” is in ${task.section}.` },
-      ...(task.caption ? [{ key: `${task.id} · caption`, kind: "caption" as const, expect: `The caption of the task about “${task.id}” says ${task.caption}.` }] : []),
+      { key: `${task.id} · section`, kind: "section", expect: `A task about “${task.id}” is in ${task.section}.`, skills },
+      ...(task.caption ? [{ key: `${task.id} · caption`, kind: "caption" as const, expect: `The caption of the task about “${task.id}” says ${task.caption}.`, skills }] : []),
       ...(task.updated ? [{
         key: `${task.id} · date`,
         kind: "date" as const,
         expect: task.updated === "any"
           ? `The task about “${task.id}” has a reasonable updated date for the latest material about it.`
           : `The task about “${task.id}” is dated ${task.updated}.`,
+        skills,
       }] : []),
     ]
   })
-  const order = rubric.order ? [{ key: "order", kind: "order" as const, expect: `Now lists these tasks in this order: ${rubric.order.map(id => `“${id}”`).join(", ")}.` }] : []
+  const order = rubric.order ? [{ key: "order", kind: "order" as const, expect: `Now lists these tasks in this order: ${rubric.order.map(id => `“${id}”`).join(", ")}.`, skills: [] }] : []
   const tolerated = rubric.tolerated.length ? rubric.tolerated.map(extra => `- ${extra}`).join("\n") : "none"
-  const precision = { key: "precision", kind: "precision" as const, expect: `Every task matches a rubric task or one of these tolerated extras, and no two tasks cover the same theme. Tolerated extras:\n${tolerated}` }
+  const precision = { key: "precision", kind: "precision" as const, skills: [], expect: `Every task matches a rubric task or one of these tolerated extras, and no two tasks cover the same theme. Tolerated extras:\n${tolerated}` }
   return [...tasks, ...order, precision]
 }
 
@@ -53,21 +55,24 @@ export async function material(project: Project, stage: Stage): Promise<string> 
   const commits = visible.commits.map(commit => `- ${commit.date} ${commit.author} <${commit.email}> on ${commit.branch}: ${commit.subject}`)
   const pulls = visible.pullRequests.map(pull => `- ${pull.state.toLowerCase()} by ${pull.author}, opened ${pull.createdAt}${pull.state === "MERGED" ? `, merged ${pull.mergedAt}` : ""}, +${pull.additions} −${pull.deletions} in ${pull.changedFiles} files, ${pull.commits} commits, branch ${pull.branch}: ${pull.title}`)
   const branches = visible.branches.map(branch => `- ${branch.name}: last commit ${branch.lastCommit}, ${branch.ahead} ahead of main, ${branch.merged ? "merged" : "not merged"}`)
+  const releases = visible.releases.map(release => `- ${release.name}: ${release.date}`)
   return [
     `Project: ${project.scenario.project}`,
     `Owner: ${owner.name} (${owner.emails.join(", ")}), GitHub ${owner.login}`,
     `Material up to: ${stage.cutoff}`,
     `Notes:\n${notes.join("\n\n") || "None."}`,
-    repository ? `Commits:\n${commits.join("\n") || "None."}\n\nPull requests:\n${pulls.join("\n") || "None."}\n\nBranches:\n${branches.join("\n") || "None."}` : "No repository.",
+    repository ? `Commits:\n${commits.join("\n") || "None."}\n\nPull requests:\n${pulls.join("\n") || "None."}\n\nBranches:\n${branches.join("\n") || "None."}\n\nReleases:\n${releases.join("\n") || "None."}` : "No repository.",
   ].join("\n\n")
 }
 
 export async function judge(rubric: Rubric, overview: OverviewResult, source: string, provider: Provider, cache: string): Promise<Judgement> {
   const list = items(rubric)
-  const key = new Bun.CryptoHasher("sha256").update(JSON.stringify({ rubric, overview, model: judgeModel })).digest("hex")
+  const asked = list.map(({ key, expect }) => ({ key, expect }))
+  const key = new Bun.CryptoHasher("sha256").update(JSON.stringify({ asked, overview, model: judgeModel })).digest("hex")
   const file = Bun.file(join(cache, `${key}.json`))
-  if (await file.exists()) return { verdicts: await file.json(), cost: 0, cached: true }
   const verdict = z.strictObject({ pass: z.boolean(), reason: z.string() })
+  const verdicts = (answers: Record<string, z.infer<typeof verdict>>) => list.map(item => ({ item: item.key, kind: item.kind, skills: item.skills, ...answers[item.key]! }))
+  if (await file.exists()) return { verdicts: verdicts(await file.json()), cost: 0, cached: true }
   const result = z.strictObject(Object.fromEntries(list.map(item => [item.key, verdict])))
   const outcome = await provider.run({
     system,
@@ -82,10 +87,9 @@ export async function judge(rubric: Rubric, overview: OverviewResult, source: st
     effort: "medium",
   })
   const answers = outcome.result as Record<string, z.infer<typeof verdict>>
-  const verdicts = list.map(item => ({ item: item.key, kind: item.kind, ...answers[item.key]! }))
   await mkdir(cache, { recursive: true })
-  await Bun.write(file, JSON.stringify(verdicts, null, 2))
-  return { verdicts, cost: cost(judgeModel, outcome.requests), cached: false }
+  await Bun.write(file, JSON.stringify(answers, null, 2))
+  return { verdicts: verdicts(answers), cost: cost(judgeModel, outcome.requests), cached: false }
 }
 
 const references = [
@@ -100,7 +104,7 @@ export function invariants(overview: OverviewResult, cutoff: string): Verdict[] 
   const over = sections.filter(section => overview[section].length > limits[section])
   const dates = tasks.filter(task => task.updated !== null && !(/^\d{4}-\d{2}-\d{2}$/.test(task.updated) && !Number.isNaN(Date.parse(task.updated)) && task.updated <= day(cutoff)))
   const leaks = tasks.flatMap(task => references.filter(reference => reference.pattern.test(`${task.title} ${task.caption}`)).map(reference => `${reference.name} in “${task.title}”`))
-  const verdict = (item: string, problems: string[], fine: string): Verdict => ({ item, kind: "invariant", pass: !problems.length, reason: problems.join("; ") || fine })
+  const verdict = (item: string, problems: string[], fine: string): Verdict => ({ item, kind: "invariant", skills: [], pass: !problems.length, reason: problems.join("; ") || fine })
   return [
     verdict("section limits", over.map(section => `${section} has ${overview[section].length} tasks, over ${limits[section]}`), "Every section is within its limit."),
     verdict("valid dates", dates.map(task => `“${task.title}” is dated ${task.updated}`), "Every date is a valid day up to the cutoff."),

@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test"
 import { $ } from "bun"
 import { join } from "node:path"
-import { type Activity, type Branch, execute, github, type PullRequest } from "../src/activity"
+import { type Activity, type Branch, execute, github, type PullRequest, type Release } from "../src/activity"
 import type { Commit } from "../src/schema"
-import { commitBatch, ownership, pageLength, pullRequestLimit, readNote, repoActivity, Sources } from "../src/tools"
+import { commitBatch, ownership, pageLength, pullRequestLimit, readNote, repoActivity, repoSearch, Sources, tracks } from "../src/tools"
 import { folder, note } from "./support"
 
 describe("read_note", () => {
@@ -66,7 +66,7 @@ describe("repo_activity", () => {
     updatedAt: "2026-11-10T10:00:00Z", state: "OPEN", title: "Change", author: "ada", branch: "change", additions: 900, deletions: 40, changedFiles: 12, commits: 5, ...fields,
   })
 
-  function recorded(commits: Commit[], fail = false, branches: Branch[] = []): Activity {
+  function recorded(commits: Commit[], fail = false, branches: Branch[] = [], releases: Release[] = []): Activity {
     return {
       commits: async (skip, count) => {
         if (fail) throw new Error("git failed")
@@ -76,6 +76,15 @@ describe("repo_activity", () => {
       branches: async () => {
         if (fail) throw new Error("git failed")
         return branches
+      },
+      releases: async () => {
+        if (fail) throw new Error("git failed")
+        return releases
+      },
+      search: async words => {
+        if (fail) throw new Error("gh failed")
+        const match = (text: string) => words.every(word => text.toLowerCase().includes(word.toLowerCase()))
+        return { commits: commits.filter(commit => match(commit.subject)), pullRequests: [pull({ state: "MERGED", title: "Typed notes in summaries" })].filter(pull => match(pull.title)) }
       },
     }
   }
@@ -129,7 +138,7 @@ describe("repo_activity", () => {
     ].join("\n"))
   })
 
-  test("lists branches newest first with idle days, staleness, merge state and pull request", async () => {
+  test("groups the owner's unmerged, then merged, then other contributors' branches, newest first, with idle days, staleness, merge state and pull request", async () => {
     const branch = (fields: Partial<Branch>): Branch => ({ name: "b", lastCommit: "2026-11-16T09:00:00-08:00", author: "Ada Park", email: "ada@work.com", ahead: 3, merged: false, pullRequest: null, ...fields })
     const branches = [
       branch({ name: "ada/old-idea", lastCommit: "2026-11-13T18:00:00-08:00" }),
@@ -138,17 +147,113 @@ describe("repo_activity", () => {
       branch({ name: "priya/billing", lastCommit: "2026-11-15T12:00:00-08:00", author: "Priya", email: "priya@work.com", pullRequest: pull({ author: "priya", title: "Billing" }) }),
     ]
     expect(await repoActivity(recorded([], false, branches), context, new Sources()).run({ source: "branches", cursor: null })).toBe([
-      "ada/editor, owner · last commit 2026-11-16 · idle 0.4 days · 3 commits ahead of main, not merged · pull request open, +900 −40 in 12 files, 5 commits: Rebuild the editor",
+      "The owner's unmerged branches:",
+      "ada/editor · last commit 2026-11-16 · idle 0.4 days · 3 commits ahead of main, not merged · pull request open, +900 −40 in 12 files, 5 commits: Rebuild the editor",
+      "ada/old-idea · last commit 2026-11-13 · idle 2.0 days, stale · 3 commits ahead of main, not merged · no pull request",
+      "The owner's merged branches:",
+      "ada/shipped · last commit 2026-11-02 · idle 12.3 days · merged · pull request merged, +900 −40 in 12 files, 5 commits: Ship it",
+      "Other contributors' branches:",
       "priya/billing, priya · last commit 2026-11-15 · idle 1.0 days · 3 commits ahead of main, not merged · pull request open, +900 −40 in 12 files, 5 commits: Billing",
-      "ada/old-idea, owner · last commit 2026-11-13 · idle 2.0 days, stale · 3 commits ahead of main, not merged · no pull request",
-      "ada/shipped, owner · last commit 2026-11-02 · idle 12.3 days · merged · pull request merged, +900 −40 in 12 files, 5 commits: Ship it",
     ].join("\n"))
+  })
+
+  test("keeps the owner's old stale branch when other contributors' branches fill the page", async () => {
+    const others = Array.from({ length: 60 }, (_, index) => ({
+      name: `priya/change-${index}`, lastCommit: "2026-11-16T09:00:00-08:00", author: "Priya", email: "priya@work.com", ahead: 0, merged: true, pullRequest: null,
+    }))
+    const shelved = { name: "ada/old-idea", lastCommit: "2026-10-21T10:00:00-07:00", author: "Ada Park", email: "ada@work.com", ahead: 4, merged: false, pullRequest: null }
+    const page = await repoActivity(recorded([], false, [...others, shelved]), context, new Sources()).run({ source: "branches", cursor: null })
+    expect(page).toStartWith("The owner's unmerged branches:\nada/old-idea · last commit 2026-10-21")
+    expect(page).toMatch(/\d+ more branches are not shown\.$/)
+    expect(page.split("\n").at(-2)).toStartWith("priya/change-")
+  })
+
+  test("groups versions into release tracks, newest first, each version dated by its first ref", async () => {
+    const releases = [
+      { name: "desktop-stable-1.0.40", date: "2026-11-11T10:00:00Z" },
+      { name: "desktop-stable-1.0.42", date: "2026-11-17T10:00:00Z" },
+      { name: "desktop-latest-1.0.42-t20261113091246.latest", date: "2026-11-13T09:12:00Z" },
+      { name: "desktop-latest-1.0.42-t20261116091246.latest", date: "2026-11-16T09:12:00Z" },
+      { name: "release/desktop/1.0.44", date: "2026-11-18T08:00:00Z" },
+      { name: "v2.4.0-rc.1", date: "2026-11-12T17:00:00Z" },
+      { name: "nemotron-apple", date: "2026-11-18T09:00:00Z" },
+    ]
+    expect(tracks(releases)).toEqual([
+      { track: "release/desktop", versions: [{ version: "1.0.44", date: "2026-11-18T08:00:00Z" }] },
+      { track: "desktop-stable", versions: [{ version: "1.0.42", date: "2026-11-17T10:00:00Z" }, { version: "1.0.40", date: "2026-11-11T10:00:00Z" }] },
+      { track: "desktop-latest", versions: [{ version: "1.0.42", date: "2026-11-13T09:12:00Z" }] },
+      { track: "versions", versions: [{ version: "2.4.0-rc.1", date: "2026-11-12T17:00:00Z" }] },
+    ])
+  })
+
+  test("keeps a canary suffix and a track name that ends in v", () => {
+    expect(tracks([{ name: "v2.5.0-canary.1", date: "2026-11-12T17:00:00Z" }, { name: "dev1.2", date: "2026-11-11T17:00:00Z" }])).toEqual([
+      { track: "versions", versions: [{ version: "2.5.0-canary.1", date: "2026-11-12T17:00:00Z" }] },
+      { track: "dev", versions: [{ version: "1.2", date: "2026-11-11T17:00:00Z" }] },
+    ])
+  })
+
+  test("lists each release track's latest versions and counts the older ones", async () => {
+    const releases = Array.from({ length: 8 }, (_, index) => ({ name: `v1.${index}.0`, date: `2026-11-0${index + 1}T10:00:00Z` }))
+    expect(await repoActivity(recorded([], false, [], releases), context, new Sources()).run({ source: "releases", cursor: null }))
+      .toBe("versions: 1.7.0 on 2026-11-08, 1.6.0 on 2026-11-07, 1.5.0 on 2026-11-06, 1.4.0 on 2026-11-05, 1.3.0 on 2026-11-04, 1.2.0 on 2026-11-03, and 2 older")
+    expect(await repoActivity(recorded([]), context, new Sources()).run({ source: "releases", cursor: null })).toBe("No tag or release branch names a version.")
+  })
+
+  test("records unreadable releases as unresolved", async () => {
+    const sources = new Sources()
+    expect(await repoActivity(recorded([], true), context, sources).run({ source: "releases", cursor: null })).toBe("The repository's releases couldn't be read.")
+    expect(sources.unresolved).toEqual(["the repository's releases"])
   })
 
   test("records unreadable branches as unresolved", async () => {
     const sources = new Sources()
     expect(await repoActivity(recorded([], true), context, sources).run({ source: "branches", cursor: null })).toBe("The repository's branches couldn't be read.")
     expect(sources.unresolved).toEqual(["the repository's branches"])
+  })
+})
+
+describe("repo_search", () => {
+  const owner = { name: "Ada Park", emails: ["ada@work.com"], login: "ada" }
+  const commits = [
+    { date: "2026-10-22T10:00:00Z", author: "Ada Park", email: "ada@work.com", subject: "Include typed notes in the summary", branch: "ada/typed-notes" },
+    { date: "2026-10-23T10:00:00Z", author: "Priya", email: "priya@work.com", subject: "Typed rooms", branch: "main" },
+  ]
+  const activity = (fail = false): Activity => ({
+    commits: async () => commits,
+    pullRequests: async () => [],
+    branches: async () => [],
+    releases: async () => [],
+    search: async words => {
+      if (fail) throw new Error("gh failed")
+      const match = (text: string) => words.every(word => text.toLowerCase().includes(word.toLowerCase()))
+      const pulls: PullRequest[] = [{ updatedAt: "2026-10-22T14:00:00Z", state: "MERGED", title: "Typed notes in summaries", author: "ada", branch: "ada/typed-notes", additions: 64, deletions: 12, changedFiles: 4, commits: 1 }]
+      return { commits: commits.filter(commit => match(commit.subject)), pullRequests: pulls.filter(pull => match(pull.title)) }
+    },
+  })
+
+  test("finds the owner's commits and pull requests that hold every word", async () => {
+    expect(await repoSearch(activity(), { owner }, new Sources()).run({ query: " typed  NOTES " })).toBe([
+      "Commits:",
+      "2026-10-22 on ada/typed-notes, owner: Include typed notes in the summary",
+      "Pull requests:",
+      "2026-10-22 merged by owner, branch ada/typed-notes, +64 −12 in 4 files, 1 commits: Typed notes in summaries",
+    ].join("\n"))
+    expect(await repoSearch(activity(), { owner }, new Sources()).run({ query: "rooms" })).toBe("Commits:\n2026-10-23 on main, Priya <priya@work.com>: Typed rooms\nPull requests:\nNo pull requests match.")
+  })
+
+  test("searches the words of a quoted query", async () => {
+    expect(await repoSearch(activity(), { owner }, new Sources()).run({ query: '"typed notes"' })).toStartWith("Commits:\n2026-10-22 on ada/typed-notes, owner: Include typed notes in the summary")
+  })
+
+  test("refuses an empty query", async () => {
+    expect(await repoSearch(activity(), { owner }, new Sources()).run({ query: "  " })).toBe("Give at least one word to search for.")
+  })
+
+  test("records a failed search as unresolved", async () => {
+    const sources = new Sources()
+    expect(await repoSearch(activity(true), { owner }, sources).run({ query: "typed" })).toBe("The repository search for “typed” couldn't be finished.")
+    expect(sources.unresolved).toEqual(["the repository search for “typed”"])
   })
 })
 
@@ -237,5 +342,43 @@ describe("github branches", () => {
     ])
     const commits = await activity.commits(0, 10)
     expect(commits.map(commit => [commit.subject, commit.branch])).toEqual([["Editor two", "editor"], ["Editor one", "editor"], ["Squashed work", "squashed"]])
+  })
+})
+
+describe("github releases and search", () => {
+  async function repository() {
+    const folder_ = await folder()
+    const git = (date: string, ...args: string[]) => $`git -C ${folder_} ${args}`
+      .env({ ...process.env, GIT_AUTHOR_NAME: "Ada", GIT_AUTHOR_EMAIL: "ada@example.com", GIT_COMMITTER_NAME: "Ada", GIT_COMMITTER_EMAIL: "ada@example.com", GIT_AUTHOR_DATE: date, GIT_COMMITTER_DATE: date })
+      .quiet()
+    await git("2026-07-01T10:00:00Z", "init", "-q", "-b", "main")
+    await git("2026-07-01T10:00:00Z", "commit", "-q", "--allow-empty", "-m", "Typed notes, long ago")
+    await git("2026-10-22T10:00:00Z", "commit", "-q", "--allow-empty", "-m", "Include TYPED notes in the summary")
+    await git("2026-10-22T10:00:00Z", "tag", "v2.3.0")
+    await git("2026-10-23T10:00:00Z", "commit", "-q", "--allow-empty", "-m", "Typed rooms")
+    await git("2026-10-23T10:00:00Z", "branch", "release/2.4")
+    await git("2026-10-23T10:00:00Z", "branch", "feature")
+    await git("2026-11-20T10:00:00Z", "commit", "-q", "--allow-empty", "-m", "Typed notes after the cutoff")
+    await git("2026-11-20T10:00:00Z", "tag", "v2.4.0")
+    return folder_
+  }
+
+  test("reads versioned tags and release branches up to the cutoff", async () => {
+    const activity = github({ folder: await repository(), slug: "ada/lumen" }, { since: new Date("2026-11-01T00:00:00Z"), until: new Date("2026-11-10T00:00:00Z") })
+    const releases = (await activity.releases()).map(({ name, date }) => [name, Date.parse(date)])
+    expect(releases.toSorted()).toEqual([["release/2.4", Date.parse("2026-10-23T10:00:00Z")], ["v2.3.0", Date.parse("2026-10-22T10:00:00Z")]])
+  })
+
+  test("searches commit messages for every word, ignoring case, within the search lookback, and asks gh with the same words", async () => {
+    const searches: string[] = []
+    const run = async (argv: string[]) => {
+      if (argv[0] !== "gh") return execute(argv)
+      searches.push(argv[argv.indexOf("--search") + 1]!)
+      return "[]"
+    }
+    const activity = github({ folder: await repository(), slug: "ada/lumen" }, { since: new Date("2026-11-01T00:00:00Z"), until: new Date("2026-11-10T00:00:00Z") }, run)
+    const found = await activity.search(["typed", "notes"])
+    expect(found.commits.map(commit => commit.subject)).toEqual(["Include TYPED notes in the summary"])
+    expect(searches).toEqual(['"typed" "notes" updated:>=2026-08-12T00:00:00Z'])
   })
 })

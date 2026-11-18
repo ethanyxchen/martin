@@ -1,7 +1,7 @@
 import { readdir } from "node:fs/promises"
 import { join, resolve } from "node:path"
 import { z } from "zod"
-import { type Branch, type Connect, lookback, main, type PullRequest as Pull } from "../src/activity"
+import { type Branch, type Connect, lookback, main, type PullRequest as Pull, type Release, searchLimit, searchLookback } from "../src/activity"
 import { Commit, Note, Owner, Repository } from "../src/schema"
 
 const Timestamp = z.iso.datetime({ offset: true })
@@ -26,6 +26,7 @@ export const Rubric = z.strictObject({
     id: z.string(),
     section: Section,
     caption: z.string().optional(),
+    skills: z.array(z.string()).optional(),
     updated: z.union([z.iso.date(), z.literal("any")]).optional(),
   })),
   tolerated: z.array(z.string()),
@@ -45,6 +46,7 @@ export const Scenario = z.strictObject({
   repository: Repository.nullable(),
   commits: z.array(Commit),
   pullRequests: z.array(PullRequest),
+  releases: z.array(z.strictObject({ name: z.string(), date: Timestamp })),
   stages: z.array(Stage),
 })
 
@@ -57,7 +59,7 @@ export type Project = { id: string, scenario: Scenario, stages: Stage[] }
 
 export type PullState = "OPEN" | "MERGED" | "CLOSED"
 export type Visible = PullRequest & { state: PullState, updatedAt: string }
-export type State = { commits: Commit[], pullRequests: Visible[], branches: Branch[] }
+export type State = { commits: Commit[], pullRequests: Visible[], branches: Branch[], releases: Release[] }
 
 export async function projects(root: string, only?: string): Promise<Project[]> {
   const folders = await readdir(root, { withFileTypes: true })
@@ -81,7 +83,7 @@ export async function load(folder: string): Promise<Project> {
   }
 }
 
-export function state(scenario: Pick<Scenario, "commits" | "pullRequests">, cutoff: Date): State {
+export function state(scenario: Pick<Scenario, "commits" | "pullRequests" | "releases">, cutoff: Date): State {
   const by = (date: string | null) => date !== null && new Date(date) <= cutoff
   const commits = scenario.commits.filter(commit => by(commit.date))
   const pullRequests = scenario.pullRequests.filter(pull => by(pull.createdAt)).map(pull => {
@@ -101,13 +103,15 @@ export function state(scenario: Pick<Scenario, "commits" | "pullRequests">, cuto
     const pull = pulls.at(-1)
     return { name, lastCommit: last.date, author: last.author, email: last.email, ahead, merged: merge !== null && ahead === 0, pullRequest: pull ? shape(pull) : null }
   })
-  return { commits, pullRequests, branches }
+  return { commits, pullRequests, branches, releases: scenario.releases.filter(release => by(release.date)) }
 }
 
 export function connect(scenario: Scenario): Connect {
   return (_, window) => {
     const visible = state(scenario, window.until)
     const since = (date: string) => new Date(date) >= window.since
+    const searchable = (date: string) => new Date(date) >= new Date(window.until.getTime() - searchLookback)
+    const matches = (text: string, words: string[]) => words.every(word => text.toLowerCase().includes(word.toLowerCase()))
     return {
       commits: async (skip, count) => visible.commits
         .filter(commit => since(commit.date))
@@ -119,6 +123,18 @@ export function connect(scenario: Scenario): Connect {
         .slice(0, limit)
         .map(shape),
       branches: async () => visible.branches.filter(branch => Date.parse(branch.lastCommit) >= window.until.getTime() - lookback),
+      releases: async () => visible.releases,
+      search: async words => ({
+        commits: visible.commits
+          .filter(commit => searchable(commit.date) && matches(commit.subject, words))
+          .toSorted((a, b) => Date.parse(b.date) - Date.parse(a.date))
+          .slice(0, searchLimit),
+        pullRequests: visible.pullRequests
+          .filter(pull => searchable(pull.updatedAt) && matches(pull.title, words))
+          .toSorted((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
+          .slice(0, searchLimit)
+          .map(shape),
+      }),
     }
   }
 }

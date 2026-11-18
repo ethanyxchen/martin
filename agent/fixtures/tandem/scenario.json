@@ -14,6 +14,20 @@
   },
   "commits": [
     {
+      "date": "2026-10-22T10:00:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Include notes typed during the call in the summary",
+      "branch": "maya/summary-typed-notes"
+    },
+    {
+      "date": "2026-10-22T14:00:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Merge pull request #3 from fernlight/maya/summary-typed-notes",
+      "branch": "main"
+    },
+    {
       "date": "2026-10-26T10:12:00Z",
       "author": "Tomás Herrera",
       "email": "tomas.herrera@fernlight.io",
@@ -985,9 +999,70 @@
       "email": "tomas.herrera@fernlight.io",
       "subject": "Show the speaker's avatar beside each transcript line",
       "branch": "tomas/speaker-avatars"
+    },
+    {
+      "date": "2026-11-17T10:30:00Z",
+      "author": "Tomás Herrera",
+      "email": "tomas.herrera@fernlight.io",
+      "subject": "Fix the Android share sheet closing before the link is copied",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-17T11:00:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Search transcripts from the command bar",
+      "branch": "maya/transcript-search"
+    },
+    {
+      "date": "2026-11-17T15:40:00Z",
+      "author": "Tomás Herrera",
+      "email": "tomas.herrera@fernlight.io",
+      "subject": "Keep offline edits when sync reconnects",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-18T10:20:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Show an empty state when no transcript matches",
+      "branch": "maya/transcript-search"
+    },
+    {
+      "date": "2026-11-19T16:00:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Merge pull request #11 from fernlight/maya/transcript-search",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-23T10:15:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Export a meeting's notes to Notion",
+      "branch": "maya/notion-export"
+    },
+    {
+      "date": "2026-11-23T15:30:00Z",
+      "author": "Maya Okafor",
+      "email": "maya.okafor@fernlight.io",
+      "subject": "Turn action items into Notion to-dos",
+      "branch": "maya/notion-export"
     }
   ],
   "pullRequests": [
+    {
+      "title": "Include typed notes in the meeting summary",
+      "author": "mokafor",
+      "branch": "maya/summary-typed-notes",
+      "createdAt": "2026-10-22T10:30:00Z",
+      "mergedAt": "2026-10-22T14:00:00Z",
+      "closedAt": "2026-10-22T14:00:00Z",
+      "additions": 64,
+      "deletions": 12,
+      "changedFiles": 4,
+      "commits": 1
+    },
     {
       "title": "Getting-started checklist on the empty home screen",
       "author": "mokafor",
@@ -1107,6 +1182,56 @@
       "deletions": 30,
       "changedFiles": 7,
       "commits": 2
+    },
+    {
+      "title": "Search across meeting transcripts",
+      "author": "mokafor",
+      "branch": "maya/transcript-search",
+      "createdAt": "2026-11-17T11:30:00Z",
+      "mergedAt": "2026-11-19T16:00:00Z",
+      "closedAt": "2026-11-19T16:00:00Z",
+      "additions": 980,
+      "deletions": 60,
+      "changedFiles": 18,
+      "commits": 8
+    },
+    {
+      "title": "Export meetings to Notion",
+      "author": "mokafor",
+      "branch": "maya/notion-export",
+      "createdAt": "2026-11-23T16:00:00Z",
+      "mergedAt": null,
+      "closedAt": null,
+      "additions": 410,
+      "deletions": 20,
+      "changedFiles": 9,
+      "commits": 2
+    }
+  ],
+  "releases": [
+    {
+      "name": "v2.3.0",
+      "date": "2026-10-21T16:00:00Z"
+    },
+    {
+      "name": "v2.3.1",
+      "date": "2026-10-29T15:00:00Z"
+    },
+    {
+      "name": "v2.4.0-rc.1",
+      "date": "2026-11-12T17:00:00Z"
+    },
+    {
+      "name": "v2.4.0-rc.2",
+      "date": "2026-11-13T18:00:00Z"
+    },
+    {
+      "name": "v2.4.0",
+      "date": "2026-11-18T15:00:00Z"
+    },
+    {
+      "name": "v2.4.1",
+      "date": "2026-11-20T14:00:00Z"
     }
   ],
   "stages": [
@@ -1127,6 +1252,13 @@
           "date": "2026-11-03T12:00:00Z",
           "changedAt": "2026-11-03T12:00:00Z",
           "file": "notes/ideas.md"
+        },
+        {
+          "id": "release-testing-2-3",
+          "title": "2.3 release testing",
+          "date": "2026-10-20T15:00:00Z",
+          "changedAt": "2026-10-21T10:00:00Z",
+          "file": "notes/release-testing-2-3.md"
         }
       ],
       "rubric": {
@@ -1148,7 +1280,10 @@
           },
           {
             "id": "2.4 release testing",
-            "section": "next"
+            "section": "next",
+            "skills": [
+              "releases"
+            ]
           },
           {
             "id": "transcript search, the branch left on Oct 29",
@@ -1170,6 +1305,20 @@
           {
             "id": "the low hanging fruit ideas, such as a recording shortcut or Notion export, which nobody has taken on",
             "section": "absent"
+          },
+          {
+            "id": "2.3 release testing, over because 2.3.0 shipped on Oct 21",
+            "section": "absent",
+            "skills": [
+              "releases"
+            ]
+          },
+          {
+            "id": "notes typed during the call missing from the summary, still unticked in My tasks and in the 2.3 checklist, but fixed and merged by the owner on Oct 22",
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
           }
         ],
         "tolerated": []
@@ -1199,6 +1348,13 @@
           "date": "2026-11-06T09:00:00Z",
           "changedAt": "2026-11-06T09:00:00Z",
           "file": "notes/none.md"
+        },
+        {
+          "id": "release-testing-2-3",
+          "title": "2.3 release testing",
+          "date": "2026-10-20T15:00:00Z",
+          "changedAt": "2026-10-21T10:00:00Z",
+          "file": "notes/release-testing-2-3.md"
         }
       ],
       "rubric": {
@@ -1216,7 +1372,10 @@
           },
           {
             "id": "2.4 release testing",
-            "section": "next"
+            "section": "next",
+            "skills": [
+              "releases"
+            ]
           },
           {
             "id": "transcript search, the branch left on Oct 29",
@@ -1246,6 +1405,20 @@
           {
             "id": "the empty note titled None",
             "section": "absent"
+          },
+          {
+            "id": "2.3 release testing, over because 2.3.0 shipped on Oct 21",
+            "section": "absent",
+            "skills": [
+              "releases"
+            ]
+          },
+          {
+            "id": "notes typed during the call missing from the summary, still unticked in My tasks and in the 2.3 checklist, but fixed and merged by the owner on Oct 22",
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
           }
         ],
         "tolerated": []
@@ -1289,6 +1462,13 @@
           "date": "2026-11-09T12:00:00Z",
           "changedAt": "2026-11-09T12:00:00Z",
           "file": "notes/release-testing-1.md"
+        },
+        {
+          "id": "release-testing-2-3",
+          "title": "2.3 release testing",
+          "date": "2026-10-20T15:00:00Z",
+          "changedAt": "2026-10-21T10:00:00Z",
+          "file": "notes/release-testing-2-3.md"
         }
       ],
       "rubric": {
@@ -1321,7 +1501,10 @@
           },
           {
             "id": "the getting-started checklist, which the 1:1 says the owner is still on but which merged on Nov 2",
-            "section": "absent"
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
           },
           {
             "id": "Tomás's speaker names in transcripts, including the review fix the owner pushed to it",
@@ -1338,6 +1521,20 @@
           {
             "id": "the empty note titled None",
             "section": "absent"
+          },
+          {
+            "id": "2.3 release testing, over because 2.3.0 shipped on Oct 21",
+            "section": "absent",
+            "skills": [
+              "releases"
+            ]
+          },
+          {
+            "id": "notes typed during the call missing from the summary, still unticked in My tasks and in the 2.3 checklist, but fixed and merged by the owner on Oct 22",
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
           }
         ],
         "tolerated": []
@@ -1381,6 +1578,13 @@
           "date": "2026-11-09T12:00:00Z",
           "changedAt": "2026-11-12T17:00:00Z",
           "file": "notes/release-testing-2.md"
+        },
+        {
+          "id": "release-testing-2-3",
+          "title": "2.3 release testing",
+          "date": "2026-10-20T15:00:00Z",
+          "changedAt": "2026-10-21T10:00:00Z",
+          "file": "notes/release-testing-2-3.md"
         }
       ],
       "rubric": {
@@ -1394,6 +1598,9 @@
             "id": "2.4 release testing, a single checklist task",
             "section": "now",
             "caption": "that the Android share sheet and offline sync are still open",
+            "skills": [
+              "releases"
+            ],
             "updated": "2026-11-12"
           },
           {
@@ -1435,6 +1642,20 @@
           {
             "id": "the empty note titled None",
             "section": "absent"
+          },
+          {
+            "id": "2.3 release testing, over because 2.3.0 shipped on Oct 21",
+            "section": "absent",
+            "skills": [
+              "releases"
+            ]
+          },
+          {
+            "id": "notes typed during the call missing from the summary, still unticked in My tasks and in the 2.3 checklist, but fixed and merged by the owner on Oct 22",
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
           }
         ],
         "tolerated": [],
@@ -1442,6 +1663,125 @@
           "transcript search, picked up again on Nov 16",
           "2.4 release testing, a single checklist task"
         ]
+      }
+    },
+    {
+      "name": "5-shipped",
+      "cutoff": "2026-11-24T09:00:00Z",
+      "notes": [
+        {
+          "id": "my-tasks",
+          "title": "My tasks",
+          "date": "2026-11-02T08:45:00Z",
+          "changedAt": "2026-11-13T11:00:00Z",
+          "file": "notes/my-tasks-4.md"
+        },
+        {
+          "id": "ideas",
+          "title": "low hanging fruit",
+          "date": "2026-11-03T12:00:00Z",
+          "changedAt": "2026-11-03T12:00:00Z",
+          "file": "notes/ideas.md"
+        },
+        {
+          "id": "none",
+          "title": "None",
+          "date": "2026-11-06T09:00:00Z",
+          "changedAt": "2026-11-06T09:00:00Z",
+          "file": "notes/none.md"
+        },
+        {
+          "id": "one-on-one",
+          "title": "Tomás / Maya 1:1",
+          "date": "2026-11-09T11:00:00Z",
+          "changedAt": "2026-11-09T11:20:00Z",
+          "file": "notes/one-on-one.md"
+        },
+        {
+          "id": "release-testing",
+          "title": "2.4 release testing",
+          "date": "2026-11-09T12:00:00Z",
+          "changedAt": "2026-11-12T17:00:00Z",
+          "file": "notes/release-testing-2.md"
+        },
+        {
+          "id": "release-testing-2-3",
+          "title": "2.3 release testing",
+          "date": "2026-10-20T15:00:00Z",
+          "changedAt": "2026-10-21T10:00:00Z",
+          "file": "notes/release-testing-2-3.md"
+        }
+      ],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "Notion export, the branch started on Nov 23 with its pull request in review",
+            "section": "now",
+            "updated": "2026-11-23"
+          },
+          {
+            "id": "2.4 release testing, over because 2.4.0 shipped on Nov 18 and 2.4.1 followed on Nov 20, even though the checklist still has unticked boxes",
+            "section": "absent",
+            "skills": [
+              "releases"
+            ]
+          },
+          {
+            "id": "transcript search, merged on Nov 19",
+            "section": "absent"
+          },
+          {
+            "id": "shared action items with assignees, due dates and reminders, merged on Nov 12",
+            "section": "absent"
+          },
+          {
+            "id": "calendar reconnect, ticked done in My tasks because Tomás fixed token refresh on the server",
+            "section": "absent"
+          },
+          {
+            "id": "the getting-started checklist on the empty home screen, merged on Nov 2",
+            "section": "absent"
+          },
+          {
+            "id": "Tomás's speaker names in transcripts, including the review fix the owner pushed to it",
+            "section": "absent"
+          },
+          {
+            "id": "Jonas's per-seat billing",
+            "section": "absent"
+          },
+          {
+            "id": "Aiko's move of every component to the design tokens",
+            "section": "absent"
+          },
+          {
+            "id": "Tomás's Google token refresh",
+            "section": "absent"
+          },
+          {
+            "id": "the other low hanging fruit ideas: a recording shortcut, a dark share page, copying action items as Markdown and auto-titled meetings",
+            "section": "absent"
+          },
+          {
+            "id": "the empty note titled None",
+            "section": "absent"
+          },
+          {
+            "id": "2.3 release testing, over because 2.3.0 shipped on Oct 21",
+            "section": "absent",
+            "skills": [
+              "releases"
+            ]
+          },
+          {
+            "id": "notes typed during the call missing from the summary, still unticked in My tasks and in the 2.3 checklist, but fixed and merged by the owner on Oct 22",
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
+          }
+        ],
+        "tolerated": []
       }
     }
   ]

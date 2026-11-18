@@ -23,6 +23,11 @@ describe("overview job", () => {
     expect(text).toContain("- untouched · Note untouched · meeting 2026-11-01 · edited 2026-11-01\n")
   })
 
+  test("asks to check notes against the repository only when one is linked", () => {
+    expect(overviewPrompt(overviewJob())).not.toContain("repo_search")
+    expect(overviewPrompt(overviewJob({ repository: { folder: "/tmp", slug: "ann/lumen" } }))).toContain("look for it with repo_search")
+  })
+
   test("keeps the system prompt identical across jobs so it can be cached", () => {
     expect(overview(overviewJob({ cutoff: "2026-11-01T09:00:00Z" })).system).toBe(system)
     expect(overview(overviewJob({ cutoff: "2026-12-01T09:00:00Z", project: { name: "Other" } })).system).toBe(system)
@@ -47,9 +52,9 @@ describe("overview job", () => {
     expect(() => spec.finish({ now: [], next: [], shelved: [] })).toThrow("Couldn't read note “Note a”.")
   })
 
-  test("offers repository activity only when a repository is linked", () => {
+  test("offers repository activity and search only when a repository is linked", () => {
     expect(overview(overviewJob()).tools.map(tool => tool.name)).toEqual(["read_note"])
-    expect(overview(overviewJob({ repository: { folder: "/tmp", slug: "ann/lumen" } })).tools.map(tool => tool.name)).toEqual(["read_note", "repo_activity"])
+    expect(overview(overviewJob({ repository: { folder: "/tmp", slug: "ann/lumen" } })).tools.map(tool => tool.name)).toEqual(["read_note", "repo_activity", "repo_search"])
   })
 })
 
