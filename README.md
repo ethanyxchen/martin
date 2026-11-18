@@ -44,9 +44,13 @@ Every 30 minutes Martin checks each project and refreshes its overview only when
 
 Martin reads the calendars you've added to macOS. To use Google Calendar, add your account in System Settings → Internet Accounts with Calendars turned on. In Settings, untick any calendars you don't want Martin to follow.
 
+## Syncing across Macs
+
+Sign in with Apple in Settings to keep your notes, meetings, projects and images in sync on every Mac you sign in on. Martin syncs every minute and whenever you change something. When a note is edited on two Macs before they sync, the later edit wins. A project's linked repository, its overview and repository suggestions stay on each Mac. Signing out keeps your notes on the Mac and stops syncing.
+
 ## Your data
 
-Everything stays on your Mac. Each meeting is a folder in `~/Library/Application Support/Martin/meetings/` holding `note.md`, the note itself, and `meeting.json`, the event it belongs to. Projects are in `projects.json`, and their overviews in `overviews.json`. Mentions are saved in the note as `@{Ada Lovelace <ada@example.com>}`, so plain-text search finds every note that mentions someone.
+Until you sign in, everything stays on your Mac. Signed in, Martin keeps a copy in its Supabase database, readable only by your account. Each meeting is a folder in `~/Library/Application Support/Martin/meetings/` holding `note.md`, the note itself, and `meeting.json`, the event it belongs to. Projects are in `projects.json`, and their overviews in `overviews.json`. Mentions are saved in the note as `@{Ada Lovelace <ada@example.com>}`, so plain-text search finds every note that mentions someone.
 
 ## Building from source
 
@@ -59,6 +63,8 @@ open build/Martin.app
 ```
 
 Run the tests with `swift test --package-path app`.
+
+Syncing needs a Supabase project with Sign in with Apple turned on, `martin://auth` in its redirect URLs and the schema in `supabase/migrations` applied. Pass the project to the build as `SUPABASE_URL` and `SUPABASE_KEY` (the publishable key). Builds without them hide the Account section.
 
 ## Releasing
 

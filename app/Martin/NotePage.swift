@@ -33,6 +33,9 @@ struct NoteView: View {
                     .menuIndicator(.hidden)
             }
         }
+        .onChange(of: app.revisions[meeting.id]) {
+            note = library.note(of: meeting) ?? ""
+        }
         .onChange(of: editingTitle) {
             if !editingTitle { app.rename(current, to: title) }
         }
