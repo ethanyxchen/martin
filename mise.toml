@@ -1,0 +1,32 @@
+min_version = "2026.11.0"
+
+[tools]
+bun = "1.4.3"
+uv = "0.11.26"
+fnox = "1.48.0"
+1password = "2.34.0"
+
+[tasks.dev]
+description = "Build Martin and open it in the background"
+run = "fnox exec -- ./scripts/build-app.sh && open -g -j build/Martin.app"
+
+[tasks.test]
+description = "Run the app and MartinKit tests"
+run = "swift test --package-path app"
+
+[tasks.lint]
+description = "Build with warnings as errors and check the agent, as the pre-commit hook does"
+run = ".githooks/pre-commit"
+
+[tasks.eval]
+description = "Benchmark the agent; pass eval.ts flags after --"
+dir = "agent"
+run = "fnox --profile agent exec -- bun eval/eval.ts"
+
+[tasks.release]
+description = "Build, sign, notarize and sign the update for a release"
+run = "fnox --profile release --if-missing error --no-daemon exec -- ./scripts/release-app.sh"
+
+[tasks.clean]
+description = "Quit this checkout's Martin and delete build output"
+run = '! pgrep -qf "$PWD/build/Martin.app/" || osascript -e "quit app \"$PWD/build/Martin.app\""; rm -rf .build build'

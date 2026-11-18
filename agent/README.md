@@ -11,25 +11,25 @@ The repository decides started and done for code work; notes decide Next, explic
 
 Notes go stale, so an open item in an old note is checked before it is kept. The releases source groups versioned tags and `release/` branches into tracks, such as `desktop-stable` or plain `v` tags, each with its latest versions and the day each appeared, so a testing checklist ends once its version or a later one ships. `repo_search` looks for every word of a query in commit messages and pull requests from the last 90 days, reaching work that merged before the last read.
 
-The provider is Claude (`ANTHROPIC_API_KEY`) or OpenAI (`OPENAI_API_KEY`), chosen by the job.
+The provider is Claude (`ANTHROPIC_API_KEY`) or OpenAI (`OPENAI_API_KEY`), chosen by the job. fnox's `agent` profile reads both from the Martin vault in 1Password.
 
 ## Develop
 
     bun install
     bun run check
     bun run build
-    bun --env-file=../.env src/main.ts < fixtures/sample/job.json
+    fnox --profile agent exec -- bun src/main.ts < fixtures/sample/job.json
 
 ## Benchmark
 
-`bun run eval` replays every project in `fixtures/` stage by stage, each run starting from the previous overview. Projects run in parallel and stages in order. Every run's time, tokens, cost, tool calls, overview and verdicts are written to `eval/out/`. It refuses to run a model missing from `eval/prices.ts`.
+`mise run eval` replays every project in `fixtures/` stage by stage, each run starting from the previous overview. Projects run in parallel and stages in order. Every run's time, tokens, cost, tool calls, overview and verdicts are written to `eval/out/`. It refuses to run a model missing from `eval/prices.ts`.
 
-    bun --env-file=../.env eval/eval.ts --provider anthropic --scratch
-    bun --env-file=../.env eval/eval.ts --provider anthropic --project lumen --model claude-sonnet-5-5
+    mise run eval -- --provider anthropic --scratch
+    mise run eval -- --provider anthropic --project lumen --model claude-sonnet-5-5
 
 `--project` runs one project, by folder or name. `--scratch` adds a final run without a previous overview. `--stage` runs only the named stage, without a previous overview or, with `--previous`, from the overview a saved run in `eval/out/` wrote, and `--repeat` runs the selection several times and pools the scores, so a change can be measured on the slice it should move. `--model` and `--effort` override the job's defaults.
 
-    bun --env-file=../.env eval/eval.ts --project martin --stage 1-refocus --repeat 4
+    mise run eval -- --project martin --stage 1-refocus --repeat 4
 
 ### Fixtures
 

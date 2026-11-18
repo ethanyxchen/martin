@@ -27,9 +27,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: oven-sh/setup-bun@v2.2.0
+      - uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
         with:
-          bun-version: 1.4.3
+          install_args: bun
 
       - run: bun install --frozen-lockfile
 
