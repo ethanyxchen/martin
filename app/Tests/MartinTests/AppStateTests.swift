@@ -365,6 +365,51 @@ final class AppStateTests: Sandbox {
         #expect(try library.lookups().isEmpty)
         #expect(app.suggestions.isEmpty)
     }
+
+    @Test func changingTheKeyStopsTheLookupsStartedWithTheOldOne() async throws {
+        let martin = try clone("martin")
+        let current = Current()
+        let log = Log()
+        let finder = RepositoryFinder(nearby: { _ in [martin] }, match: { _, _, _, credential in
+            if credential == claude { await MainActor.run { current.app?.credential = openAI } }
+            await log.add("\(credential.provider.rawValue) \(Task.isCancelled ? "cancelled" : "running")")
+            return []
+        })
+        let app = AppState(library: library, defaults: defaults, credentials: credentials, finder: finder)
+        current.app = app
+        app.file(try library.create(), inNewProjectNamed: "Notepad")
+        app.file(try library.create(), inNewProjectNamed: "Atlas")
+        app.credential = claude
+        await app.suggestRepositories()
+        #expect(await log.entries == ["anthropic cancelled"])
+        #expect(app.suggestions.isEmpty)
+    }
+
+    @Test func aLookupCancelledWithItsViewIsAskedAgainNextTime() async throws {
+        let martin = try clone("martin")
+        let asked = Asked()
+        let finder = RepositoryFinder(nearby: { _ in [martin] }, match: { _, _, _, _ in
+            await asked.count()
+            withUnsafeCurrentTask { $0?.cancel() }
+            return nil
+        })
+        let app = AppState(library: library, defaults: defaults, credentials: credentials, finder: finder)
+        app.file(try library.create(), inNewProjectNamed: "Notepad")
+        app.credential = claude
+        let project = try #require(app.projects.first)
+        await app.suggestRepository(for: project)
+        #expect(app.suggestions.isEmpty)
+        await app.suggestRepository(for: project)
+        #expect(await asked.times == 2)
+    }
+}
+
+actor Log {
+    private(set) var entries: [String] = []
+
+    func add(_ entry: String) {
+        entries.append(entry)
+    }
 }
 
 private let claude = Credential(provider: .anthropic, key: "sk-ant")
