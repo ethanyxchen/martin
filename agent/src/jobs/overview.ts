@@ -27,7 +27,7 @@ Notes supply intent. They decide what is next, what the owner explicitly shelved
 
 The title names the task in a few words. The caption is one short sentence on where it stands. Never mention pull request numbers, commit hashes, branch names or file names. Set "updated" to the YYYY-MM-DD date of the latest note or owner activity about the task, or null when unknown. A release is not owner activity.
 
-Start from the previous overview: keep what still holds and change only what the new material changes. The previous overview is a draft, not evidence; check its claims against the notes and repository, and let later material override earlier.
+Start from the previous overview: keep what still holds and change only what the new material changes. The previous overview is a draft, not evidence; check its claims against the notes and repository, and let later material override earlier. It can also miss work: apply the rules above to every branch and note, not just to what changed, so a stale branch of the owner's goes in shelved by those rules even when the previous overview leaves it out.
 
 Read only what you need. You may read several notes at once. When a note continues past the page you read and the rest may settle a task, read on. When a repository is linked, read its branches and releases every time, and its commits and pull requests as needed, even if no note changed. If a source couldn't be read, do not describe it as having no activity. Leave out anything the material does not support.`
 

@@ -30,6 +30,7 @@ const { values } = parseArgs({
     project: { type: "string" },
     scratch: { type: "boolean", default: false },
     stage: { type: "string" },
+    previous: { type: "string" },
     repeat: { type: "string", default: "1" },
     model: { type: "string" },
     effort: { type: "string" },
@@ -44,6 +45,8 @@ const selected = await projects(join(import.meta.dir, "..", "fixtures"), values.
 if (!selected.length) exit(values.project ? `No project named ${values.project}.` : "No projects in fixtures/.")
 const repeats = Number(values.repeat)
 if (!Number.isInteger(repeats) || repeats < 1) exit("--repeat takes a whole number of runs, at least 1.")
+if (values.previous && !values.stage) exit("--previous needs --stage.")
+const start: Overview | null = values.previous ? await recorded(values.previous) : null
 if (values.stage && !selected.some(project => project.stages.some(stage => stage.name === values.stage))) exit(`No stage named ${values.stage}.`)
 const out = values.out ?? join(import.meta.dir, "out", `${new Date().toISOString().replace(/[:.]/g, "-")}-${model}`)
 const cache = join(import.meta.dir, "cache")
@@ -61,7 +64,7 @@ async function replay(project: Project, round: string): Promise<Run[]> {
   const label = (name: string) => round ? `${name}-${round}` : name
   if (values.stage) {
     const only = project.stages.find(stage => stage.name === values.stage)
-    return only ? [await attempt(project, only, null, label("scratch"))] : []
+    return only ? [await attempt(project, only, start, label(start ? "resumed" : "scratch"))] : []
   }
   const runs: Run[] = []
   let previous: Overview | null = null
@@ -179,6 +182,12 @@ function sum(requests: Usage[]): Usage {
 
 function message(error: unknown): string {
   return error instanceof Failure ? error.message : String(error)
+}
+
+async function recorded(file: string): Promise<Overview> {
+  const run: { job: { cutoff: string }, outcome?: { result: OverviewResult } } = await Bun.file(file).json()
+  if (!run.outcome) exit(`${file} holds no overview.`)
+  return { ...run.outcome.result, readAt: run.job.cutoff }
 }
 
 function exit(text: string): never {

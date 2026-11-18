@@ -27,7 +27,7 @@ The provider is Claude (`ANTHROPIC_API_KEY`) or OpenAI (`OPENAI_API_KEY`), chose
     bun --env-file=../.env eval/eval.ts --provider anthropic --scratch
     bun --env-file=../.env eval/eval.ts --provider anthropic --project lumen --model claude-sonnet-5-5
 
-`--project` runs one project, by folder or name. `--scratch` adds a final run without a previous overview. `--stage` runs only the named stage, without a previous overview, and `--repeat` runs the selection several times and pools the scores, so a change can be measured on the slice it should move. `--model` and `--effort` override the job's defaults.
+`--project` runs one project, by folder or name. `--scratch` adds a final run without a previous overview. `--stage` runs only the named stage, without a previous overview or, with `--previous`, from the overview a saved run in `eval/out/` wrote, and `--repeat` runs the selection several times and pools the scores, so a change can be measured on the slice it should move. `--model` and `--effort` override the job's defaults.
 
     bun --env-file=../.env eval/eval.ts --project martin --stage 1-refocus --repeat 4
 
