@@ -262,7 +262,7 @@ struct ProjectActions: View {
                 project.map { on ? app.addRepository(to: $0) : app.link($0, to: nil) }
             })
             .disabled(project == nil)
-            let refreshing = project.map { app.overviewStatus[$0.id] == .refreshing } == true
+            let refreshing = project.map(app.isRefreshingOverview(of:)) == true
             Button(refreshing ? "Refreshing Overview…" : "Refresh Overview", systemImage: "arrow.clockwise") { if let project { app.refreshOverview(of: project) } }
                 .disabled(refreshing || project.map(app.canRefreshOverview(of:)) != true)
             Divider()
@@ -372,7 +372,7 @@ struct ProjectOverview: View {
 
     var body: some View {
         if app.canRefreshOverview(of: project) {
-            OverviewSection(overview: app.overviews[project.id]?.built?.overview, status: app.overviewStatus[project.id] ?? .ready, now: now) {
+            OverviewSection(overview: app.overviews[project.id]?.built?.overview, status: app.overviewStatus[project.id] ?? .ready, sweepsAbove: project.repository != nil, now: now) {
                 app.refreshOverview(of: project)
             }
         }

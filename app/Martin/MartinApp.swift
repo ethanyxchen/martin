@@ -570,6 +570,10 @@ final class AppState {
 extension AppState {
     private static let unsaved = "Couldn’t save the overview."
 
+    func isRefreshingOverview(of project: Project) -> Bool {
+        overviewStatus[project.id] == .refreshing
+    }
+
     func canRefreshOverview(of project: Project) -> Bool {
         guard credential != nil, let project = projects.first(where: { $0.id == project.id }), !project.isSecret else { return false }
         return !overviewNotes(in: project).isEmpty || project.repository?.folder != nil || overviews[project.id]?.built != nil

@@ -45,9 +45,9 @@ struct OverviewSectionTests {
         #expect(OverviewSection.age(of: now.addingTimeInterval(5), now: now) == RelativeDateTimeFormatter().localizedString(for: now, relativeTo: now))
     }
 
-    @Test func aFailedRefreshOffersToTryAgainAndARunningOneOffersNothing() {
+    @Test func aFailedRefreshOffersToTryAgain() {
         #expect(OverviewStatus.ready.action == "Refresh")
-        #expect(OverviewStatus.refreshing.action == nil)
+        #expect(OverviewStatus.refreshing.action == "Refresh")
         #expect(OverviewStatus.failed("Couldn't refresh.").action == "Try Again")
     }
 

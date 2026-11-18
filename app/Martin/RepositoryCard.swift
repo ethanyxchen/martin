@@ -15,11 +15,11 @@ struct RepositoryCard: View {
         switch repository {
         case .folder(let folder):
             if let repository = Repository(at: folder) {
-                card(icon: "chevron.left.forwardslash.chevron.right", tint: Theme.ink, title: repository.slug, detail: [folder.abbreviated, repository.branch].compactMap(\.self).joined(separator: " · "), reading: reading) {
+                card(icon: "chevron.left.forwardslash.chevron.right", tint: Theme.ink, title: repository.slug, detail: [folder.abbreviated, repository.branch].compactMap(\.self).joined(separator: " · ")) {
                     linkedMenu(repository)
                 }
             } else {
-                card(icon: "exclamationmark.triangle", tint: Theme.secondary, title: folder.lastPathComponent, detail: "Not found at \(folder.abbreviated)", reading: reading) {
+                card(icon: "exclamationmark.triangle", tint: Theme.secondary, title: folder.lastPathComponent, detail: "Not found at \(folder.abbreviated)") {
                     linkedMenu(nil)
                 }
             }
@@ -29,10 +29,6 @@ struct RepositoryCard: View {
                     .menuButton(Chip())
             }
         }
-    }
-
-    private var reading: Bool {
-        app.overviewStatus[project.id] == .refreshing
     }
 
     private func linkedMenu(_ repository: Repository?) -> some View {
@@ -48,7 +44,7 @@ struct RepositoryCard: View {
         .menuButton(RowAction())
     }
 
-    private func card(icon: String, tint: some ShapeStyle, title: String, detail: String, tentative: Bool = false, busy: Bool = false, reading: Bool = false, @ViewBuilder actions: () -> some View) -> some View {
+    private func card(icon: String, tint: some ShapeStyle, title: String, detail: String, tentative: Bool = false, busy: Bool = false, @ViewBuilder actions: () -> some View) -> some View {
         HStack(spacing: 12) {
             Group {
                 if busy {
@@ -86,14 +82,16 @@ struct RepositoryCard: View {
             } else {
                 shape.fill(Theme.well)
             }
-            if reading {
-                ReadingBar()
-                    .frame(maxHeight: .infinity, alignment: .bottom)
-                    .clipShape(shape)
-                    .transition(.opacity)
+            ZStack {
+                if app.isRefreshingOverview(of: project) {
+                    ReadingBar()
+                        .frame(maxHeight: .infinity, alignment: .bottom)
+                        .clipShape(shape)
+                        .transition(.opacity)
+                }
             }
+            .animation(.easeOut(duration: 0.2), value: app.isRefreshingOverview(of: project))
         }
-        .animation(.easeOut(duration: 0.2), value: reading)
         .flush()
         .padding(.bottom, 14)
     }
@@ -120,8 +118,8 @@ private struct LinkChoices: View {
 
 private struct ReadingBar: View {
     private static let share: CGFloat = 0.35
-    private static let period: TimeInterval = 1.4
     @Environment(\.accessibilityReduceMotion) private var still
+    @State private var swept = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -129,20 +127,16 @@ private struct ReadingBar: View {
             if still {
                 Capsule().fill(Theme.cobalt.opacity(0.5))
             } else {
-                TimelineView(.animation) { context in
-                    Capsule()
-                        .fill(Theme.cobalt)
-                        .frame(width: width * Self.share)
-                        .offset(x: width * ((1 + Self.share) * Self.sweep(at: context.date) - Self.share))
-                }
+                Capsule()
+                    .fill(Theme.cobalt)
+                    .frame(width: width * Self.share)
+                    .offset(x: swept ? width : -width * Self.share)
+                    .onAppear {
+                        withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: false)) { swept = true }
+                    }
             }
         }
         .frame(height: 2)
-    }
-
-    private static func sweep(at date: Date) -> CGFloat {
-        let t = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: period) / period
-        return t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t)
     }
 }
 

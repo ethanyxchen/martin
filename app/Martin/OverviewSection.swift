@@ -6,12 +6,8 @@ enum OverviewStatus: Equatable {
     case refreshing
     case failed(String)
 
-    var action: String? {
-        switch self {
-        case .ready: "Refresh"
-        case .refreshing: nil
-        case .failed: "Try Again"
-        }
+    var action: String {
+        if case .failed = self { "Try Again" } else { "Refresh" }
     }
 }
 
@@ -19,6 +15,7 @@ struct OverviewSection: View {
     static let folded = 2
     let overview: Overview?
     let status: OverviewStatus
+    let sweepsAbove: Bool
     let now: Date
     let refresh: () -> Void
     @State private var unfolded = false
@@ -79,23 +76,25 @@ struct OverviewSection: View {
 
     private var footer: some View {
         HStack(spacing: 6) {
+            if status == .refreshing, !sweepsAbove {
+                ProgressView().controlSize(.mini)
+            }
             Self.caption(overview, status: status, now: now).map(Text.init)
             Spacer(minLength: 0)
-            if let action = status.action {
-                Button(action: refresh) {
-                    Label(action, systemImage: "arrow.clockwise")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(Theme.secondary)
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 3)
-                        .background(Theme.well, in: .capsule)
-                        .contentShape(.capsule)
-                }
-                .buttonStyle(Pressable())
-                .pointerStyle(.link)
+            Button(action: refresh) {
+                Label(status.action, systemImage: "arrow.clockwise")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Theme.secondary)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 3)
+                    .background(Theme.well, in: .capsule)
+                    .contentShape(.capsule)
             }
+            .buttonStyle(Pressable())
+            .pointerStyle(.link)
+            .disabled(status == .refreshing)
+            .opacity(status == .refreshing ? 0 : 1)
         }
-        .frame(minHeight: 22)
         .font(Theme.meta)
         .foregroundStyle(Theme.tertiary)
         .padding(.horizontal, TaskRow.inset)
