@@ -82,6 +82,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 @Observable
 final class AppState {
     static let overviewInterval: TimeInterval = 30 * 60
+    static let domain = "dev.ethanchen.martin"
+    static let sharedDefaults = Bundle.main.bundleIdentifier == domain ? UserDefaults.standard : UserDefaults(suiteName: domain)!
     private static let windowSize = NSSize(width: 520, height: 640)
     private static let hiddenCalendarsKey = "hiddenCalendars"
     private static let pageKey = "page"
@@ -137,7 +139,7 @@ final class AppState {
     @ObservationIgnored private var grown: CGFloat = 0
     @ObservationIgnored private(set) lazy var window = makeWindow()
 
-    init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = .standard, credentials: CredentialStore = .keychain(service: Bundle.main.bundleIdentifier ?? "Martin"), finder: RepositoryFinder = RepositoryFinder(), overviewer: Overviewer = Overviewer(), share: @escaping (Bool) -> Void = Telemetry.share) {
+    init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = sharedDefaults, credentials: CredentialStore = .keychain(service: domain), finder: RepositoryFinder = RepositoryFinder(), overviewer: Overviewer = Overviewer(), share: @escaping (Bool) -> Void = Telemetry.share) {
         self.library = library
         self.defaults = defaults
         self.credentials = credentials
