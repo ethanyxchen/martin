@@ -186,6 +186,13 @@ describe("repo_activity", () => {
     ])
   })
 
+  test("keeps a canary suffix and a track name that ends in v", () => {
+    expect(tracks([{ name: "v2.5.0-canary.1", date: "2026-11-12T17:00:00Z" }, { name: "dev1.2", date: "2026-11-11T17:00:00Z" }])).toEqual([
+      { track: "versions", versions: [{ version: "2.5.0-canary.1", date: "2026-11-12T17:00:00Z" }] },
+      { track: "dev", versions: [{ version: "1.2", date: "2026-11-11T17:00:00Z" }] },
+    ])
+  })
+
   test("lists each release track's latest versions and counts the older ones", async () => {
     const releases = Array.from({ length: 8 }, (_, index) => ({ name: `v1.${index}.0`, date: `2026-11-0${index + 1}T10:00:00Z` }))
     expect(await repoActivity(recorded([], false, [], releases), context, new Sources()).run({ source: "releases", cursor: null }))
@@ -233,6 +240,10 @@ describe("repo_search", () => {
       "2026-10-22 merged by owner, branch ada/typed-notes, +64 −12 in 4 files, 1 commits: Typed notes in summaries",
     ].join("\n"))
     expect(await repoSearch(activity(), { owner }, new Sources()).run({ query: "rooms" })).toBe("Commits:\n2026-10-23 on main, Priya <priya@work.com>: Typed rooms\nPull requests:\nNo pull requests match.")
+  })
+
+  test("searches the words of a quoted query", async () => {
+    expect(await repoSearch(activity(), { owner }, new Sources()).run({ query: '"typed notes"' })).toStartWith("Commits:\n2026-10-22 on ada/typed-notes, owner: Include typed notes in the summary")
   })
 
   test("refuses an empty query", async () => {
@@ -368,6 +379,6 @@ describe("github releases and search", () => {
     const activity = github({ folder: await repository(), slug: "ada/lumen" }, { since: new Date("2026-11-01T00:00:00Z"), until: new Date("2026-11-10T00:00:00Z") }, run)
     const found = await activity.search(["typed", "notes"])
     expect(found.commits.map(commit => commit.subject)).toEqual(["Include TYPED notes in the summary"])
-    expect(searches).toEqual(["typed notes updated:>=2026-08-12T00:00:00Z"])
+    expect(searches).toEqual(['"typed" "notes" updated:>=2026-08-12T00:00:00Z'])
   })
 })

@@ -106,7 +106,7 @@ function describe(owner: Owner) {
 export function tracks(releases: Release[]): { track: string, versions: { version: string, date: string }[] }[] {
   const grouped = new Map<string, Map<string, string>>()
   for (const { name, date } of releases) {
-    const match = name.match(/^(?<track>.*?)v?(?<version>\d+(?:\.\d+)+(?:-(?:rc|beta|alpha|preview)[.-]?\d*)?)/i)
+    const match = name.match(/^(?<track>.*?)(?:(?<![a-z])v)?(?<version>\d+(?:\.\d+)+(?:-(?:rc|beta|alpha|preview|pre|canary|next|dev|nightly)[.-]?\d*)?)/i)
     if (!match?.groups) continue
     const track = match.groups.track!.replace(/[-_/.]+$/, "") || "versions"
     const version = match.groups.version!
@@ -217,7 +217,7 @@ export function repoSearch(activity: Activity, { owner }: Pick<Context, "owner">
     description: `Search the linked repository's commit messages and pull requests from the last ${searchDays} days for every word in the query, ignoring case, to check whether work a note mentions was done. Use a few distinctive words. Activity by the owner is marked “owner”.`,
     input: z.strictObject({ query: z.string() }),
     run: async ({ query }) => {
-      const words = query.split(/\s+/).filter(Boolean)
+      const words = query.split(/[\s"]+/).filter(Boolean)
       if (!words.length) return "Give at least one word to search for."
       const found = await sources.read(`search ${words.join(" ")}`, `the repository search for “${query}”`, () => activity.search(words))
       if (!found) return `The repository search for “${query}” couldn't be finished.`

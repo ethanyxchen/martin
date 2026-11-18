@@ -67,7 +67,7 @@ export function github(repository: Repository, window: Window, run = execute): A
   const until = window.until
   const pulls = async (since: Date, limit: number, words: string[] = []) => {
     const output = await run([
-      "gh", "pr", "list", "--repo", slug, "--state", "all", "--limit", `${limit}`, "--search", [...words, `updated:>=${seconds(since)}`].join(" "),
+      "gh", "pr", "list", "--repo", slug, "--state", "all", "--limit", `${limit}`, "--search", [...words.map(word => `"${word}"`), `updated:>=${seconds(since)}`].join(" "),
       "--json", "title,state,updatedAt,mergedAt,author,headRefName,additions,deletions,changedFiles,commits",
     ])
     const listed: (Omit<PullRequest, "author" | "branch" | "commits"> & { mergedAt: string | null, author: { login: string } | null, headRefName: string, commits: unknown[] })[] = JSON.parse(output)

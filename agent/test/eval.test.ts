@@ -244,6 +244,15 @@ describe("judge", () => {
     expect(provider.runs).toBe(3)
   })
 
+  test("labels a cached verdict with the skills its rubric tags now", async () => {
+    const cache = await folder()
+    const provider = counting(fake({ calls: [], answer: answer(() => true) }))
+    await judge({ ...rubric, tasks: rubric.tasks.map(({ skills: _, ...task }) => task) }, result, "material", provider, cache)
+    const again = await judge(rubric, result, "material", provider, cache)
+    expect([provider.runs, again.cached]).toEqual([1, true])
+    expect(again.verdicts.find(verdict => verdict.item === "widget · section")!.skills).toEqual(["stale-notes"])
+  })
+
   test("rejects an answer that skips an item", async () => {
     const { precision: _, ...partial } = answer(() => true)
     await expect(judge(rubric, result, "material", fake({ calls: [], answer: partial }), await folder())).rejects.toThrow()

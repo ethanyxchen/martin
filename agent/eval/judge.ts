@@ -67,10 +67,12 @@ export async function material(project: Project, stage: Stage): Promise<string> 
 
 export async function judge(rubric: Rubric, overview: OverviewResult, source: string, provider: Provider, cache: string): Promise<Judgement> {
   const list = items(rubric)
-  const key = new Bun.CryptoHasher("sha256").update(JSON.stringify({ rubric, overview, model: judgeModel })).digest("hex")
+  const asked = list.map(({ key, expect }) => ({ key, expect }))
+  const key = new Bun.CryptoHasher("sha256").update(JSON.stringify({ asked, overview, model: judgeModel })).digest("hex")
   const file = Bun.file(join(cache, `${key}.json`))
-  if (await file.exists()) return { verdicts: await file.json(), cost: 0, cached: true }
   const verdict = z.strictObject({ pass: z.boolean(), reason: z.string() })
+  const verdicts = (answers: Record<string, z.infer<typeof verdict>>) => list.map(item => ({ item: item.key, kind: item.kind, skills: item.skills, ...answers[item.key]! }))
+  if (await file.exists()) return { verdicts: verdicts(await file.json()), cost: 0, cached: true }
   const result = z.strictObject(Object.fromEntries(list.map(item => [item.key, verdict])))
   const outcome = await provider.run({
     system,
@@ -85,10 +87,9 @@ export async function judge(rubric: Rubric, overview: OverviewResult, source: st
     effort: "medium",
   })
   const answers = outcome.result as Record<string, z.infer<typeof verdict>>
-  const verdicts = list.map(item => ({ item: item.key, kind: item.kind, skills: item.skills, ...answers[item.key]! }))
   await mkdir(cache, { recursive: true })
-  await Bun.write(file, JSON.stringify(verdicts, null, 2))
-  return { verdicts, cost: cost(judgeModel, outcome.requests), cached: false }
+  await Bun.write(file, JSON.stringify(answers, null, 2))
+  return { verdicts: verdicts(answers), cost: cost(judgeModel, outcome.requests), cached: false }
 }
 
 const references = [

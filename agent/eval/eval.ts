@@ -45,7 +45,7 @@ const selected = await projects(join(import.meta.dir, "..", "fixtures"), values.
 if (!selected.length) exit(values.project ? `No project named ${values.project}.` : "No projects in fixtures/.")
 const repeats = Number(values.repeat)
 if (!Number.isInteger(repeats) || repeats < 1) exit("--repeat takes a whole number of runs, at least 1.")
-if (values.previous && !values.stage) exit("--previous needs --stage.")
+if (values.previous && !(values.stage && values.project)) exit("--previous needs --stage and --project, since the overview belongs to one project.")
 const start: Overview | null = values.previous ? await recorded(values.previous) : null
 if (values.stage && !selected.some(project => project.stages.some(stage => stage.name === values.stage))) exit(`No stage named ${values.stage}.`)
 const out = values.out ?? join(import.meta.dir, "out", `${new Date().toISOString().replace(/[:.]/g, "-")}-${model}`)
