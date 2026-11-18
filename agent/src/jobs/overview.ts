@@ -2,7 +2,7 @@ import { type Connect, github, lookback } from "../activity"
 import { Failure } from "../failure"
 import type { JobSpec } from "./spec"
 import { type Overview, type OverviewJob, OverviewResult, type Task } from "../schema"
-import { readNote, repoActivity, Sources } from "../tools"
+import { readNote, repoActivity, repoSearch, Sources } from "../tools"
 import { day, prefix } from "../text"
 
 export const limits = { now: 3, next: 6, shelved: 6, title: 80, caption: 160 }
@@ -25,11 +25,13 @@ Only work marked as the owner's counts. Another contributor's branches and pull 
 
 Notes supply intent. They decide what is next, what the owner explicitly shelved or cancelled, and the status of work that isn't code. A ticked box (- [x]) means done, even when the repository shows nothing. Remove cancelled tasks. An idea list is not a task until something says the owner is doing it, and neither are discussion, meeting chores or other people's plans. A release or testing checklist is one task, with its open items summed up in the caption. When a note disagrees with the repository about code, the repository wins.
 
-The title names the task in a few words. The caption is one short sentence on where it stands. Never mention pull request numbers, commit hashes, branch names or file names. Set "updated" to the YYYY-MM-DD date of the latest note or activity about the task, or null when unknown.
+The title names the task in a few words. The caption is one short sentence on where it stands. Never mention pull request numbers, commit hashes, branch names or file names. Set "updated" to the YYYY-MM-DD date of the latest note or owner activity about the task, or null when unknown. A release is not owner activity.
 
 Start from the previous overview: keep what still holds and change only what the new material changes. The previous overview is a draft, not evidence; check its claims against the notes and repository, and let later material override earlier.
 
-Read only what you need. You may read several notes at once. When a note continues past the page you read and the rest may settle a task, read on. When a repository is linked, read its branches every time, and its commits and pull requests as needed, even if no note changed. If a source couldn't be read, do not describe it as having no activity. Leave out anything the material does not support.`
+Read only what you need. You may read several notes at once. When a note continues past the page you read and the rest may settle a task, read on. When a repository is linked, read its branches and releases every time, and its commits and pull requests as needed, even if no note changed. If a source couldn't be read, do not describe it as having no activity. Leave out anything the material does not support.`
+
+const stale = `Notes go stale: each says what was true when it was last edited, and nobody goes back to tidy old ones. An open item in a note that hasn't been edited for days is a claim to check, not proof the work is still open. Before keeping such an item in now or next, look for it with repo_search, and treat it as done when the owner's merged work covers it. A release or testing checklist belongs to one version. Once that version, or a later one on the same track, has shipped, the checklist is over: remove its task, even when boxes are still unticked. Use the repository's releases to tell which versions have shipped and which are still being tested, and name the version the owner is actually on.`
 
 export function overview(job: OverviewJob, connect: Connect = github): JobSpec<OverviewResult> {
   const sources = new Sources()
@@ -39,7 +41,10 @@ export function overview(job: OverviewJob, connect: Connect = github): JobSpec<O
   return {
     system,
     prompt: prompt(job),
-    tools: [readNote(job.notes, sources), ...(repository ? [repoActivity(repository, { owner: job.owner, cutoff: job.cutoff }, sources)] : [])],
+    tools: [
+      readNote(job.notes, sources),
+      ...(repository ? [repoActivity(repository, { owner: job.owner, cutoff: job.cutoff }, sources), repoSearch(repository, { owner: job.owner }, sources)] : []),
+    ],
     result: OverviewResult,
     model: models,
     effort: "high",
@@ -70,7 +75,7 @@ export function prompt(job: OverviewJob): string {
     `Last read: ${job.previous?.readAt ?? "never"}`,
     `Previous overview:\n${job.previous ? describe(job.previous) : "None yet."}`,
     `Notes:\n${notes.length ? notes.join("\n") : "No notes."}`,
-    job.repository ? `Repository: ${job.repository.slug}. Read its activity with repo_activity.` : "No repository is linked.",
+    job.repository ? `Repository: ${job.repository.slug}. Read its activity with repo_activity.\n\n${stale}` : "No repository is linked.",
   ].join("\n\n")
 }
 

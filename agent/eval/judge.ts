@@ -53,12 +53,13 @@ export async function material(project: Project, stage: Stage): Promise<string> 
   const commits = visible.commits.map(commit => `- ${commit.date} ${commit.author} <${commit.email}> on ${commit.branch}: ${commit.subject}`)
   const pulls = visible.pullRequests.map(pull => `- ${pull.state.toLowerCase()} by ${pull.author}, opened ${pull.createdAt}${pull.state === "MERGED" ? `, merged ${pull.mergedAt}` : ""}, +${pull.additions} −${pull.deletions} in ${pull.changedFiles} files, ${pull.commits} commits, branch ${pull.branch}: ${pull.title}`)
   const branches = visible.branches.map(branch => `- ${branch.name}: last commit ${branch.lastCommit}, ${branch.ahead} ahead of main, ${branch.merged ? "merged" : "not merged"}`)
+  const releases = visible.releases.map(release => `- ${release.name}: ${release.date}`)
   return [
     `Project: ${project.scenario.project}`,
     `Owner: ${owner.name} (${owner.emails.join(", ")}), GitHub ${owner.login}`,
     `Material up to: ${stage.cutoff}`,
     `Notes:\n${notes.join("\n\n") || "None."}`,
-    repository ? `Commits:\n${commits.join("\n") || "None."}\n\nPull requests:\n${pulls.join("\n") || "None."}\n\nBranches:\n${branches.join("\n") || "None."}` : "No repository.",
+    repository ? `Commits:\n${commits.join("\n") || "None."}\n\nPull requests:\n${pulls.join("\n") || "None."}\n\nBranches:\n${branches.join("\n") || "None."}\n\nReleases:\n${releases.join("\n") || "None."}` : "No repository.",
   ].join("\n\n")
 }
 

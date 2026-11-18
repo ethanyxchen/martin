@@ -34,6 +34,7 @@ describe("fixture state", () => {
       pull({ mergedAt: "2026-11-05T09:00:00Z", closedAt: "2026-11-05T09:00:00Z" }),
       pull({ title: "Dropped", branch: "dropped", createdAt: "2026-11-04T10:00:00Z", closedAt: "2026-11-05T10:00:00Z" }),
     ],
+    tags: [{ name: "v1.0.0", date: "2026-11-03T12:00:00Z" }, { name: "v1.1.0", date: "2026-11-06T12:00:00Z" }],
   }
 
   test("hides what happens after the cutoff and works out each pull request's state then", () => {
@@ -72,6 +73,25 @@ describe("fixture state", () => {
     expect((await activity.branches()).map(branch => [branch.name, branch.pullRequest?.title])).toEqual([["feature", "Feature"], ["dropped", "Dropped"]])
   })
 
+  test("the agent sees the releases tagged by the cutoff and searches every word in titles and subjects", async () => {
+    const activity = connect({ ...scenario, project: "P", owner: { name: "Ada", emails: [], login: "ada" }, repository: null, stages: [] })(
+      { folder: ".", slug: "a/b" },
+      { since: new Date("2026-11-05T00:00:00Z"), until: new Date("2026-11-05T12:00:00Z") },
+    )
+    expect(await activity.releases()).toEqual([{ name: "v1.0.0", date: "2026-11-03T12:00:00Z" }])
+    const found = await activity.search(["DROPPED"])
+    expect([found.commits, found.pullRequests.map(pull => pull.title)]).toEqual([[], ["Dropped"]])
+    expect((await activity.search(["work"])).commits).toHaveLength(4)
+    expect((await activity.search(["work", "missing"])).commits).toEqual([])
+  })
+
+  test("the agent's search reaches back past its window but not past the search lookback", async () => {
+    const activity = connect({ ...scenario, project: "P", owner: { name: "Ada", emails: [], login: "ada" }, repository: null, stages: [] })
+    const window = (until: string) => ({ since: new Date(until), until: new Date(until) })
+    expect((await activity({ folder: ".", slug: "a/b" }, window("2026-12-20T00:00:00Z")).search(["work"])).commits).toHaveLength(5)
+    expect((await activity({ folder: ".", slug: "a/b" }, window("2027-01-31T09:00:00Z")).search(["work"])).commits).toHaveLength(4)
+  })
+
   test("the agent's branches leave out those idle for longer than the lookback", async () => {
     const activity = connect({ ...scenario, project: "P", owner: { name: "Ada", emails: [], login: "ada" }, repository: null, stages: [] })(
       { folder: ".", slug: "a/b" },
@@ -86,6 +106,19 @@ test("every project's notes exist and no commit comes from a checkpoint ref", as
     for (const stage of project.stages) for (const note of stage.notes) expect(await Bun.file(note.path).exists()).toBe(true)
     expect(project.scenario.commits.filter(commit => commit.branch.startsWith("refs/"))).toEqual([])
   }
+})
+
+describe("Tandem", () => {
+  test("once 2.4 has shipped, the releases show it and only a search reaches the 2.3 fix", async () => {
+    const tandem = await load(join(fixtures, "tandem"))
+    const stage = tandem.stages.at(-1)!
+    const job = { kind: "overview" as const, provider: "anthropic" as const, project: { name: "Tandem" }, owner: tandem.scenario.owner, cutoff: stage.cutoff, previous: null, notes: stage.notes, repository: tandem.scenario.repository }
+    const tools = overview(job, connect(tandem.scenario)).tools
+    const run = (name: string, input: unknown) => tools.find(tool => tool.name === name)!.run(input)
+    expect(await run("repo_activity", { source: "releases", cursor: null })).toBe("versions: 2.4.1 on 2026-11-20, 2.4.0 on 2026-11-18, 2.4.0-rc.2 on 2026-11-13, 2.4.0-rc.1 on 2026-11-12, 2.3.1 on 2026-10-29, 2.3.0 on 2026-10-21")
+    expect(await run("repo_activity", { source: "commits", cursor: null })).not.toContain("typed during the call")
+    expect(await run("repo_search", { query: "typed notes" })).toContain("merged by owner, branch maya/summary-typed-notes")
+  })
 })
 
 describe("Lumen", () => {
@@ -120,6 +153,14 @@ describe("Lumen", () => {
     expect(text).toContain("open by nbrennan")
     expect(text).toContain("shared-albums: last commit 2026-10-08T14:00:00-07:00, 1 ahead of main, not merged")
     expect(text).not.toContain("Accept an album invite")
+  })
+
+  test("the judge's material lists the releases tagged by the cutoff", async () => {
+    const tandem = await load(join(fixtures, "tandem"))
+    const text = await material(tandem, tandem.stages.at(-1)!)
+    expect(text).toContain("Releases:\n- v2.3.0: 2026-10-21T16:00:00Z")
+    expect(text).toContain("- v2.4.1: 2026-11-20T14:00:00Z")
+    expect(await material(tandem, tandem.stages[0]!)).not.toContain("v2.4.0")
   })
 })
 

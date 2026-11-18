@@ -7,7 +7,9 @@ Jobs:
 - `overview` reads a project's notes and its repository's recent activity and returns the tasks being worked on now, next and shelved. The job names the owner (name, emails and GitHub login): a commit is the owner's when its name or email matches, and a pull request when its login matches.
 - `repositoryLookup` names the GitHub repositories that hold a project's code.
 
-The repository decides started and done for code work; notes decide Next, explicit shelving and cancelling, and work that isn't code. `repo_activity` reads three sources: commits with their branch, pull requests with their size, and branches. For each branch touched in the last 30 days, the branches source gives its last commit, idle days, whether it is stale, how far it is ahead of main, whether it has merged, and its pull request. Idle days are calendar days in the cutoff's time zone, with weekend days counted as half. An unmerged branch idle for 2 days or more is stale, and its task is shelved.
+The repository decides started and done for code work; notes decide Next, explicit shelving and cancelling, and work that isn't code. `repo_activity` reads four sources: commits with their branch, pull requests with their size, branches, and releases. For each branch touched in the last 30 days, the branches source gives its last commit, idle days, whether it is stale, how far it is ahead of main, whether it has merged, and its pull request. Idle days are calendar days in the cutoff's time zone, with weekend days counted as half. An unmerged branch idle for 2 days or more is stale, and its task is shelved.
+
+Notes go stale, so an open item in an old note is checked before it is kept. The releases source groups versioned tags and `release/` branches into tracks, such as `desktop-stable` or plain `v` tags, each with its latest versions and the day each appeared, so a testing checklist ends once its version or a later one ships. `repo_search` looks for every word of a query in commit messages and pull requests from the last 90 days, reaching work that merged before the last read.
 
 The provider is Claude (`ANTHROPIC_API_KEY`) or OpenAI (`OPENAI_API_KEY`), chosen by the job.
 
@@ -29,15 +31,15 @@ The provider is Claude (`ANTHROPIC_API_KEY`) or OpenAI (`OPENAI_API_KEY`), chose
 
 ### Fixtures
 
-Four projects are graded. Martin is this repository's real activity from Oct 19 to Nov 17, with its two real notes. Tandem is an invented work app with teammates, a large pull request in progress and more than 100 commits in one window. Lumen is an invented app whose branches and merges drive started and done. Interviews is a job search with notes only.
+Four projects are graded. Martin is this repository's real activity from Oct 19 to Nov 17, with its two real notes. Tandem is an invented work app with teammates, a large pull request in progress, more than 100 commits in one window, and release testing checklists left unticked after their version ships. Lumen is an invented app whose branches and merges drive started and done. Interviews is a job search with notes only.
 
-Each project is a folder holding `scenario.json` and its notes. A scenario has the project's owner (name, emails and GitHub login), its repository or null, the commits (date, author, email, subject and branch), the pull requests (title, author, branch, `createdAt`, `mergedAt`, `closedAt`, lines added and removed, files changed and commit count) and the stages. Each stage has a cutoff, the notes visible then, and a rubric.
+Each project is a folder holding `scenario.json` and its notes. A scenario has the project's owner (name, emails and GitHub login), its repository or null, the commits (date, author, email, subject and branch), the pull requests (title, author, branch, `createdAt`, `mergedAt`, `closedAt`, lines added and removed, files changed and commit count), the tags and release branches (name and date) and the stages. Each stage has a cutoff, the notes visible then, and a rubric.
 
-At each cutoff the fixture works out which commits and pull requests are visible, each pull request's state, and each branch's last commit, how far it is ahead of main, whether it has merged and its pull request. None of these are stored. The agent reads them through the same `repo_activity` view as a real repository.
+At each cutoff the fixture works out which commits and pull requests are visible, each pull request's state, and each branch's last commit, how far it is ahead of main, whether it has merged and its pull request. None of these are stored. The agent reads them through the same `repo_activity` and `repo_search` views as a real repository; releases are those tagged by the cutoff, and search reaches 90 days back from it.
 
 A rubric lists the expected tasks, each with a theme id, its section (`now`, `next`, `shelved` or `absent`), optionally what its caption must say and its `updated` date (a day, or `any` for any reasonable date); the extras it tolerates, in words; and optionally the order of Now.
 
-`eval/record.ts` writes a real repository's commits and pull requests into a scenario. It reads commits from the local clone's branches, remotes and tags, so unpushed branches are included and checkpoint refs are not, and pull requests from `gh`. Run it from the repository's checkout:
+`eval/record.ts` writes a real repository's commits, pull requests and releases into a scenario. It reads commits from the local clone's branches, remotes and tags, so unpushed branches are included and checkpoint refs are not, and pull requests from `gh`. Run it from the repository's checkout:
 
     bun eval/record.ts <fixture folder> <owner/repo> <since> <until>
 
