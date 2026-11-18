@@ -45,9 +45,19 @@ struct OverviewSectionTests {
         #expect(OverviewSection.age(of: now.addingTimeInterval(5), now: now) == RelativeDateTimeFormatter().localizedString(for: now, relativeTo: now))
     }
 
-    @Test func aFailedRefreshOffersToTryAgain() {
+    @Test func aFailedRefreshOffersToTryAgainAndARunningOneOffersNothing() {
         #expect(OverviewStatus.ready.action == "Refresh")
-        #expect(OverviewStatus.refreshing.action == "Refresh")
+        #expect(OverviewStatus.refreshing.action == nil)
         #expect(OverviewStatus.failed("Couldn't refresh.").action == "Try Again")
+    }
+
+    @Test func aRefreshKeepsTheAgeOfTheOverviewItReplaces() {
+        let now = date(11, 17)
+        let overview = Overview(now: [], next: [], shelved: [], readAt: now.addingTimeInterval(-7200))
+        let updated = "Updated \(OverviewSection.age(of: overview.readAt, now: now))"
+        #expect(OverviewSection.caption(overview, status: .ready, now: now) == updated)
+        #expect(OverviewSection.caption(overview, status: .refreshing, now: now) == "\(updated) · refreshing")
+        #expect(OverviewSection.caption(nil, status: .refreshing, now: now) == "Refreshing…")
+        #expect(OverviewSection.caption(nil, status: .ready, now: now) == nil)
     }
 }

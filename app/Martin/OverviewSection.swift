@@ -6,8 +6,12 @@ enum OverviewStatus: Equatable {
     case refreshing
     case failed(String)
 
-    var action: String {
-        if case .failed = self { "Try Again" } else { "Refresh" }
+    var action: String? {
+        switch self {
+        case .ready: "Refresh"
+        case .refreshing: nil
+        case .failed: "Try Again"
+        }
     }
 }
 
@@ -75,31 +79,33 @@ struct OverviewSection: View {
 
     private var footer: some View {
         HStack(spacing: 6) {
-            if status == .refreshing {
-                ProgressView().controlSize(.mini)
-                Text("Refreshing…")
-            } else if let overview {
-                Text("Updated \(Self.age(of: overview.readAt, now: now))")
-            }
+            Self.caption(overview, status: status, now: now).map(Text.init)
             Spacer(minLength: 0)
-            Button(action: refresh) {
-                Label(status.action, systemImage: "arrow.clockwise")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Theme.secondary)
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 3)
-                    .background(Theme.well, in: .capsule)
-                    .contentShape(.capsule)
+            if let action = status.action {
+                Button(action: refresh) {
+                    Label(action, systemImage: "arrow.clockwise")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Theme.secondary)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 3)
+                        .background(Theme.well, in: .capsule)
+                        .contentShape(.capsule)
+                }
+                .buttonStyle(Pressable())
+                .pointerStyle(.link)
             }
-            .buttonStyle(Pressable())
-            .pointerStyle(.link)
-            .disabled(status == .refreshing)
-            .opacity(status == .refreshing ? 0.5 : 1)
         }
+        .frame(minHeight: 22)
         .font(Theme.meta)
         .foregroundStyle(Theme.tertiary)
         .padding(.horizontal, TaskRow.inset)
         .padding(.top, overview == nil ? 0 : 10)
+    }
+
+    static func caption(_ overview: Overview?, status: OverviewStatus, now: Date) -> String? {
+        let updated = overview.map { "Updated \(age(of: $0.readAt, now: now))" }
+        guard status == .refreshing else { return updated }
+        return updated.map { "\($0) · refreshing" } ?? "Refreshing…"
     }
 
     static func shown(_ tasks: [Overview.Item], in section: Overview.Section, unfolded: Bool) -> [Overview.Item] {
