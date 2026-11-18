@@ -1,5 +1,7 @@
+import AppKit
 import Foundation
 import MartinKit
+import SwiftUI
 import Testing
 @testable import Martin
 
@@ -313,5 +315,30 @@ final class OverviewRefreshTests: Sandbox {
         #expect(app.overviewStatus[project.id] != nil)
         app.credential = Credential(provider: .openai, key: "sk-proj")
         #expect(app.overviewStatus.isEmpty)
+    }
+
+    @Test func theProjectPageShowsTheOverviewOnlyForAProjectItCanRefresh() throws {
+        let app = launch()
+        let project = try project(app)
+        func height() -> CGFloat {
+            let view = NSHostingView(rootView: ProjectOverview(app: app, project: project, now: agent.now).frame(width: 400))
+            view.layoutSubtreeIfNeeded()
+            return view.fittingSize.height
+        }
+        #expect(height() > 0)
+        app.credential = nil
+        #expect(height() == 0)
+        app.credential = Credential(provider: .anthropic, key: "sk-ant")
+        app.keepSecret(project, true)
+        #expect(height() == 0)
+    }
+
+    @Test func aProjectWhoseOnlyNoteIsUnwrittenHasNothingToRefresh() throws {
+        let app = launch()
+        app.file(try library.create(), inNewProjectNamed: "Blank")
+        let blank = try #require(app.projects.first)
+        #expect(!app.canRefreshOverview(of: blank))
+        app.save("Notes", for: try #require(app.notes(in: blank).first))
+        #expect(app.canRefreshOverview(of: blank))
     }
 }
