@@ -85,6 +85,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 final class AppState {
     static let overviewInterval: TimeInterval = 30 * 60
     static let syncInterval: TimeInterval = 60
+    nonisolated static let domain = "dev.ethanchen.martin"
+    static let sharedDefaults = Bundle.main.bundleIdentifier == domain ? UserDefaults.standard : UserDefaults(suiteName: domain)!
     private static let windowSize = NSSize(width: 520, height: 640)
     private static let hiddenCalendarsKey = "hiddenCalendars"
     private static let pageKey = "page"
@@ -147,7 +149,7 @@ final class AppState {
     @ObservationIgnored private var grown: CGFloat = 0
     @ObservationIgnored private(set) lazy var window = makeWindow()
 
-    init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = .standard, credentials: CredentialStore = .keychain(service: Bundle.main.bundleIdentifier ?? "Martin"), finder: RepositoryFinder = RepositoryFinder(), overviewer: Overviewer = Overviewer(), cloud: Cloud? = .supabase(), share: @escaping (Bool) -> Void = Telemetry.share) {
+    init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = sharedDefaults, credentials: CredentialStore = .keychain(service: domain), finder: RepositoryFinder = RepositoryFinder(), overviewer: Overviewer = Overviewer(), cloud: Cloud? = .supabase(), share: @escaping (Bool) -> Void = Telemetry.share) {
         self.library = library
         self.defaults = defaults
         self.credentials = credentials
@@ -587,6 +589,10 @@ final class AppState {
 
 extension AppState {
     private static let unsaved = "Couldn’t save the overview."
+
+    func isRefreshingOverview(of project: Project) -> Bool {
+        overviewStatus[project.id] == .refreshing
+    }
 
     func canRefreshOverview(of project: Project) -> Bool {
         guard credential != nil, let project = projects.first(where: { $0.id == project.id }), !project.isSecret else { return false }

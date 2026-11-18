@@ -19,7 +19,7 @@ struct Cloud: Sendable {
               let key = bundle.object(forInfoDictionaryKey: "SupabaseKey") as? String else { return nil }
         let client = SupabaseClient(supabaseURL: url, supabaseKey: key, options: SupabaseClientOptions(
             auth: .init(
-                storage: KeychainLocalStorage(service: (bundle.bundleIdentifier ?? "Martin") + ".account"),
+                storage: KeychainLocalStorage(service: AppState.domain + ".account"),
                 redirectToURL: URL(string: "\(WebSignIn.scheme)://auth"),
                 emitLocalSessionAsInitialSession: true
             )

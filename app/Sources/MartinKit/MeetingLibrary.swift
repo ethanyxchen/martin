@@ -3,9 +3,7 @@ import Foundation
 public struct MeetingLibrary: Sendable {
     public let root: URL
 
-    public static let dataDirectory = (Bundle.main.object(forInfoDictionaryKey: "MartinDataDirectory") as? String)
-        .map { URL(filePath: $0, directoryHint: .isDirectory) }
-        ?? URL.applicationSupportDirectory.appending(path: "Martin", directoryHint: .isDirectory)
+    public static let dataDirectory = URL.applicationSupportDirectory.appending(path: "Martin", directoryHint: .isDirectory)
 
     public init(root: URL = dataDirectory) {
         self.root = root

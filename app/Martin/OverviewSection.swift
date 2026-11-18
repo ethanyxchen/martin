@@ -15,6 +15,7 @@ struct OverviewSection: View {
     static let folded = 2
     let overview: Overview?
     let status: OverviewStatus
+    let sweepsAbove: Bool
     let now: Date
     let refresh: () -> Void
     @State private var unfolded = false
@@ -75,12 +76,10 @@ struct OverviewSection: View {
 
     private var footer: some View {
         HStack(spacing: 6) {
-            if status == .refreshing {
+            if status == .refreshing, !sweepsAbove {
                 ProgressView().controlSize(.mini)
-                Text("Refreshing…")
-            } else if let overview {
-                Text("Updated \(Self.age(of: overview.readAt, now: now))")
             }
+            Self.caption(overview, status: status, now: now).map(Text.init)
             Spacer(minLength: 0)
             Button(action: refresh) {
                 Label(status.action, systemImage: "arrow.clockwise")
@@ -94,12 +93,18 @@ struct OverviewSection: View {
             .buttonStyle(Pressable())
             .pointerStyle(.link)
             .disabled(status == .refreshing)
-            .opacity(status == .refreshing ? 0.5 : 1)
+            .opacity(status == .refreshing ? 0 : 1)
         }
         .font(Theme.meta)
         .foregroundStyle(Theme.tertiary)
         .padding(.horizontal, TaskRow.inset)
         .padding(.top, overview == nil ? 0 : 10)
+    }
+
+    static func caption(_ overview: Overview?, status: OverviewStatus, now: Date) -> String? {
+        let updated = overview.map { "Updated \(age(of: $0.readAt, now: now))" }
+        guard status == .refreshing else { return updated }
+        return updated.map { "\($0) · refreshing" } ?? "Refreshing…"
     }
 
     static func shown(_ tasks: [Overview.Item], in section: Overview.Section, unfolded: Bool) -> [Overview.Item] {
