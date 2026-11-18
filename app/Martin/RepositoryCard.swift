@@ -82,6 +82,15 @@ struct RepositoryCard: View {
             } else {
                 shape.fill(Theme.well)
             }
+            ZStack {
+                if app.isRefreshingOverview(of: project) {
+                    ReadingBar()
+                        .frame(maxHeight: .infinity, alignment: .bottom)
+                        .clipShape(shape)
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeOut(duration: 0.2), value: app.isRefreshingOverview(of: project))
         }
         .flush()
         .padding(.bottom, 14)
@@ -104,6 +113,30 @@ private struct LinkChoices: View {
             Divider()
         }
         Button("Choose Folder…") { app.chooseRepository(for: project) }
+    }
+}
+
+private struct ReadingBar: View {
+    private static let share: CGFloat = 0.35
+    @Environment(\.accessibilityReduceMotion) private var still
+    @State private var swept = false
+
+    var body: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            if still {
+                Capsule().fill(Theme.cobalt.opacity(0.5))
+            } else {
+                Capsule()
+                    .fill(Theme.cobalt)
+                    .frame(width: width * Self.share)
+                    .offset(x: swept ? width : -width * Self.share)
+                    .onAppear {
+                        withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: false)) { swept = true }
+                    }
+            }
+        }
+        .frame(height: 2)
     }
 }
 

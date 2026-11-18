@@ -317,6 +317,19 @@ final class OverviewRefreshTests: Sandbox {
         #expect(app.overviewStatus.isEmpty)
     }
 
+    @Test func aProjectIsRefreshingOnlyWhileTheAgentWorks() async throws {
+        let app = launch()
+        let project = try project(app)
+        var during: [Bool] = []
+        agent.during = { during.append(app.isRefreshingOverview(of: project)) }
+        await app.refreshOverview(of: project)?.value
+        #expect(during == [true])
+        #expect(!app.isRefreshingOverview(of: project))
+        agent.failure = .broken
+        await app.refreshOverview(of: project)?.value
+        #expect(!app.isRefreshingOverview(of: project))
+    }
+
     @Test func theProjectPageShowsTheOverviewOnlyForAProjectItCanRefresh() throws {
         let app = launch()
         let project = try project(app)
