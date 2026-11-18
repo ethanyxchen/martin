@@ -4,29 +4,29 @@
   "scripts": [
     {
       "name": "Setup Worktree",
-      "command": "git config core.hooksPath .githooks",
+      "command": "git config core.hooksPath .githooks && mise trust --yes && mise install",
       "icon": "configure",
       "runOnWorktreeCreate": true,
       "async": false
     },
     {
       "name": "Run Martin",
-      "command": "./scripts/build-app.sh && open -g -j build/Martin.app",
+      "command": "mise run dev",
       "icon": "play"
     },
     {
       "name": "Test",
-      "command": "swift test --package-path app",
+      "command": "mise run test",
       "icon": "test"
     },
     {
       "name": "Lint",
-      "command": ".githooks/pre-commit",
+      "command": "mise run lint",
       "icon": "lint"
     },
     {
       "name": "Clean Up",
-      "command": "! pgrep -qf \"$PWD/build/Martin.app/\" || osascript -e \"quit app \\\"$PWD/build/Martin.app\\\"\"; rm -rf .build build",
+      "command": "mise run clean",
       "icon": "build",
       "runOnDone": true
     }

@@ -1,0 +1,27 @@
+[providers.op]
+type = "1password"
+account = "my.1password.com"
+vault = "Martin"
+
+[daemon]
+enabled = true
+idle_timeout = "8h"
+
+[secrets]
+SUPABASE_PROJECT_ID = { provider = "op", value = "aull6g6rc7ocd3l47ws5slkmwy/Project ID" }
+SUPABASE_KEY = { provider = "op", value = "aull6g6rc7ocd3l47ws5slkmwy/credential" }
+
+[profiles.agent.secrets]
+ANTHROPIC_API_KEY = { provider = "op", value = "naf6efqqwn3hjopfkfrvavonmq/Dev API key" }
+OPENAI_API_KEY = { provider = "op", value = "j3lvpysq3fahbac6i3jwxknvja/credential" }
+
+[profiles.release.secrets]
+POSTHOG_PROJECT_TOKEN = { provider = "op", value = "gi2xvqfiqey6xcetljbwfx6zp4/credential", if_missing = "error" }
+NOTARY_KEY = { provider = "op", value = "cft6c4dbc6n3s6z4pmgu4nxuta/private key", if_missing = "error" }
+NOTARY_KEY_ID = { provider = "op", value = "cft6c4dbc6n3s6z4pmgu4nxuta/key id", if_missing = "error" }
+NOTARY_ISSUER_ID = { provider = "op", value = "cft6c4dbc6n3s6z4pmgu4nxuta/issuer id", if_missing = "error" }
+SPARKLE_PRIVATE_KEY = { provider = "op", value = "mnexl2s3ipxdgrzvyfx7ykh2fi/private key", if_missing = "error" }
+
+[profiles.signing.secrets]
+DEVELOPER_ID_P12 = { provider = "op", value = "23hpnzkyqanjrn4w4i67o6tbga/p12 base64", if_missing = "error" }
+DEVELOPER_ID_P12_PASSWORD = { provider = "op", value = "23hpnzkyqanjrn4w4i67o6tbga/password", if_missing = "error" }

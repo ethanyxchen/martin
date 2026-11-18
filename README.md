@@ -54,17 +54,25 @@ Until you sign in, everything stays on your Mac. Signed in, Martin keeps a copy 
 
 ## Building from source
 
-You need Xcode and an Apple Development signing certificate.
+You need Xcode, an Apple Development signing certificate and [mise](https://mise.jdx.dev), which installs the pinned bun, uv, [fnox](https://fnox.jdx.dev) and 1Password CLI from `mise.toml`.
 
 ```sh
 git config core.hooksPath .githooks
-./scripts/build-app.sh
-open build/Martin.app
+mise install
+mise run dev
 ```
 
-Run the tests with `swift test --package-path app`.
+| Task | What it does |
+| --- | --- |
+| `mise run dev` | Builds Martin and opens it in the background |
+| `mise run test` | Runs the app and MartinKit tests |
+| `mise run lint` | Builds with warnings as errors and checks the agent, as the pre-commit hook does |
+| `mise run eval -- <flags>` | Benchmarks the agent |
+| `mise run clean` | Quits this checkout's Martin and deletes the build output |
 
-Syncing needs a Supabase project with Sign in with Apple turned on, `martin://auth` in its redirect URLs and the schema in `supabase/migrations` applied. Pass the project to the build as `SUPABASE_URL` and `SUPABASE_KEY` (the publishable key), either in the environment or as lines in the main checkout's `.env`. Builds without them hide the Account section.
+Secrets live in the Martin vault of the Chen Family 1Password account, and fnox reads them through the 1Password app; `fnox.toml` holds only references. A build reads the Supabase project ID and publishable key, and fnox's daemon keeps them for 8 idle hours so builds don't ask 1Password every time. Without 1Password the build still works and hides the Account section.
+
+Syncing needs a Supabase project with Sign in with Apple turned on, `martin://auth` in its redirect URLs and the schema in `supabase/migrations` applied.
 
 ## Releasing
 
@@ -75,4 +83,4 @@ git tag -a v1.1.2 -m v1.1.2
 git push origin v1.1.2
 ```
 
-The Release workflow builds Martin, signs it with Developer ID, notarizes the app and the DMG, signs the update for Sparkle and publishes `Martin-<version>.dmg` and `appcast.xml` to a GitHub release. Installed copies find the update through the appcast of the latest release.
+The Release workflow builds Martin, signs it with Developer ID, notarizes the app and the DMG, signs the update for Sparkle and publishes `Martin-<version>.dmg` and `appcast.xml` to a GitHub release. It reads its signing and release secrets from the repository's GitHub secrets. `mise run release` does the same from a Mac with the secrets from the Martin vault. Installed copies find the update through the appcast of the latest release.
