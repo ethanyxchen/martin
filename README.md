@@ -32,13 +32,21 @@ Type `@` to mention someone. Martin suggests the meeting's guests first, then pe
 
 Choose which pages appear in the navigation bar in Settings.
 
+## Project overviews
+
+Each project page can show an overview of the project: what you're working on **Now**, what comes **Next**, and what you've **Shelved**. Martin builds it from the project's notes and, when a GitHub repository is linked, from its commits, branches and pull requests.
+
+To turn it on, choose Claude or OpenAI in Settings and paste an API key. The key is kept in your Mac's Keychain. Martin's bundled agent sends the provider the project's name, the notes it chooses to read, the repository's recent activity and your git name, email and GitHub login. Nothing is sent while no key is saved.
+
+Every 30 minutes Martin checks each project and refreshes its overview only when something changed: a note was edited, added or removed, the repository link changed, or the repository has new commits or pull request updates. Choose **Refresh Overview** from the project's menu, or Refresh in the section, to update it now. When a refresh fails, the last overview stays and the reason shows above it; Martin tries again at the next check, or you can choose Try Again.
+
 ## Calendars
 
 Martin reads the calendars you've added to macOS. To use Google Calendar, add your account in System Settings → Internet Accounts with Calendars turned on. In Settings, untick any calendars you don't want Martin to follow.
 
 ## Your data
 
-Everything stays on your Mac. Each meeting is a folder in `~/Library/Application Support/Martin/meetings/` holding `note.md`, the note itself, and `meeting.json`, the event it belongs to. Mentions are saved in the note as `@{Ada Lovelace <ada@example.com>}`, so plain-text search finds every note that mentions someone.
+Everything stays on your Mac. Each meeting is a folder in `~/Library/Application Support/Martin/meetings/` holding `note.md`, the note itself, and `meeting.json`, the event it belongs to. Projects are in `projects.json`, and their overviews in `overviews.json`. Mentions are saved in the note as `@{Ada Lovelace <ada@example.com>}`, so plain-text search finds every note that mentions someone.
 
 ## Building from source
 

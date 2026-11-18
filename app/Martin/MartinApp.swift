@@ -68,10 +68,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         app.show()
         PostHogSDK.shared.logger?.info("application launch completed", attributes: ["runtime": "macos"])
-        Task {
-            await app.suggestRepositories()
-            await app.scheduleOverviews()
-        }
+        Task { await app.suggestRepositories() }
+        Task { await app.scheduleOverviews() }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
@@ -625,11 +623,11 @@ extension AppState {
         guard (try? library.save(checked, for: id)) != nil else { return overviewStatus[id] = .failed(Self.unsaved) }
         let notes = overviewNotes(in: project)
         let folder = project.repository?.folder
-        let unchanged = if overviewRequests[id]?.checksChanges == true, let built { !(await overviewChanged(since: built, notes: notes, folder: folder)) } else { false }
+        let repository = folder.flatMap(Repository.init(at:))
+        let unchanged = if overviewRequests[id]?.checksChanges == true, let built { !(await overviewChanged(since: built, notes: notes, folder: folder, repository: repository)) } else { false }
         guard let current = overviewRequests[id], current.id == request else { return }
         if unchanged, current.checksChanges { return overviewStatus[id] = nil }
         overviewStatus[id] = .refreshing
-        let repository = folder.flatMap(Repository.init(at:))
         let previous = built.flatMap { $0.repository == folder ? $0.overview : nil }
         let job = Agent.OverviewJob(provider: credential.provider, project: project.name, owner: await overviewer.owner(repository?.folder), cutoff: cutoff, previous: previous, notes: notes, repository: repository)
         let result: Result<Overview, any Error>
@@ -647,10 +645,10 @@ extension AppState {
         }
     }
 
-    private func overviewChanged(since built: OverviewRecord.Built, notes: [Agent.OverviewJob.Note], folder: URL?) async -> Bool {
+    private func overviewChanged(since built: OverviewRecord.Built, notes: [Agent.OverviewJob.Note], folder: URL?, repository: Repository?) async -> Bool {
         let readAt = built.overview.readAt
         guard Set(notes.map(\.id)) == built.notes, folder == built.repository, notes.allSatisfy({ $0.changedAt <= readAt }) else { return true }
-        guard let repository = folder.flatMap(Repository.init(at:)) else { return false }
+        guard let repository else { return false }
         return await overviewer.hasActivity(repository, readAt)
     }
 

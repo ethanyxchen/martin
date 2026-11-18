@@ -262,6 +262,9 @@ struct ProjectActions: View {
                 project.map { on ? app.addRepository(to: $0) : app.link($0, to: nil) }
             })
             .disabled(project == nil)
+            let refreshing = project.map { app.overviewStatus[$0.id] == .refreshing } == true
+            Button(refreshing ? "Refreshing Overview…" : "Refresh Overview", systemImage: "arrow.clockwise") { if let project { app.refreshOverview(of: project) } }
+                .disabled(refreshing || project.map(app.canRefreshOverview(of:)) != true)
             Divider()
         }
         if project?.archivedAt == nil {
@@ -353,8 +356,25 @@ private struct ShelfView: View {
             }
             .flush()
         } content: {
-            if let project = shelf.project, let repository = project.repository { RepositoryCard(app: app, project: project, repository: repository) }
+            if let project = shelf.project {
+                if let repository = project.repository { RepositoryCard(app: app, project: project, repository: repository) }
+                ProjectOverview(app: app, project: project, now: now).id(project.id)
+            }
             NoteList(app: app, meetings: shelf.meetings, now: now) { app.previews[$0.id] }
+        }
+    }
+}
+
+struct ProjectOverview: View {
+    let app: AppState
+    let project: Project
+    let now: Date
+
+    var body: some View {
+        if app.canRefreshOverview(of: project) {
+            OverviewSection(overview: app.overviews[project.id]?.built?.overview, status: app.overviewStatus[project.id] ?? .ready, now: now) {
+                app.refreshOverview(of: project)
+            }
         }
     }
 }
