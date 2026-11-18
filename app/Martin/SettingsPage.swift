@@ -9,6 +9,12 @@ struct SettingsView: View {
             PageHeading(title: "Settings")
         } content: {
             VStack(alignment: .leading, spacing: 36) {
+                if app.cloud != nil {
+                    SettingsSection(title: "Account", detail: "Sign in to keep your notes and projects in sync across your Macs.") {
+                        AccountForm(app: app)
+                            .flush()
+                    }
+                }
                 SettingsSection(title: "Navigation bar", detail: "The pages you can switch between at the top of this window.") {
                     NavigationToggles(hidden: $app.hiddenPages)
                         .flush()
@@ -107,6 +113,56 @@ private struct APIKeyForm: View {
         guard !trimmedKey.isEmpty else { return }
         app.use(Credential(provider: provider, key: trimmedKey))
         key = ""
+    }
+}
+
+private struct AccountForm: View {
+    let app: AppState
+
+    var body: some View {
+        if let user = app.user {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 10) {
+                    Label("Signed in\(user.email.map { " as \($0)" } ?? "")", systemImage: "person.crop.circle.fill")
+                        .foregroundStyle(Theme.ink)
+                    Button("Sign Out") { Task { await app.signOut() } }
+                }
+                SyncStatusLine(status: app.syncStatus)
+            }
+            .font(.system(size: 13))
+        } else {
+            Button {
+                Task { await app.signIn() }
+            } label: {
+                Label("Sign in with Apple", systemImage: "apple.logo")
+            }
+            .font(.system(size: 13))
+        }
+    }
+}
+
+private struct SyncStatusLine: View {
+    let status: SyncStatus
+
+    var body: some View {
+        switch status {
+        case .idle:
+            EmptyView()
+        case .syncing:
+            Text("Syncing…")
+                .font(Theme.meta)
+                .foregroundStyle(Theme.secondary)
+        case .synced(let date):
+            TimelineView(.periodic(from: date, by: 60)) { _ in
+                Text("Synced \(date.formatted(.relative(presentation: .named)))")
+                    .font(Theme.meta)
+                    .foregroundStyle(Theme.secondary)
+            }
+        case .failed(let reason):
+            Text("Couldn’t sync: \(reason)")
+                .font(Theme.meta)
+                .foregroundStyle(.red)
+        }
     }
 }
 

@@ -275,4 +275,10 @@ extension MeetingLibraryTests {
         try library.delete(deleted)
         #expect(library.overviews() == [kept.id: record])
     }
+
+    @Test func notesStartedInTheSameSecondOnTwoMacsGetDifferentIDs() throws {
+        let other = LibrarySandbox()
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        #expect(try library.create(startedAt: start).id != other.library.create(startedAt: start).id)
+    }
 }

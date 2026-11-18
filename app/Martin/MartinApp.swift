@@ -1,4 +1,5 @@
 import AppKit
+import AuthenticationServices
 import MartinKit
 import PostHog
 import SwiftUI
@@ -70,6 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PostHogSDK.shared.logger?.info("application launch completed", attributes: ["runtime": "macos"])
         Task { await app.suggestRepositories() }
         Task { await app.scheduleOverviews() }
+        app.startSyncing()
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
@@ -82,7 +84,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 @Observable
 final class AppState {
     static let overviewInterval: TimeInterval = 30 * 60
-    static let domain = "dev.ethanchen.martin"
+    static let syncInterval: TimeInterval = 60
+    static let syncSpacing: TimeInterval = 2
+    nonisolated static let domain = "dev.ethanchen.martin"
     static let sharedDefaults = Bundle.main.bundleIdentifier == domain ? UserDefaults.standard : UserDefaults(suiteName: domain)!
     private static let windowSize = NSSize(width: 520, height: 640)
     private static let hiddenCalendarsKey = "hiddenCalendars"
@@ -95,6 +99,7 @@ final class AppState {
     private let finder: RepositoryFinder
     private let overviewer: Overviewer
     private let share: (Bool) -> Void
+    let cloud: Cloud?
     private(set) var meetings: [Meeting] = []
     private(set) var allProjects: [Project] = []
     private(set) var previews: [Meeting.ID: String] = [:]
@@ -102,6 +107,12 @@ final class AppState {
     private(set) var suggestions: [Project.ID: RepositorySuggestion] = [:]
     private(set) var overviews: [Project.ID: OverviewRecord] = [:]
     private(set) var overviewStatus: [Project.ID: OverviewStatus] = [:]
+    private(set) var user: CloudUser?
+    private(set) var syncStatus = SyncStatus.idle
+    private(set) var revisions: [Meeting.ID: Int] = [:]
+    @ObservationIgnored private var syncRequests: AsyncStream<Void>.Continuation?
+    @ObservationIgnored private var syncing: Task<Void, Never>?
+    @ObservationIgnored private var syncPass: Task<Void, Never>?
     @ObservationIgnored private var overviewRequests: [Project.ID: OverviewRequest] = [:]
     @ObservationIgnored private var scouting: Task<[Repository], Never>?
     @ObservationIgnored private var lookupRound = 0
@@ -139,13 +150,15 @@ final class AppState {
     @ObservationIgnored private var grown: CGFloat = 0
     @ObservationIgnored private(set) lazy var window = makeWindow()
 
-    init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = sharedDefaults, credentials: CredentialStore = .keychain(service: domain), finder: RepositoryFinder = RepositoryFinder(), overviewer: Overviewer = Overviewer(), share: @escaping (Bool) -> Void = Telemetry.share) {
+    init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = sharedDefaults, credentials: CredentialStore = .keychain(service: domain), finder: RepositoryFinder = RepositoryFinder(), overviewer: Overviewer = Overviewer(), cloud: Cloud? = .supabase(), share: @escaping (Bool) -> Void = Telemetry.share) {
         self.library = library
         self.defaults = defaults
         self.credentials = credentials
         self.finder = finder
         self.overviewer = overviewer
         self.share = share
+        self.cloud = cloud
+        user = cloud?.user()
         page = defaults.string(forKey: Self.pageKey).flatMap(HomePage.init) ?? .upcoming
         hiddenPages = Set((defaults.stringArray(forKey: Self.hiddenPagesKey) ?? []).compactMap(HomePage.init))
         credential = credentials.load()
@@ -229,6 +242,11 @@ final class AppState {
     }
 
     func reload() {
+        refresh()
+        syncRequests?.yield()
+    }
+
+    private func refresh() {
         meetings = (try? library.meetings()) ?? []
         allProjects = (try? library.projects()) ?? []
         previews = meetings.reduce(into: [:]) { previews, meeting in
@@ -275,6 +293,7 @@ final class AppState {
     func save(_ note: String, for meeting: Meeting) {
         try? library.saveNote(note, for: meeting)
         previews[meeting.id] = Markdown.preview(of: note)
+        syncRequests?.yield()
     }
 
     func rename(_ meeting: Meeting, to title: String) {
@@ -670,6 +689,88 @@ extension AppState {
         overviewRequests.removeValue(forKey: id)?.task.cancel()
         overviewStatus[id] = nil
     }
+}
+
+extension AppState {
+    func signIn() async {
+        guard let cloud, user == nil else { return }
+        do {
+            user = try await cloud.signIn()
+        } catch {
+            if (error as? ASWebAuthenticationSessionError)?.code != .canceledLogin { inform("Martin couldn’t sign you in", error.localizedDescription) }
+            return
+        }
+        PostHogSDK.shared.capture("account_signed_in")
+        startSyncing()
+    }
+
+    func signOut() async {
+        guard let cloud, let user else { return }
+        syncing?.cancel()
+        syncing = nil
+        syncRequests?.finish()
+        syncRequests = nil
+        await syncPass?.value
+        try? await cloud.signOut()
+        try? Sync(library: library, server: cloud.server, user: user.id).forget()
+        self.user = nil
+        syncStatus = .idle
+        PostHogSDK.shared.capture("account_signed_out")
+    }
+
+    func startSyncing() {
+        guard user != nil, syncing == nil else { return }
+        let (requests, continuation) = AsyncStream.makeStream(of: Void.self, bufferingPolicy: .bufferingNewest(1))
+        syncRequests = continuation
+        syncing = Task {
+            let ticks = Task {
+                while !Task.isCancelled {
+                    continuation.yield()
+                    try? await Task.sleep(for: .seconds(Self.syncInterval))
+                }
+            }
+            for await _ in requests where !Task.isCancelled {
+                await syncNow()
+                try? await Task.sleep(for: .seconds(Self.syncSpacing))
+            }
+            ticks.cancel()
+        }
+    }
+
+    func syncNow() async {
+        let previous = syncPass
+        let pass = Task {
+            await previous?.value
+            await runSync()
+        }
+        syncPass = pass
+        await pass.value
+    }
+
+    private func runSync() async {
+        guard let cloud, let user else { return }
+        if case .synced = syncStatus {} else { syncStatus = .syncing }
+        do {
+            let applied = try await Sync(library: library, server: cloud.server, user: user.id).run()
+            guard self.user == user else { return }
+            syncStatus = .synced(.now)
+            guard !applied.isEmpty else { return }
+            refresh()
+            for key in applied where key.kind == .meeting { revisions[key.id, default: 0] += 1 }
+            navigate(to: path.filter { if case .note(let id) = $0 { meeting(id) != nil } else { true } })
+        } catch {
+            guard self.user == user, !Task.isCancelled else { return }
+            syncStatus = .failed(error.localizedDescription)
+            PostHogSDK.shared.logger?.error("sync failed", attributes: ["error": String(describing: type(of: error))])
+        }
+    }
+}
+
+enum SyncStatus: Equatable {
+    case idle
+    case syncing
+    case synced(Date)
+    case failed(String)
 }
 
 struct OverviewRequest {

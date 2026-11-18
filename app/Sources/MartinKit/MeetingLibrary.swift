@@ -9,7 +9,7 @@ public struct MeetingLibrary: Sendable {
         self.root = root
     }
 
-    private var meetingsFolder: URL { root.appending(path: "meetings", directoryHint: .isDirectory) }
+    var meetingsFolder: URL { root.appending(path: "meetings", directoryHint: .isDirectory) }
     private var projectsFile: URL { root.appending(path: "projects.json") }
     private var lookupsFile: URL { root.appending(path: "lookups.json") }
     private var overviewsFile: URL { root.appending(path: "overviews.json") }
@@ -55,14 +55,7 @@ public struct MeetingLibrary: Sendable {
     }
 
     private func unusedID(at startedAt: Date) -> Meeting.ID {
-        let stamp = Self.folderName.string(from: startedAt)
-        var id = stamp
-        var copy = 1
-        while FileManager.default.fileExists(atPath: meetingsFolder.appending(path: id).path) {
-            copy += 1
-            id = "\(stamp)-\(copy)"
-        }
-        return id
+        "\(Self.folderName.string(from: startedAt))-\(UUID().uuidString.prefix(6).lowercased())"
     }
 
     public func save(_ meeting: Meeting) throws {
@@ -74,7 +67,7 @@ public struct MeetingLibrary: Sendable {
     }
 
     public func folder(of meeting: Meeting) -> URL {
-        meetingsFolder.appending(path: meeting.id, directoryHint: .isDirectory)
+        meetingFolder(meeting.id)
     }
 
     public func projects() throws -> [Project] {
@@ -131,9 +124,13 @@ public struct MeetingLibrary: Sendable {
         for meeting in try meetings() where meeting.project == project.id {
             try delete(meeting)
         }
-        try save(projects().filter { $0.id != project.id })
-        try save(nil as RepositoryLookup?, for: project.id, in: lookupsFile)
-        try save(nil as OverviewRecord?, for: project.id, in: overviewsFile)
+        try forget(project: project.id)
+    }
+
+    func forget(project: Project.ID) throws {
+        try save(projects().filter { $0.id != project })
+        try save(nil as RepositoryLookup?, for: project, in: lookupsFile)
+        try save(nil as OverviewRecord?, for: project, in: overviewsFile)
     }
 
     public func lookups() -> [Project.ID: RepositoryLookup] {
@@ -170,7 +167,7 @@ public struct MeetingLibrary: Sendable {
         return try projects().first { $0.archivedAt == nil && $0.series.contains(series) }?.id
     }
 
-    private func save(_ projects: [Project]) throws {
+    func save(_ projects: [Project]) throws {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         try Self.encoder.encode(projects).write(to: projectsFile, options: .atomic)
     }
@@ -194,14 +191,14 @@ public struct MeetingLibrary: Sendable {
         return formatter
     }()
 
-    private static let encoder: JSONEncoder = {
+    static let encoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.sortedKeys]
         return encoder
     }()
 
-    private static let decoder: JSONDecoder = {
+    static let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return decoder
