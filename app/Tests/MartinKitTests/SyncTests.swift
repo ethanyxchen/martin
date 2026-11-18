@@ -25,6 +25,19 @@ final class SyncTests {
         #expect(other.library.note(of: meeting) == "- shipped sync")
     }
 
+    @Test func aMacWithItsOwnNotesSigningInForTheFirstTimeKeepsThemAndGetsTheOthers() async throws {
+        let mine = try mac.library.create(startedAt: .now - 60, title: "Standup")
+        let project = try mac.library.createProject(named: "Martin")
+        try await sync(mac)
+        let theirs = try other.library.create(title: "Retro")
+        let sameName = try other.library.createProject(named: "Martin")
+        try await sync(other)
+        try await sync(mac)
+        #expect(Set(try mac.library.meetings().map(\.id)) == [mine.id, theirs.id])
+        #expect(Set(try other.library.meetings().map(\.id)) == [mine.id, theirs.id])
+        #expect(Set(try other.library.projects().map(\.id)) == [project.id, sameName.id])
+    }
+
     @Test func anEditOnOneMacReplacesTheOtherMacsCopy() async throws {
         let meeting = try mac.library.create(title: "Standup")
         try await sync(mac)
