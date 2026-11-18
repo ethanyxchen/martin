@@ -64,7 +64,7 @@ open build/Martin.app
 
 Run the tests with `swift test --package-path app`.
 
-Syncing needs a Supabase project with Sign in with Apple turned on, `martin://auth` in its redirect URLs and the schema in `supabase/migrations` applied. Pass the project to the build as `SUPABASE_URL` and `SUPABASE_KEY` (the publishable key). Builds without them hide the Account section.
+Syncing needs a Supabase project with Sign in with Apple turned on, `martin://auth` in its redirect URLs and the schema in `supabase/migrations` applied. Pass the project to the build as `SUPABASE_URL` and `SUPABASE_KEY` (the publishable key), either in the environment or as lines in the main checkout's `.env`. Builds without them hide the Account section.
 
 ## Releasing
 

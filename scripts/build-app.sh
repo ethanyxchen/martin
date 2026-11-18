@@ -44,6 +44,11 @@ if [[ "$(git rev-parse --absolute-git-dir)" != "$(git rev-parse --path-format=ab
 elif [[ -n "${POSTHOG_PROJECT_TOKEN:-}" ]]; then
   plutil -insert PostHogProjectToken -string "$POSTHOG_PROJECT_TOKEN" "$app_bundle/Contents/Info.plist"
 fi
+env_file="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")/.env"
+if [[ -f "$env_file" ]]; then
+  SUPABASE_URL="${SUPABASE_URL:-$(sed -n 's/^SUPABASE_URL=//p' "$env_file")}"
+  SUPABASE_KEY="${SUPABASE_KEY:-$(sed -n 's/^SUPABASE_KEY=//p' "$env_file")}"
+fi
 if [[ -n "${SUPABASE_URL:-}" && -n "${SUPABASE_KEY:-}" ]]; then
   plutil -insert SupabaseURL -string "$SUPABASE_URL" "$app_bundle/Contents/Info.plist"
   plutil -insert SupabaseKey -string "$SUPABASE_KEY" "$app_bundle/Contents/Info.plist"
