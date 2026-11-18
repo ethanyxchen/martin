@@ -85,6 +85,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 final class AppState {
     static let overviewInterval: TimeInterval = 30 * 60
     static let syncInterval: TimeInterval = 60
+    static let syncSpacing: TimeInterval = 2
     nonisolated static let domain = "dev.ethanchen.martin"
     static let sharedDefaults = Bundle.main.bundleIdentifier == domain ? UserDefaults.standard : UserDefaults(suiteName: domain)!
     private static let windowSize = NSSize(width: 520, height: 640)
@@ -709,6 +710,7 @@ extension AppState {
         syncing = nil
         syncRequests?.finish()
         syncRequests = nil
+        await syncPass?.value
         try? await cloud.signOut()
         try? Sync(library: library, server: cloud.server, user: user.id).forget()
         self.user = nil
@@ -729,6 +731,7 @@ extension AppState {
             }
             for await _ in requests where !Task.isCancelled {
                 await syncNow()
+                try? await Task.sleep(for: .seconds(Self.syncSpacing))
             }
             ticks.cancel()
         }
@@ -752,8 +755,8 @@ extension AppState {
             guard self.user == user else { return }
             syncStatus = .synced(.now)
             guard !applied.isEmpty else { return }
-            for key in applied where key.kind == .meeting { revisions[key.id, default: 0] += 1 }
             refresh()
+            for key in applied where key.kind == .meeting { revisions[key.id, default: 0] += 1 }
             navigate(to: path.filter { if case .note(let id) = $0 { meeting(id) != nil } else { true } })
         } catch {
             guard self.user == user, !Task.isCancelled else { return }

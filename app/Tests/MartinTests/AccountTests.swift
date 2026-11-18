@@ -1,6 +1,8 @@
+import AppKit
 import Foundation
 import MartinKit
 import MartinKitFakes
+import SwiftUI
 import Testing
 @testable import Martin
 
@@ -78,5 +80,53 @@ final class AccountTests: Sandbox {
         await app.signIn()
         await app.syncNow()
         #expect(library.note(of: meeting) == "edited elsewhere")
+    }
+
+    @Test func typingNotYetSavedSurvivesAnEditArrivingFromAnotherMac() async throws {
+        let meeting = try library.create(title: "Standup")
+        let app = app()
+        await app.syncNow()
+        try await syncElsewhere()
+        try elsewhere.saveNote("edited elsewhere", for: meeting)
+        try await syncElsewhere()
+        let window = try await noteWindow(for: meeting, in: app)
+        let editor = try editor(in: window)
+        try await Task.sleep(for: .milliseconds(700))
+        editor.insertText("typed here", replacementRange: NSRange(location: 0, length: 0))
+        await app.syncNow()
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(editor.string == "typed here")
+    }
+
+    @Test func aRenameFromAnotherMacReplacesTheTitleShownInTheOpenNote() async throws {
+        let meeting = try library.create(title: "Standup")
+        let app = app()
+        await app.syncNow()
+        try await syncElsewhere()
+        var renamed = meeting
+        renamed.title = "Retro"
+        try elsewhere.save(renamed)
+        try elsewhere.saveNote("edited elsewhere", for: renamed)
+        try await syncElsewhere()
+        let window = try await noteWindow(for: meeting, in: app)
+        await app.syncNow()
+        try await Task.sleep(for: .milliseconds(100))
+        let titles = window.contentView!.descendants.compactMap { ($0 as? NSTextField)?.stringValue }
+        #expect(titles.contains("Retro"))
+        #expect(try editor(in: window).string == "edited elsewhere")
+    }
+
+    private func noteWindow(for meeting: Meeting, in app: AppState) async throws -> NSWindow {
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 640), styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = NSHostingView(rootView: NoteView(app: app, meeting: meeting))
+        for _ in 0..<100 where !window.contentView!.descendants.contains(where: { $0 is NoteTextView }) {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        return window
+    }
+
+    private func editor(in window: NSWindow) throws -> NoteTextView {
+        try #require(window.contentView!.descendants.compactMap { $0 as? NoteTextView }.first)
     }
 }

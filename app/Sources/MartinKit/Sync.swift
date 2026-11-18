@@ -78,42 +78,43 @@ public struct Sync: Sendable {
     private var stateFile: URL { library.root.appending(path: "sync.json") }
 
     @discardableResult
-    public func run() async throws -> Set<SyncRecord.Key> {
-        let now = Date.now
+    nonisolated(nonsending) public func run() async throws -> Set<SyncRecord.Key> {
         var state = loadState()
-        var local = try library.syncRecords()
+        try notice(library.syncData(), in: &state)
+        try save(state)
         var applied: Set<SyncRecord.Key> = []
         for change in try await server.pull(state.cursor.map { $0 - Self.overlap }).sorted(by: { $0.updatedAt < $1.updatedAt }) {
             state.cursor = max(state.cursor ?? .distantPast, change.updatedAt)
             let remote = change.record
             let theirs = try remote.data.map { try library.canonical(remote.key.kind, $0) }
-            let mine = local[remote.key]
-            guard mine?.data != theirs else {
-                state.synced[remote.key.name] = theirs.map(Self.hash)
-                continue
+            let mine = try library.syncData(for: remote.key)
+            let editedHere = mine.map(Self.hash) != state.synced[remote.key.name]
+            if mine != theirs, editedHere, editedAt(remote.key, mine, state) > remote.editedAt { continue }
+            if mine != theirs {
+                try library.apply(SyncRecord(key: remote.key, data: theirs, editedAt: remote.editedAt))
+                applied.insert(remote.key)
+                if remote.key.kind == .meeting, theirs != nil { state.missing.insert(remote.key.id) }
             }
-            let editedHere = mine?.data.map(Self.hash) != state.synced[remote.key.name]
-            if editedHere, (mine?.editedAt ?? now) > remote.editedAt { continue }
-            try library.apply(SyncRecord(key: remote.key, data: theirs, editedAt: remote.editedAt))
-            local[remote.key] = theirs.map { SyncRecord(key: remote.key, data: $0, editedAt: remote.editedAt) }
             state.synced[remote.key.name] = theirs.map(Self.hash)
-            applied.insert(remote.key)
+            state.changedAt[remote.key.name] = nil
         }
-        let keys = Set(local.keys).union(state.synced.keys.compactMap(SyncRecord.Key.init(name:)))
-        let outgoing = keys.filter { local[$0]?.data.map(Self.hash) != state.synced[$0.name] }
-            .map { local[$0] ?? SyncRecord(key: $0, data: nil, editedAt: now) }
+        let local = try library.syncData()
+        notice(local, in: &state)
+        let outgoing = changed(local, state).map { SyncRecord(key: $0, data: local[$0], editedAt: editedAt($0, local[$0], state)) }
         for record in outgoing where record.key.kind == .meeting && record.data != nil {
             try await uploadImages(of: record.key.id, into: &state)
         }
         if !outgoing.isEmpty { try await server.push(outgoing) }
         for record in outgoing {
             state.synced[record.key.name] = record.data.map(Self.hash)
+            state.changedAt[record.key.name] = nil
             guard record.key.kind == .meeting, record.data == nil else { continue }
             try await server.removeImages(record.key.id)
             state.images = state.images.filter { !$0.hasPrefix(record.key.id + "/") }
         }
-        for key in applied where key.kind == .meeting && local[key] != nil {
-            try await downloadImages(of: key.id, into: &state)
+        for meeting in state.missing {
+            let complete = local[SyncRecord.Key(kind: .meeting, id: meeting)] == nil ? true : try await downloadImages(of: meeting, into: &state)
+            if complete { state.missing.remove(meeting) }
         }
         try save(state)
         return applied
@@ -122,6 +123,23 @@ public struct Sync: Sendable {
     public func forget() throws {
         guard FileManager.default.fileExists(atPath: stateFile.path) else { return }
         try FileManager.default.removeItem(at: stateFile)
+    }
+
+    private func changed(_ local: [SyncRecord.Key: Data], _ state: State) -> [SyncRecord.Key] {
+        Set(local.keys).union(state.synced.keys.compactMap(SyncRecord.Key.init(name:)))
+            .filter { local[$0].map(Self.hash) != state.synced[$0.name] }
+    }
+
+    private func notice(_ local: [SyncRecord.Key: Data], in state: inout State) {
+        let now = Date.now
+        for key in changed(local, state) where state.changedAt[key.name] == nil {
+            state.changedAt[key.name] = now
+        }
+    }
+
+    private func editedAt(_ key: SyncRecord.Key, _ data: Data?, _ state: State) -> Date {
+        if key.kind == .meeting, data != nil, let modified = library.modified(meeting: key.id) { return modified }
+        return state.changedAt[key.name] ?? .now
     }
 
     private func uploadImages(of meeting: Meeting.ID, into state: inout State) async throws {
@@ -135,25 +153,32 @@ public struct Sync: Sendable {
         }
     }
 
-    private func downloadImages(of meeting: Meeting.ID, into state: inout State) async throws {
+    private func downloadImages(of meeting: Meeting.ID, into state: inout State) async throws -> Bool {
         let folder = library.meetingFolder(meeting)
         let images = NoteImages(meetingFolder: folder)
         let note = (try? String(contentsOf: folder.appending(path: "note.md"), encoding: .utf8)) ?? ""
+        var complete = true
         for path in Set(note.components(separatedBy: .newlines).compactMap { NoteImage(line: $0)?.path }) {
             guard let file = images.url(for: path), !FileManager.default.fileExists(atPath: file.path) else { continue }
             let remote = "\(meeting)/\(path)"
-            guard let data = try? await server.download(remote) else { continue }
+            guard let data = try? await server.download(remote) else {
+                complete = false
+                continue
+            }
             try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
             try data.write(to: file, options: .atomic)
             state.images.insert(remote)
         }
+        return complete
     }
 
     private struct State: Codable {
         var user: String
         var cursor: Date?
         var synced: [String: String] = [:]
+        var changedAt: [String: Date] = [:]
         var images: Set<String> = []
+        var missing: Set<Meeting.ID> = []
     }
 
     private func loadState() -> State {
@@ -185,19 +210,34 @@ private struct SyncedMeeting: Codable {
 }
 
 extension MeetingLibrary {
-    func syncRecords() throws -> [SyncRecord.Key: SyncRecord] {
-        var records: [SyncRecord.Key: SyncRecord] = [:]
+    func syncData() throws -> [SyncRecord.Key: Data] {
+        var records: [SyncRecord.Key: Data] = [:]
         for meeting in try meetings() {
-            let key = SyncRecord.Key(kind: .meeting, id: meeting.id)
-            let editedAt = [folder(of: meeting).appending(path: "meeting.json"), noteFile(of: meeting)].compactMap(Self.modified).max() ?? .distantPast
-            records[key] = try SyncRecord(key: key, data: Self.encoder.encode(SyncedMeeting(meeting: meeting, note: note(of: meeting) ?? "")), editedAt: editedAt)
+            records[SyncRecord.Key(kind: .meeting, id: meeting.id)] = try syncData(of: meeting)
         }
-        let editedAt = Self.modified(projectsFile) ?? .distantPast
         for project in try projects() {
-            let key = SyncRecord.Key(kind: .project, id: project.id)
-            records[key] = try SyncRecord(key: key, data: Self.encoder.encode(project.synced), editedAt: editedAt)
+            records[SyncRecord.Key(kind: .project, id: project.id)] = try Self.encoder.encode(project.synced)
         }
         return records
+    }
+
+    func syncData(for key: SyncRecord.Key) throws -> Data? {
+        switch key.kind {
+        case .meeting:
+            let file = meetingFolder(key.id).appending(path: "meeting.json")
+            guard let meeting = try? Self.decoder.decode(Meeting.self, from: Data(contentsOf: file)) else { return nil }
+            return try syncData(of: meeting)
+        case .project:
+            return try projects().first { $0.id == key.id }.map { try Self.encoder.encode($0.synced) }
+        }
+    }
+
+    private func syncData(of meeting: Meeting) throws -> Data {
+        try Self.encoder.encode(SyncedMeeting(meeting: meeting, note: note(of: meeting) ?? ""))
+    }
+
+    func modified(meeting id: Meeting.ID) -> Date? {
+        ["meeting.json", "note.md"].compactMap { try? meetingFolder(id).appending(path: $0).resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate }.max()
     }
 
     func canonical(_ kind: SyncRecord.Kind, _ data: Data) throws -> Data {
@@ -229,10 +269,6 @@ extension MeetingLibrary {
 
     func meetingFolder(_ id: Meeting.ID) -> URL {
         meetingsFolder.appending(path: id, directoryHint: .isDirectory)
-    }
-
-    private static func modified(_ file: URL) -> Date? {
-        try? file.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
     }
 }
 

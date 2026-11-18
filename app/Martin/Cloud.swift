@@ -28,12 +28,14 @@ struct Cloud: Sendable {
         let folder: @Sendable () async throws -> String = { try await client.auth.session.user.id.uuidString.lowercased() }
         let server = SyncServer { after in
             var changes: [SyncChange] = []
+            var since = after
             while true {
                 var query = client.from("records").select("kind, id, data, edited_at, updated_at")
-                if let after { query = query.gt("updated_at", value: after) }
-                let page: [Row] = try await query.order("updated_at").range(from: changes.count, to: changes.count + Row.page - 1).execute().value
+                if let since { query = query.gt("updated_at", value: since) }
+                let page: [Row] = try await query.order("updated_at").limit(Row.page).execute().value
                 changes += try page.map { try $0.change }
-                if page.count < Row.page { return changes }
+                guard page.count == Row.page, let last = page.last?.updatedAt else { return changes }
+                since = last
             }
         } push: { records in
             try await client.from("records").upsert(records.map(Row.init), onConflict: "user_id,kind,id").execute()
@@ -43,9 +45,9 @@ struct Cloud: Sendable {
             try await images.download(path: "\(folder())/\(path)")
         } removeImages: { meeting in
             let prefix = "\(try await folder())/\(meeting)/images"
-            let files = try await images.list(path: prefix)
-            guard !files.isEmpty else { return }
-            try await images.remove(paths: files.map { "\(prefix)/\($0.name)" })
+            while case let files = try await images.list(path: prefix), !files.isEmpty {
+                try await images.remove(paths: files.map { "\(prefix)/\($0.name)" })
+            }
         }
         return Cloud(
             user: { client.auth.currentUser.map(CloudUser.init) },

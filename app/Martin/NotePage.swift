@@ -5,13 +5,16 @@ struct NoteView: View {
     let app: AppState
     let meeting: Meeting
     @State private var note: String
+    @State private var saved: String
     @State private var title: String
     @FocusState private var editingTitle: Bool
 
     init(app: AppState, meeting: Meeting) {
         self.app = app
         self.meeting = meeting
-        _note = State(initialValue: app.library.note(of: meeting) ?? "")
+        let note = app.library.note(of: meeting) ?? ""
+        _note = State(initialValue: note)
+        _saved = State(initialValue: note)
         _title = State(initialValue: meeting.title ?? "")
     }
 
@@ -34,7 +37,11 @@ struct NoteView: View {
             }
         }
         .onChange(of: app.revisions[meeting.id]) {
-            note = library.note(of: meeting) ?? ""
+            if note == saved {
+                note = library.note(of: meeting) ?? ""
+                saved = note
+            }
+            if !editingTitle { title = current.title ?? "" }
         }
         .onChange(of: editingTitle) {
             if !editingTitle { app.rename(current, to: title) }
@@ -85,6 +92,7 @@ struct NoteView: View {
     private func save() {
         guard !((library.note(of: meeting) ?? "") as NSString).isEqual(to: note) else { return }
         app.save(note, for: meeting)
+        saved = note
     }
 }
 

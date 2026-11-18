@@ -10,7 +10,7 @@ public struct MeetingLibrary: Sendable {
     }
 
     var meetingsFolder: URL { root.appending(path: "meetings", directoryHint: .isDirectory) }
-    var projectsFile: URL { root.appending(path: "projects.json") }
+    private var projectsFile: URL { root.appending(path: "projects.json") }
     private var lookupsFile: URL { root.appending(path: "lookups.json") }
     private var overviewsFile: URL { root.appending(path: "overviews.json") }
 
@@ -55,14 +55,7 @@ public struct MeetingLibrary: Sendable {
     }
 
     private func unusedID(at startedAt: Date) -> Meeting.ID {
-        let stamp = Self.folderName.string(from: startedAt)
-        var id = stamp
-        var copy = 1
-        while FileManager.default.fileExists(atPath: meetingsFolder.appending(path: id).path) {
-            copy += 1
-            id = "\(stamp)-\(copy)"
-        }
-        return id
+        "\(Self.folderName.string(from: startedAt))-\(UUID().uuidString.prefix(6).lowercased())"
     }
 
     public func save(_ meeting: Meeting) throws {
