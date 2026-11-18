@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   release:
-    runs-on: macos-26
+    runs-on: [self-hosted, macOS, ARM64]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -34,7 +34,7 @@ jobs:
             -P "$DEVELOPER_ID_P12_PASSWORD" -T /usr/bin/codesign
           rm "$RUNNER_TEMP/developer-id.p12"
           security set-key-partition-list -S apple-tool:,apple: -k "$password" "$keychain"
-          security list-keychains -d user -s "$keychain"
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
 
       - name: Build, sign, notarize and sign the update
         env:
