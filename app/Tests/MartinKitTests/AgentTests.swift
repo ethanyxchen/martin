@@ -66,3 +66,49 @@ struct AgentTests {
         #expect(picked(interviews, ["acme/atlas"], [martin]) == nil)
     }
 }
+
+struct OverviewJobTests {
+    let clones = RepositoryTests()
+    let zone = TimeZone(identifier: "America/Los_Angeles")!
+    let cutoff = Date(timeIntervalSince1970: 1_795_000_000)
+
+    @Test func theOverviewJobCarriesEveryInputWithTimesInTheLocalOffsetAndNullsSpelledOut() throws {
+        let martin = clones.repository("ethanyxchen/martin", in: "martin")
+        let owner = Owner(name: "Ada Lovelace", email: "Ada@Example.com", account: "ada 42")
+        let previous = Overview(now: [.init(title: "Agent", caption: "Wiring it up.")], next: [], shelved: [], readAt: cutoff - 3600)
+        let note = Agent.OverviewJob.Note(id: "2026-11-17-090000", title: "Standup", date: cutoff - 7200, changedAt: cutoff - 60, file: URL(filePath: "/notes/standup/note.md"))
+        let job = Agent.OverviewJob(provider: .anthropic, project: "Martin", owner: owner, cutoff: cutoff, previous: previous, notes: [note], repository: martin)
+        let encoded = try JSONSerialization.jsonObject(with: AgentClient.encoder(in: zone).encode(job)) as? NSDictionary
+        #expect(encoded == [
+            "kind": "overview",
+            "provider": "anthropic",
+            "project": ["name": "Martin"],
+            "owner": ["name": "Ada Lovelace", "emails": ["ada@example.com", "42+ada@users.noreply.github.com"], "login": "ada"],
+            "cutoff": "2026-11-18T03:06:40-08:00",
+            "previous": [
+                "now": [["title": "Agent", "caption": "Wiring it up.", "updated": NSNull()]],
+                "next": [], "shelved": [],
+                "readAt": "2026-11-18T02:06:40-08:00",
+            ],
+            "notes": [["id": "2026-11-17-090000", "title": "Standup", "date": "2026-11-18T01:06:40-08:00", "changedAt": "2026-11-18T03:05:40-08:00", "path": "/notes/standup/note.md"]],
+            "repository": ["folder": martin.folder.path(percentEncoded: false), "slug": "ethanyxchen/martin"],
+        ])
+    }
+
+    @Test func aFirstOverviewWithoutARepositorySendsNulls() throws {
+        let job = Agent.OverviewJob(provider: .openai, project: "Interviews", owner: Owner(name: nil, email: nil, account: nil), cutoff: cutoff, previous: nil, notes: [], repository: nil)
+        let encoded = try #require(JSONSerialization.jsonObject(with: AgentClient.encoder(in: zone).encode(job)) as? NSDictionary)
+        #expect(encoded["previous"] as? NSNull != nil)
+        #expect(encoded["repository"] as? NSNull != nil)
+        #expect(encoded["owner"] as? NSDictionary == ["name": "", "emails": [], "login": ""])
+    }
+
+    @Test func theAgentsSectionsBecomeAnOverviewReadAtTheCutoff() throws {
+        let line = #"{"type":"result","result":{"now":[{"title":"Agent","caption":"Wiring it up.","updated":"2026-11-17"}],"next":[],"shelved":[{"title":"Docs","caption":"Paused.","updated":null}]}}"#
+        let sections: Agent.Sections = try AgentClient.result(of: Command.Outcome(output: line + "\n", ending: .exited(0)))
+        #expect(sections.now == [.init(title: "Agent", caption: "Wiring it up.", updated: "2026-11-17")])
+        #expect(sections.shelved == [.init(title: "Docs", caption: "Paused.")])
+        let lookup = #"{"type":"result","result":{"evidence":"","slugs":[]}}"#
+        #expect(throws: AgentClient.Failure.broken) { let _: Agent.Sections = try AgentClient.result(of: Command.Outcome(output: lookup, ending: .exited(0))) }
+    }
+}

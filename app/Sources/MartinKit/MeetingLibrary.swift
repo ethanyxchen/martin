@@ -14,6 +14,7 @@ public struct MeetingLibrary: Sendable {
     private var meetingsFolder: URL { root.appending(path: "meetings", directoryHint: .isDirectory) }
     private var projectsFile: URL { root.appending(path: "projects.json") }
     private var lookupsFile: URL { root.appending(path: "lookups.json") }
+    private var overviewsFile: URL { root.appending(path: "overviews.json") }
 
     public func meetings() throws -> [Meeting] {
         guard FileManager.default.fileExists(atPath: meetingsFolder.path) else { return [] }
@@ -133,23 +134,37 @@ public struct MeetingLibrary: Sendable {
             try delete(meeting)
         }
         try save(projects().filter { $0.id != project.id })
-        if var lookups = try? lookups(), lookups.removeValue(forKey: project.id) != nil { try save(lookups) }
+        try save(nil as RepositoryLookup?, for: project.id, in: lookupsFile)
+        try save(nil as OverviewRecord?, for: project.id, in: overviewsFile)
     }
 
-    public func lookups() throws -> [Project.ID: RepositoryLookup] {
-        guard FileManager.default.fileExists(atPath: lookupsFile.path) else { return [:] }
-        return (try? Self.decoder.decode([Project.ID: RepositoryLookup].self, from: Data(contentsOf: lookupsFile))) ?? [:]
+    public func lookups() -> [Project.ID: RepositoryLookup] {
+        records(in: lookupsFile)
     }
 
     public func save(_ lookup: RepositoryLookup, for project: Project.ID) throws {
-        var lookups = try lookups()
-        lookups[project] = lookup
-        try save(lookups)
+        try save(lookup, for: project, in: lookupsFile)
     }
 
-    private func save(_ lookups: [Project.ID: RepositoryLookup]) throws {
+    public func overviews() -> [Project.ID: OverviewRecord] {
+        records(in: overviewsFile)
+    }
+
+    public func save(_ overview: OverviewRecord, for project: Project.ID) throws {
+        try save(overview, for: project, in: overviewsFile)
+    }
+
+    private func records<Record: Decodable>(in file: URL) -> [Project.ID: Record] {
+        guard let data = try? Data(contentsOf: file) else { return [:] }
+        return (try? Self.decoder.decode([Project.ID: Record].self, from: data)) ?? [:]
+    }
+
+    private func save<Record: Codable>(_ record: Record?, for project: Project.ID, in file: URL) throws {
+        var records: [Project.ID: Record] = records(in: file)
+        guard records[project] != nil || record != nil else { return }
+        records[project] = record
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        try Self.encoder.encode(lookups).write(to: lookupsFile, options: .atomic)
+        try Self.encoder.encode(records).write(to: file, options: .atomic)
     }
 
     private func project(following occurrence: Occurrence) throws -> Project.ID? {

@@ -246,20 +246,33 @@ final class ArchivedProjectNoteTests: LibrarySandbox {
 
     @Test func aProjectsLookupIsSavedUntilTheProjectIsDeleted() throws {
         let kept = try library.createProject(named: "Martin"), deleted = try library.createProject(named: "Goodmeet")
-        #expect(try library.lookups().isEmpty)
+        #expect(library.lookups().isEmpty)
         let lookup = RepositoryLookup(folder: URL(filePath: "/Users/ada/Developer/martin", directoryHint: .isDirectory))
         try library.save(lookup, for: kept.id)
         try library.save(RepositoryLookup(folder: nil), for: deleted.id)
         try library.delete(deleted)
-        #expect(try library.lookups() == [kept.id: lookup])
+        #expect(library.lookups() == [kept.id: lookup])
     }
 
     @Test func aDamagedLookupFileCountsAsNoLookupsAndDoesNotStopADeletion() throws {
         let project = try library.createProject(named: "Martin")
         try "{ truncated".write(to: library.root.appending(path: "lookups.json"), atomically: true, encoding: .utf8)
-        #expect(try library.lookups().isEmpty)
+        #expect(library.lookups().isEmpty)
         try library.delete(project)
         try library.save(RepositoryLookup(folder: nil), for: "other")
-        #expect(try library.lookups().keys.sorted() == ["other"])
+        #expect(library.lookups().keys.sorted() == ["other"])
+    }
+}
+
+extension MeetingLibraryTests {
+    @Test func aProjectsOverviewIsSavedUntilTheProjectIsDeleted() throws {
+        let kept = try library.createProject(named: "Martin"), deleted = try library.createProject(named: "Goodmeet")
+        #expect(library.overviews().isEmpty)
+        let overview = Overview(now: [.init(title: "Agent", caption: "Wiring it up.", updated: "2026-11-17")], next: [], shelved: [], readAt: Date(timeIntervalSince1970: 1_795_000_000))
+        let record = OverviewRecord(built: .init(overview: overview, notes: ["a", "b"], repository: URL(filePath: "/Users/ada/Developer/martin", directoryHint: .isDirectory)), checkedAt: Date(timeIntervalSince1970: 1_795_000_100))
+        try library.save(record, for: kept.id)
+        try library.save(OverviewRecord(built: nil, checkedAt: .now), for: deleted.id)
+        try library.delete(deleted)
+        #expect(library.overviews() == [kept.id: record])
     }
 }
