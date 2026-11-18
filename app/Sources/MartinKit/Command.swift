@@ -5,12 +5,38 @@ enum Command {
     static let grace: TimeInterval = 1
     static let census: TimeInterval = 0.1
 
-    static func run(_ tool: String, _ arguments: [String], input: String? = nil, environment: [String: String] = [:], timeout: TimeInterval) async -> String? {
-        await withCheckedContinuation { continuation in
-            Run(arguments: ["/usr/bin/env", tool] + arguments, input: input, environment: Self.environment.merging(environment) { $1 }, timeout: timeout) {
-                continuation.resume(returning: $0)
-            }.start()
+    struct Outcome: Equatable, Sendable {
+        enum Ending: Equatable, Sendable {
+            case exited(Int32)
+            case signalled(Int32)
+            case stopped
+            case unlaunched
         }
+
+        let output: String
+        let ending: Ending
+
+        var success: String? {
+            ending == .exited(0) ? output : nil
+        }
+    }
+
+    static func run(_ tool: String, _ arguments: [String], input: String? = nil, environment: [String: String] = [:], timeout: TimeInterval) async -> Outcome {
+        let environment = Self.environment.merging(environment) { $1 }
+        guard let executable = executable(tool, searching: environment["PATH"] ?? "") else { return Outcome(output: "", ending: .unlaunched) }
+        let run = Run(arguments: [executable] + arguments, input: input, environment: environment, timeout: timeout)
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                run.start { continuation.resume(returning: $0) }
+            }
+        } onCancel: {
+            run.stop()
+        }
+    }
+
+    private static func executable(_ tool: String, searching path: String) -> String? {
+        let candidates = tool.contains("/") ? [tool] : path.split(separator: ":").map { "\($0)/\(tool)" }
+        return candidates.first(where: FileManager.default.isExecutableFile(atPath:))
     }
 
     private static var environment: [String: String] {
@@ -27,15 +53,16 @@ private final class Run: @unchecked Sendable {
     private let input: String?
     private let environment: [String: String]
     private let timeout: TimeInterval
-    private let done: (String?) -> Void
+    private var done: (@Sendable (Command.Outcome) -> Void)?
     private var group: pid_t = 0
     private var lineage: Lineage?
     private var tracker: Int32 = -1
     private var output = Data()
-    private var status: Int32?
+    private var ending: Command.Outcome.Ending?
     private var drained = false
     private var exited = false
-    private var timedOut = false
+    private var halted = false
+    private var stopped = false
     private var finished = false
     private var reader: DispatchIO?
     private var writer: DispatchIO?
@@ -43,16 +70,22 @@ private final class Run: @unchecked Sendable {
     private var deadline: DispatchSourceTimer?
     private var census: DispatchSourceTimer?
 
-    init(arguments: [String], input: String?, environment: [String: String], timeout: TimeInterval, done: @escaping (String?) -> Void) {
+    init(arguments: [String], input: String?, environment: [String: String], timeout: TimeInterval) {
         self.arguments = arguments
         self.input = input
         self.environment = environment
         self.timeout = timeout
-        self.done = done
     }
 
-    func start() {
-        queue.async { self.launch() }
+    func start(_ done: @escaping @Sendable (Command.Outcome) -> Void) {
+        queue.async {
+            self.done = done
+            self.halted ? self.finish(.stopped) : self.launch()
+        }
+    }
+
+    func stop() {
+        queue.async { self.halt() }
     }
 
     private func launch() {
@@ -61,7 +94,7 @@ private final class Run: @unchecked Sendable {
         (stdout + stdin + tracking).filter { $0 >= 0 }.forEach { _ = fcntl($0, F_SETFD, FD_CLOEXEC) }
         guard piped, let pid = spawn(stdin: stdin[0], stdout: stdout[1], tracking: tracking[1]) else {
             (piped ? [stdout[0], stdin[1], tracking[0]] : stdout + stdin + tracking).filter { $0 >= 0 }.forEach { close($0) }
-            return finish(nil)
+            return finish(.unlaunched)
         }
         group = pid
         tracker = tracking[0]
@@ -136,8 +169,8 @@ private final class Run: @unchecked Sendable {
         var info = siginfo_t()
         let result = retrying { waitid(P_PID, id_t(group), &info, WEXITED | WNOHANG | WNOWAIT) }
         if result == -1, errno == ECHILD {
-            status = -1
-            return finish(nil)
+            ending = .stopped
+            return finish(.stopped)
         }
         guard result == 0, info.si_pid == group else { return }
         exited = true
@@ -166,10 +199,11 @@ private final class Run: @unchecked Sendable {
     }
 
     private func reap() {
-        guard status == nil else { return }
+        guard ending == nil else { return }
         sweep()
         var status: Int32 = 0
-        self.status = retrying { waitpid(group, &status, 0) } == group ? status : -1
+        guard retrying({ waitpid(group, &status, 0) }) == group else { return ending = .stopped }
+        ending = status & 0x7f == 0 ? .exited((status >> 8) & 0xff) : .signalled(status & 0x7f)
     }
 
     private func retrying(_ call: () -> Int32) -> Int32 {
@@ -181,29 +215,33 @@ private final class Run: @unchecked Sendable {
     private func startDeadline() {
         let deadline = DispatchSource.makeTimerSource(queue: queue)
         deadline.schedule(deadline: .now() + timeout)
-        deadline.setEventHandler { [self] in
-            noticeExit()
-            guard !finished else { return }
-            timedOut = !exited
-            sweep()
-            queue.asyncAfter(deadline: .now() + Command.grace) { [self] in
-                guard exited else { return finish(nil) }
-                drained = true
-                reap()
-                settle()
-            }
-        }
+        deadline.setEventHandler { [self] in halt() }
         deadline.resume()
         self.deadline = deadline
     }
 
-    private func settle() {
-        guard let status, drained else { return }
-        let succeeded = !timedOut && status & 0x7f == 0 && (status >> 8) & 0xff == 0
-        finish(succeeded ? String(decoding: output, as: UTF8.self) : nil)
+    private func halt() {
+        guard !finished, !halted else { return }
+        halted = true
+        guard group > 0 else { return }
+        noticeExit()
+        guard !finished else { return }
+        stopped = !exited
+        sweep()
+        queue.asyncAfter(deadline: .now() + Command.grace) { [self] in
+            guard exited else { return finish(.stopped) }
+            drained = true
+            reap()
+            settle()
+        }
     }
 
-    private func finish(_ result: String?) {
+    private func settle() {
+        guard let ending, drained else { return }
+        finish(stopped ? .stopped : ending)
+    }
+
+    private func finish(_ ending: Command.Outcome.Ending) {
         guard !finished else { return }
         finished = true
         deadline?.cancel()
@@ -212,7 +250,7 @@ private final class Run: @unchecked Sendable {
         reader?.close(flags: .stop)
         writer?.close(flags: .stop)
         if tracker >= 0 { close(tracker) }
-        if group > 0, status == nil {
+        if group > 0, self.ending == nil {
             sweep()
             let group = group
             DispatchQueue.global().async {
@@ -220,6 +258,6 @@ private final class Run: @unchecked Sendable {
                 waitpid(group, &status, 0)
             }
         }
-        done(result)
+        done?(Command.Outcome(output: String(decoding: output, as: UTF8.self), ending: ending))
     }
 }

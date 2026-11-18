@@ -97,6 +97,7 @@ final class AppState {
     private(set) var suggestions: [Project.ID: RepositorySuggestion] = [:]
     @ObservationIgnored private var scouting: Task<[Repository], Never>?
     @ObservationIgnored private var lookupRound = 0
+    @ObservationIgnored private var lookups: Task<Void, Never>?
     var page: HomePage {
         didSet { defaults.set(page.rawValue, forKey: Self.pageKey) }
     }
@@ -108,6 +109,7 @@ final class AppState {
             credentials.save(credential)
             suggestions = [:]
             lookupRound += 1
+            lookups?.cancel()
         }
     }
     var sharesUsage: Bool {
@@ -352,9 +354,13 @@ final class AppState {
     }
 
     func suggestRepositories() async {
-        for project in projects where !project.isSecret {
-            await suggestRepository(for: project)
+        let lookups = Task {
+            for project in projects where !project.isSecret && !Task.isCancelled {
+                await suggestRepository(for: project)
+            }
         }
+        self.lookups = lookups
+        await lookups.value
     }
 
     func suggestRepository(for project: Project) async {
@@ -371,6 +377,7 @@ final class AppState {
         let matches = await finder.match(project, notes, candidates, credential)
         let repository = await Task.detached { Agent.pick(for: project, matches: matches ?? [], among: candidates) }.value
         guard round == lookupRound, allProjects.contains(where: { $0.id == project.id }) else { return }
+        guard !Task.isCancelled else { return suggestions[project.id] = nil }
         if matches != nil { try? library.save(RepositoryLookup(folder: repository?.folder), for: project.id) }
         found(repository, for: project)
         PostHogSDK.shared.logger?.info("repository suggestion completed", attributes: [
