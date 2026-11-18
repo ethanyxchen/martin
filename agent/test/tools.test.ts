@@ -138,7 +138,7 @@ describe("repo_activity", () => {
     ].join("\n"))
   })
 
-  test("lists branches newest first with idle days, staleness, merge state and pull request", async () => {
+  test("groups the owner's unmerged, then merged, then other contributors' branches, newest first, with idle days, staleness, merge state and pull request", async () => {
     const branch = (fields: Partial<Branch>): Branch => ({ name: "b", lastCommit: "2026-11-16T09:00:00-08:00", author: "Ada Park", email: "ada@work.com", ahead: 3, merged: false, pullRequest: null, ...fields })
     const branches = [
       branch({ name: "ada/old-idea", lastCommit: "2026-11-13T18:00:00-08:00" }),
@@ -147,11 +147,25 @@ describe("repo_activity", () => {
       branch({ name: "priya/billing", lastCommit: "2026-11-15T12:00:00-08:00", author: "Priya", email: "priya@work.com", pullRequest: pull({ author: "priya", title: "Billing" }) }),
     ]
     expect(await repoActivity(recorded([], false, branches), context, new Sources()).run({ source: "branches", cursor: null })).toBe([
-      "ada/editor, owner · last commit 2026-11-16 · idle 0.4 days · 3 commits ahead of main, not merged · pull request open, +900 −40 in 12 files, 5 commits: Rebuild the editor",
+      "The owner's unmerged branches:",
+      "ada/editor · last commit 2026-11-16 · idle 0.4 days · 3 commits ahead of main, not merged · pull request open, +900 −40 in 12 files, 5 commits: Rebuild the editor",
+      "ada/old-idea · last commit 2026-11-13 · idle 2.0 days, stale · 3 commits ahead of main, not merged · no pull request",
+      "The owner's merged branches:",
+      "ada/shipped · last commit 2026-11-02 · idle 12.3 days · merged · pull request merged, +900 −40 in 12 files, 5 commits: Ship it",
+      "Other contributors' branches:",
       "priya/billing, priya · last commit 2026-11-15 · idle 1.0 days · 3 commits ahead of main, not merged · pull request open, +900 −40 in 12 files, 5 commits: Billing",
-      "ada/old-idea, owner · last commit 2026-11-13 · idle 2.0 days, stale · 3 commits ahead of main, not merged · no pull request",
-      "ada/shipped, owner · last commit 2026-11-02 · idle 12.3 days · merged · pull request merged, +900 −40 in 12 files, 5 commits: Ship it",
     ].join("\n"))
+  })
+
+  test("keeps the owner's old stale branch when other contributors' branches fill the page", async () => {
+    const others = Array.from({ length: 60 }, (_, index) => ({
+      name: `priya/change-${index}`, lastCommit: "2026-11-16T09:00:00-08:00", author: "Priya", email: "priya@work.com", ahead: 0, merged: true, pullRequest: null,
+    }))
+    const shelved = { name: "ada/old-idea", lastCommit: "2026-10-21T10:00:00-07:00", author: "Ada Park", email: "ada@work.com", ahead: 4, merged: false, pullRequest: null }
+    const page = await repoActivity(recorded([], false, [...others, shelved]), context, new Sources()).run({ source: "branches", cursor: null })
+    expect(page).toStartWith("The owner's unmerged branches:\nada/old-idea · last commit 2026-10-21")
+    expect(page).toMatch(/\d+ more branches are not shown\.$/)
+    expect(page.split("\n").at(-2)).toStartWith("priya/change-")
   })
 
   test("groups versions into release tracks, newest first, each version dated by its first ref", async () => {

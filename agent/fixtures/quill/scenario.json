@@ -1,0 +1,944 @@
+{
+  "project": "Quill",
+  "owner": {
+    "name": "Sam Rivera",
+    "emails": [
+      "sam.rivera@inkwell.app"
+    ],
+    "login": "srivera"
+  },
+  "repository": {
+    "folder": ".",
+    "slug": "inkwell/quill"
+  },
+  "commits": [
+    {
+      "date": "2026-10-07T10:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Use the meeting's own time zone for recurring occurrences",
+      "branch": "sam/recurring-timezone"
+    },
+    {
+      "date": "2026-10-08T15:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Merge pull request #401 from inkwell/sam/recurring-timezone",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-19T10:00:00Z",
+      "author": "Lena Fischer",
+      "email": "lena.fischer@inkwell.app",
+      "subject": "Prepare mobile 1.0.2",
+      "branch": "lena/mobile-1.0.2"
+    },
+    {
+      "date": "2026-10-20T09:00:00Z",
+      "author": "Lena Fischer",
+      "email": "lena.fischer@inkwell.app",
+      "subject": "Merge pull request #402 from inkwell/lena/mobile-1.0.2",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-26T11:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Keep section lines when expanding a summary section",
+      "branch": "sam/section-expand"
+    },
+    {
+      "date": "2026-10-27T09:30:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Merge pull request #403 from inkwell/sam/section-expand",
+      "branch": "main"
+    },
+    {
+      "date": "2026-10-28T13:00:00Z",
+      "author": "Omar Haddad",
+      "email": "omar.haddad@inkwell.app",
+      "subject": "Sketch the new calendar sync engine",
+      "branch": "omar/calendar-sync-v2"
+    },
+    {
+      "date": "2026-11-02T10:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Include typed notes in the precomputed summary",
+      "branch": "sam/precompute-typed-notes"
+    },
+    {
+      "date": "2026-11-02T16:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Precompute again when typed notes change",
+      "branch": "sam/precompute-typed-notes"
+    },
+    {
+      "date": "2026-11-03T11:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Merge pull request #404 from inkwell/sam/precompute-typed-notes",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-04T10:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Stream summary sections as they are generated",
+      "branch": "sam/summary-streaming"
+    },
+    {
+      "date": "2026-11-04T12:00:00Z",
+      "author": "Lena Fischer",
+      "email": "lena.fischer@inkwell.app",
+      "subject": "Show an offline banner on mobile",
+      "branch": "lena/offline-banner"
+    },
+    {
+      "date": "2026-11-05T10:00:00Z",
+      "author": "Lena Fischer",
+      "email": "lena.fischer@inkwell.app",
+      "subject": "Merge pull request #405 from inkwell/lena/offline-banner",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-05T14:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Show sections in place while they stream",
+      "branch": "sam/summary-streaming"
+    },
+    {
+      "date": "2026-11-06T12:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Merge pull request #406 from inkwell/sam/summary-streaming",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-09T10:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Cache transcript chunks between summary runs",
+      "branch": "sam/transcript-chunk-cache"
+    },
+    {
+      "date": "2026-11-09T15:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Merge pull request #407 from inkwell/sam/transcript-chunk-cache",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-10T10:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Carry open action items into the next meeting in a series",
+      "branch": "sam/carry-action-items"
+    },
+    {
+      "date": "2026-11-11T09:00:00Z",
+      "author": "Lena Fischer",
+      "email": "lena.fischer@inkwell.app",
+      "subject": "Prepare mobile 1.0.6",
+      "branch": "lena/mobile-1.0.6"
+    },
+    {
+      "date": "2026-11-11T11:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Show carried action items at the top of the note",
+      "branch": "sam/carry-action-items"
+    },
+    {
+      "date": "2026-11-11T15:00:00Z",
+      "author": "Lena Fischer",
+      "email": "lena.fischer@inkwell.app",
+      "subject": "Merge pull request #409 from inkwell/lena/mobile-1.0.6",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-12T09:00:00Z",
+      "author": "Omar Haddad",
+      "email": "omar.haddad@inkwell.app",
+      "subject": "Pull calendar changes incrementally",
+      "branch": "omar/calendar-sync-v2"
+    },
+    {
+      "date": "2026-11-12T10:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Merge pull request #408 from inkwell/sam/carry-action-items",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-12T14:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Remember spelling corrections across meetings",
+      "branch": "sam/spelling-memory"
+    },
+    {
+      "date": "2026-11-13T08:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Apply remembered spellings to new transcripts",
+      "branch": "sam/spelling-memory"
+    },
+    {
+      "date": "2026-11-13T10:00:00Z",
+      "author": "Omar Haddad",
+      "email": "omar.haddad@inkwell.app",
+      "subject": "Resolve conflicting calendar edits",
+      "branch": "omar/calendar-sync-v2"
+    },
+    {
+      "date": "2026-11-13T13:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Bring checklist items back into summaries",
+      "branch": "sam/checklist-items"
+    },
+    {
+      "date": "2026-11-13T16:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Merge pull request #410 from inkwell/sam/spelling-memory",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-13T17:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Merge pull request #411 from inkwell/sam/checklist-items",
+      "branch": "main"
+    },
+    {
+      "date": "2026-11-16T11:00:00Z",
+      "author": "Omar Haddad",
+      "email": "omar.haddad@inkwell.app",
+      "subject": "Backfill calendars after sync v2 lands",
+      "branch": "omar/calendar-sync-v2"
+    },
+    {
+      "date": "2026-11-16T15:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Say when More detail has nothing to add",
+      "branch": "sam/more-detail-empty"
+    },
+    {
+      "date": "2026-11-17T10:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Cover More detail's empty answer in tests",
+      "branch": "sam/more-detail-empty"
+    },
+    {
+      "date": "2026-11-17T14:00:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Report copies of notes, summaries and transcripts",
+      "branch": "sam/copy-telemetry"
+    },
+    {
+      "date": "2026-11-17T15:00:00Z",
+      "author": "Omar Haddad",
+      "email": "omar.haddad@inkwell.app",
+      "subject": "Retry calendar sync with backoff",
+      "branch": "omar/calendar-sync-v2"
+    },
+    {
+      "date": "2026-11-18T09:40:00Z",
+      "author": "Sam Rivera",
+      "email": "sam.rivera@inkwell.app",
+      "subject": "Report copies from the mobile app",
+      "branch": "sam/copy-telemetry"
+    }
+  ],
+  "pullRequests": [
+    {
+      "title": "Fix the time zone of recurring meetings",
+      "author": "srivera",
+      "branch": "sam/recurring-timezone",
+      "createdAt": "2026-10-07T11:00:00Z",
+      "mergedAt": "2026-10-08T15:00:00Z",
+      "closedAt": "2026-10-08T15:00:00Z",
+      "additions": 120,
+      "deletions": 30,
+      "changedFiles": 5,
+      "commits": 1
+    },
+    {
+      "title": "Mobile 1.0.2",
+      "author": "lfischer",
+      "branch": "lena/mobile-1.0.2",
+      "createdAt": "2026-10-19T10:30:00Z",
+      "mergedAt": "2026-10-20T09:00:00Z",
+      "closedAt": "2026-10-20T09:00:00Z",
+      "additions": 40,
+      "deletions": 10,
+      "changedFiles": 3,
+      "commits": 1
+    },
+    {
+      "title": "Keep section lines on expand",
+      "author": "srivera",
+      "branch": "sam/section-expand",
+      "createdAt": "2026-10-26T12:00:00Z",
+      "mergedAt": "2026-10-27T09:30:00Z",
+      "closedAt": "2026-10-27T09:30:00Z",
+      "additions": 90,
+      "deletions": 12,
+      "changedFiles": 3,
+      "commits": 1
+    },
+    {
+      "title": "Include typed notes in the precomputed summary",
+      "author": "srivera",
+      "branch": "sam/precompute-typed-notes",
+      "createdAt": "2026-11-02T10:30:00Z",
+      "mergedAt": "2026-11-03T11:00:00Z",
+      "closedAt": "2026-11-03T11:00:00Z",
+      "additions": 210,
+      "deletions": 40,
+      "changedFiles": 7,
+      "commits": 2
+    },
+    {
+      "title": "Stream summary sections as they generate",
+      "author": "srivera",
+      "branch": "sam/summary-streaming",
+      "createdAt": "2026-11-04T11:00:00Z",
+      "mergedAt": "2026-11-06T12:00:00Z",
+      "closedAt": "2026-11-06T12:00:00Z",
+      "additions": 640,
+      "deletions": 120,
+      "changedFiles": 14,
+      "commits": 2
+    },
+    {
+      "title": "Offline banner on mobile",
+      "author": "lfischer",
+      "branch": "lena/offline-banner",
+      "createdAt": "2026-11-04T12:30:00Z",
+      "mergedAt": "2026-11-05T10:00:00Z",
+      "closedAt": "2026-11-05T10:00:00Z",
+      "additions": 80,
+      "deletions": 5,
+      "changedFiles": 3,
+      "commits": 1
+    },
+    {
+      "title": "Cache transcript chunks for faster summaries",
+      "author": "srivera",
+      "branch": "sam/transcript-chunk-cache",
+      "createdAt": "2026-11-09T10:30:00Z",
+      "mergedAt": "2026-11-09T15:00:00Z",
+      "closedAt": "2026-11-09T15:00:00Z",
+      "additions": 180,
+      "deletions": 20,
+      "changedFiles": 4,
+      "commits": 1
+    },
+    {
+      "title": "Carry action items into the next meeting",
+      "author": "srivera",
+      "branch": "sam/carry-action-items",
+      "createdAt": "2026-11-10T10:30:00Z",
+      "mergedAt": "2026-11-12T10:00:00Z",
+      "closedAt": "2026-11-12T10:00:00Z",
+      "additions": 420,
+      "deletions": 60,
+      "changedFiles": 11,
+      "commits": 2
+    },
+    {
+      "title": "Mobile 1.0.6",
+      "author": "lfischer",
+      "branch": "lena/mobile-1.0.6",
+      "createdAt": "2026-11-11T09:30:00Z",
+      "mergedAt": "2026-11-11T15:00:00Z",
+      "closedAt": "2026-11-11T15:00:00Z",
+      "additions": 30,
+      "deletions": 8,
+      "changedFiles": 3,
+      "commits": 1
+    },
+    {
+      "title": "Remember spelling corrections across meetings",
+      "author": "srivera",
+      "branch": "sam/spelling-memory",
+      "createdAt": "2026-11-12T15:00:00Z",
+      "mergedAt": "2026-11-13T16:00:00Z",
+      "closedAt": "2026-11-13T16:00:00Z",
+      "additions": 360,
+      "deletions": 40,
+      "changedFiles": 9,
+      "commits": 2
+    },
+    {
+      "title": "Calendar sync v2",
+      "author": "ohaddad",
+      "branch": "omar/calendar-sync-v2",
+      "createdAt": "2026-11-13T10:30:00Z",
+      "mergedAt": null,
+      "closedAt": null,
+      "additions": 1400,
+      "deletions": 300,
+      "changedFiles": 40,
+      "commits": 5
+    },
+    {
+      "title": "Bring checklist items back",
+      "author": "srivera",
+      "branch": "sam/checklist-items",
+      "createdAt": "2026-11-13T13:30:00Z",
+      "mergedAt": "2026-11-13T17:00:00Z",
+      "closedAt": "2026-11-13T17:00:00Z",
+      "additions": 150,
+      "deletions": 20,
+      "changedFiles": 4,
+      "commits": 1
+    },
+    {
+      "title": "Say when More detail has nothing to add",
+      "author": "srivera",
+      "branch": "sam/more-detail-empty",
+      "createdAt": "2026-11-17T10:30:00Z",
+      "mergedAt": null,
+      "closedAt": null,
+      "additions": 178,
+      "deletions": 30,
+      "changedFiles": 11,
+      "commits": 2
+    },
+    {
+      "title": "Track copy actions across web, desktop and mobile",
+      "author": "srivera",
+      "branch": "sam/copy-telemetry",
+      "createdAt": "2026-11-18T10:00:00Z",
+      "mergedAt": null,
+      "closedAt": null,
+      "additions": 520,
+      "deletions": 80,
+      "changedFiles": 16,
+      "commits": 2
+    }
+  ],
+  "releases": [
+    {
+      "name": "mobile-stable-1.0.2",
+      "date": "2026-10-21T12:00:00Z"
+    },
+    {
+      "name": "desktop-stable-1.0.28",
+      "date": "2026-10-23T16:00:00Z"
+    },
+    {
+      "name": "release/desktop/1.0.30",
+      "date": "2026-10-27T18:00:00Z"
+    },
+    {
+      "name": "desktop-nightly-1.0.31-t20261028020000.nightly",
+      "date": "2026-10-28T02:00:00Z"
+    },
+    {
+      "name": "desktop-latest-1.0.31-t20261028020000.latest",
+      "date": "2026-10-28T02:10:00Z"
+    },
+    {
+      "name": "desktop-stable-1.0.30",
+      "date": "2026-10-28T16:00:00Z"
+    },
+    {
+      "name": "desktop-nightly-1.0.31-t20261029020000.nightly",
+      "date": "2026-10-29T02:00:00Z"
+    },
+    {
+      "name": "desktop-latest-1.0.31-t20261029020000.latest",
+      "date": "2026-10-29T02:10:00Z"
+    },
+    {
+      "name": "release/desktop/1.0.32",
+      "date": "2026-10-29T18:00:00Z"
+    },
+    {
+      "name": "desktop-nightly-1.0.33-t20261030020000.nightly",
+      "date": "2026-10-30T02:00:00Z"
+    },
+    {
+      "name": "desktop-latest-1.0.33-t20261030020000.latest",
+      "date": "2026-10-30T02:10:00Z"
+    },
+    {
+      "name": "desktop-stable-1.0.32",
+      "date": "2026-10-30T16:00:00Z"
+    },
+    {
+      "name": "desktop-nightly-1.0.33-t20261102020000.nightly",
+      "date": "2026-11-02T02:00:00Z"
+    },
+    {
+      "name": "desktop-latest-1.0.33-t20261102020000.latest",
+      "date": "2026-11-02T02:10:00Z"
+    },
+    {
+      "name": "release/desktop/1.0.34",
+      "date": "2026-11-02T09:00:00Z"
+    },
+    {
+      "name": "desktop-stable-1.0.34",
+      "date": "2026-11-02T16:00:00Z"
+    },
+    {
+      "name": "desktop-nightly-1.0.35-t20261103020000.nightly",
+      "date": "2026-11-03T02:00:00Z"
+    },
+    {
+      "name": "desktop-latest-1.0.35-t20261103020000.latest",
+      "date": "2026-11-03T02:10:00Z"
+    },
+    {
+      "name": "release/desktop/1.0.36",
+      "date": "2026-11-03T18:00:00Z"
+    },
+    {
+      "name": "desktop-nightly-1.0.37-t20261104020000.nightly",
+      "date": "2026-11-04T02:00:00Z"
+    },
+    {
+      "name": "desktop-latest-1.0.37-t20261104020000.latest",
+      "date": "2026-11-04T02:10:00Z"
+    },
+    {
+      "name": "desktop-stable-1.0.36",
+      "date": "2026-11-04T16:00:00Z"
+    },
+    {
+      "name": "desktop-nightly-1.0.37-t20261105020000.nightly",
+      "date": "2026-11-05T02:00:00Z"
+    },
+    {
+      "name": "desktop-latest-1.0.37-t20261105020000.latest",
+      "date": "2026-11-05T02:10:00Z"
+    },
+    {
+      "name": "mobile-stable-1.0.4",
+      "date": "2026-11-05T12:00:00Z"
+    },
+    {
+      "name": "release/desktop/1.0.38",
+      "date": "2026-11-05T18:00:00Z"
+    },
+    {
+      "name": "desktop-nightly-1.0.39-t20261106020000.nightly",
+      "date": "2026-11-06T02:00:00Z"
+    },
+    {
+      "name": "desktop-latest-1.0.39-t20261106020000.latest",
+      "date": "2026-11-06T02:10:00Z"
+    },
+    {
+      "name": "desktop-stable-1.0.38",
+      "date": "2026-11-06T16:00:00Z"
+    },
+    {
+      "name": "desktop-nightly-1.0.39-t20261109020000.nightly",
+      "date": "2026-11-09T02:00:00Z"
+    },
+    {
+      "name": "desktop-latest-1.0.39-t20261109020000.latest",
+      "date": "2026-11-09T02:10:00Z"
+    },
+    {
+      "name": "desktop-nightly-1.0.39-t20261110020000.nightly",
+      "date": "2026-11-10T02:00:00Z"
+    },
+    {
+      "name": "desktop-latest-1.0.39-t20261110020000.latest",
+      "date": "2026-11-10T02:10:00Z"
+    },
+    {
+      "name": "release/desktop/1.0.40",
+      "date": "2026-11-10T18:00:00Z"
+    },
+    {
+      "name": "desktop-nightly-1.0.41-t20261111020000.nightly",
+      "date": "2026-11-11T02:00:00Z"
+    },
+    {
+      "name": "desktop-latest-1.0.41-t20261111020000.latest",
+      "date": "2026-11-11T02:10:00Z"
+    },
+    {
+      "name": "desktop-stable-1.0.40",
+      "date": "2026-11-11T16:00:00Z"
+    },
+    {
+      "name": "desktop-nightly-1.0.41-t20261112020000.nightly",
+      "date": "2026-11-12T02:00:00Z"
+    },
+    {
+      "name": "desktop-latest-1.0.41-t20261112020000.latest",
+      "date": "2026-11-12T02:10:00Z"
+    },
+    {
+      "name": "mobile-stable-1.0.6",
+      "date": "2026-11-12T12:00:00Z"
+    },
+    {
+      "name": "desktop-nightly-1.0.41-t20261113020000.nightly",
+      "date": "2026-11-13T02:00:00Z"
+    },
+    {
+      "name": "desktop-latest-1.0.41-t20261113020000.latest",
+      "date": "2026-11-13T02:10:00Z"
+    },
+    {
+      "name": "desktop-nightly-1.0.41-t20261116020000.nightly",
+      "date": "2026-11-16T02:00:00Z"
+    },
+    {
+      "name": "desktop-latest-1.0.41-t20261116020000.latest",
+      "date": "2026-11-16T02:10:00Z"
+    },
+    {
+      "name": "release/desktop/1.0.42",
+      "date": "2026-11-16T18:00:00Z"
+    },
+    {
+      "name": "desktop-nightly-1.0.43-t20261117020000.nightly",
+      "date": "2026-11-17T02:00:00Z"
+    },
+    {
+      "name": "desktop-latest-1.0.43-t20261117020000.latest",
+      "date": "2026-11-17T02:10:00Z"
+    },
+    {
+      "name": "desktop-stable-1.0.42",
+      "date": "2026-11-17T16:00:00Z"
+    },
+    {
+      "name": "desktop-nightly-1.0.43-t20261118020000.nightly",
+      "date": "2026-11-18T02:00:00Z"
+    },
+    {
+      "name": "desktop-latest-1.0.43-t20261118020000.latest",
+      "date": "2026-11-18T02:10:00Z"
+    },
+    {
+      "name": "release/desktop/1.0.44",
+      "date": "2026-11-18T08:00:00Z"
+    }
+  ],
+  "stages": [
+    {
+      "name": "1-candidate",
+      "cutoff": "2026-10-30T09:00:00Z",
+      "notes": [
+        {
+          "id": "rc-1-0-30",
+          "title": "RC 1.0.30 testing",
+          "date": "2026-10-28T17:41:00Z",
+          "changedAt": "2026-10-29T16:25:00Z",
+          "file": "notes/rc-1-0-30.md"
+        },
+        {
+          "id": "my-tasks",
+          "title": "My tasks",
+          "date": "2026-10-06T09:00:00Z",
+          "changedAt": "2026-10-29T16:21:00Z",
+          "file": "notes/my-tasks.md"
+        },
+        {
+          "id": "personalisation",
+          "title": "Personalisation",
+          "date": "2026-10-29T16:37:00Z",
+          "changedAt": "2026-10-29T16:39:00Z",
+          "file": "notes/personalisation.md"
+        },
+        {
+          "id": "rc-1-0-32",
+          "title": "RC 1.0.32 testing",
+          "date": "2026-10-29T22:59:00Z",
+          "changedAt": "2026-10-29T23:10:00Z",
+          "file": "notes/rc-1-0-32.md"
+        }
+      ],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "RC 1.0.32 testing, a release candidate still being tested",
+            "section": "now",
+            "caption": "that checks on section editing and expansion are still being run",
+            "skills": [
+              "releases"
+            ],
+            "updated": "2026-10-29"
+          },
+          {
+            "id": "typed notes missing from the precomputed summary, the bug still open from 1.0.30 testing",
+            "section": "next",
+            "skills": [
+              "stale-notes"
+            ]
+          },
+          {
+            "id": "speeding up summary generation",
+            "section": "next",
+            "skills": [
+              "stale-notes"
+            ]
+          },
+          {
+            "id": "personalisation: carrying action items over, remembering spelling corrections and bringing checklist items back",
+            "section": "next",
+            "skills": [
+              "stale-notes"
+            ]
+          },
+          {
+            "id": "RC 1.0.30 testing as a checklist, over because 1.0.30 shipped on Oct 28",
+            "section": "absent",
+            "skills": [
+              "releases"
+            ]
+          },
+          {
+            "id": "recurring meeting time zones, still unticked in My tasks but fixed and merged by the owner on Oct 8",
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
+          },
+          {
+            "id": "keeping section lines on expand, merged on Oct 27",
+            "section": "absent"
+          },
+          {
+            "id": "Omar's calendar sync v2",
+            "section": "absent"
+          },
+          {
+            "id": "Lena's mobile releases and offline banner",
+            "section": "absent"
+          }
+        ],
+        "tolerated": [
+          "the typed notes bug and summary speed combined as one summary task in Next"
+        ]
+      }
+    },
+    {
+      "name": "2-six-releases-later",
+      "cutoff": "2026-11-13T09:00:00Z",
+      "notes": [
+        {
+          "id": "rc-1-0-30",
+          "title": "RC 1.0.30 testing",
+          "date": "2026-10-28T17:41:00Z",
+          "changedAt": "2026-10-29T16:25:00Z",
+          "file": "notes/rc-1-0-30.md"
+        },
+        {
+          "id": "my-tasks",
+          "title": "My tasks",
+          "date": "2026-10-06T09:00:00Z",
+          "changedAt": "2026-10-29T16:21:00Z",
+          "file": "notes/my-tasks.md"
+        },
+        {
+          "id": "personalisation",
+          "title": "Personalisation",
+          "date": "2026-10-29T16:37:00Z",
+          "changedAt": "2026-10-29T16:39:00Z",
+          "file": "notes/personalisation.md"
+        },
+        {
+          "id": "rc-1-0-32",
+          "title": "RC 1.0.32 testing",
+          "date": "2026-10-29T22:59:00Z",
+          "changedAt": "2026-10-29T23:10:00Z",
+          "file": "notes/rc-1-0-32.md"
+        }
+      ],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "personalisation, with action items carried over merged on Nov 12 and spelling memory in review",
+            "section": "now",
+            "caption": "that carrying action items over has merged and spelling memory is in review",
+            "skills": [
+              "stale-notes"
+            ],
+            "updated": "2026-11-13"
+          },
+          {
+            "id": "RC 1.0.32 testing, over because 1.0.32 shipped on Oct 30 and four releases followed, even though both checks are unticked",
+            "section": "absent",
+            "skills": [
+              "releases"
+            ]
+          },
+          {
+            "id": "RC 1.0.30 testing as a checklist, over because 1.0.30 shipped on Oct 28",
+            "section": "absent",
+            "skills": [
+              "releases"
+            ]
+          },
+          {
+            "id": "typed notes missing from the precomputed summary, still unticked in the 1.0.30 note but fixed and merged by the owner on Nov 3",
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
+          },
+          {
+            "id": "speeding up summary generation, still unticked in My tasks but done by streaming sections, merged Nov 6, and caching transcript chunks, merged Nov 9",
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
+          },
+          {
+            "id": "recurring meeting time zones, still unticked in My tasks but fixed and merged by the owner on Oct 8",
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
+          },
+          {
+            "id": "Omar's calendar sync v2",
+            "section": "absent"
+          },
+          {
+            "id": "Lena's mobile releases and offline banner",
+            "section": "absent"
+          }
+        ],
+        "tolerated": [
+          "bringing checklist items back as its own task in Next"
+        ]
+      }
+    },
+    {
+      "name": "3-today",
+      "cutoff": "2026-11-18T11:30:00Z",
+      "notes": [
+        {
+          "id": "rc-1-0-30",
+          "title": "RC 1.0.30 testing",
+          "date": "2026-10-28T17:41:00Z",
+          "changedAt": "2026-10-29T16:25:00Z",
+          "file": "notes/rc-1-0-30.md"
+        },
+        {
+          "id": "my-tasks",
+          "title": "My tasks",
+          "date": "2026-10-06T09:00:00Z",
+          "changedAt": "2026-10-29T16:21:00Z",
+          "file": "notes/my-tasks.md"
+        },
+        {
+          "id": "personalisation",
+          "title": "Personalisation",
+          "date": "2026-10-29T16:37:00Z",
+          "changedAt": "2026-10-29T16:39:00Z",
+          "file": "notes/personalisation.md"
+        },
+        {
+          "id": "rc-1-0-32",
+          "title": "RC 1.0.32 testing",
+          "date": "2026-10-29T22:59:00Z",
+          "changedAt": "2026-10-29T23:10:00Z",
+          "file": "notes/rc-1-0-32.md"
+        },
+        {
+          "id": "rc-1-0-44",
+          "title": "RC 1.0.44 testing",
+          "date": "2026-11-18T10:00:00Z",
+          "changedAt": "2026-11-18T10:20:00Z",
+          "file": "notes/rc-1-0-44.md"
+        }
+      ],
+      "rubric": {
+        "tasks": [
+          {
+            "id": "copy action telemetry across web, desktop and mobile, pushed today with its pull request open",
+            "section": "now",
+            "updated": "2026-11-18"
+          },
+          {
+            "id": "RC 1.0.44 testing, the release candidate cut this morning",
+            "section": "now",
+            "caption": "that the copy menu and lock screen reminder checks are still open",
+            "skills": [
+              "releases"
+            ],
+            "updated": "2026-11-18"
+          },
+          {
+            "id": "More detail saying when it has nothing to add, in review",
+            "section": "now",
+            "updated": "2026-11-17"
+          },
+          {
+            "id": "personalisation, still unticked in the notes but finished: action items merged Nov 12, spelling memory and checklist items merged Nov 13",
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
+          },
+          {
+            "id": "RC 1.0.32 testing, over because 1.0.32 shipped on Oct 30 and 1.0.42 is current",
+            "section": "absent",
+            "skills": [
+              "releases"
+            ]
+          },
+          {
+            "id": "RC 1.0.30 testing as a checklist, over because 1.0.30 shipped on Oct 28",
+            "section": "absent",
+            "skills": [
+              "releases"
+            ]
+          },
+          {
+            "id": "typed notes missing from the precomputed summary, fixed and merged by the owner on Nov 3",
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
+          },
+          {
+            "id": "speeding up summary generation, done by changes merged Nov 6 and Nov 9",
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
+          },
+          {
+            "id": "recurring meeting time zones, still unticked in My tasks but fixed and merged by the owner on Oct 8",
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
+          },
+          {
+            "id": "Omar's calendar sync v2",
+            "section": "absent"
+          },
+          {
+            "id": "Lena's mobile releases and offline banner",
+            "section": "absent"
+          }
+        ],
+        "tolerated": []
+      }
+    }
+  ]
+}

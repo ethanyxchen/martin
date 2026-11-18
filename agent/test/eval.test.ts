@@ -34,7 +34,7 @@ describe("fixture state", () => {
       pull({ mergedAt: "2026-11-05T09:00:00Z", closedAt: "2026-11-05T09:00:00Z" }),
       pull({ title: "Dropped", branch: "dropped", createdAt: "2026-11-04T10:00:00Z", closedAt: "2026-11-05T10:00:00Z" }),
     ],
-    tags: [{ name: "v1.0.0", date: "2026-11-03T12:00:00Z" }, { name: "v1.1.0", date: "2026-11-06T12:00:00Z" }],
+    releases: [{ name: "v1.0.0", date: "2026-11-03T12:00:00Z" }, { name: "v1.1.0", date: "2026-11-06T12:00:00Z" }],
   }
 
   test("hides what happens after the cutoff and works out each pull request's state then", () => {
@@ -121,6 +121,28 @@ describe("Tandem", () => {
   })
 })
 
+describe("Quill", () => {
+  test("today, the releases show the new candidate beside the shipped versions and only a search reaches the October fix", async () => {
+    const quill = await load(join(fixtures, "quill"))
+    const stage = quill.stages.at(-1)!
+    const job = { kind: "overview" as const, provider: "anthropic" as const, project: { name: "Quill" }, owner: quill.scenario.owner, cutoff: stage.cutoff, previous: null, notes: stage.notes, repository: quill.scenario.repository }
+    const tools = overview(job, connect(quill.scenario)).tools
+    const run = (name: string, input: unknown) => tools.find(tool => tool.name === name)!.run(input)
+    const releases = await run("repo_activity", { source: "releases", cursor: null })
+    expect(releases).toStartWith("release/desktop: 1.0.44 on 2026-11-18, 1.0.42 on 2026-11-16")
+    expect(releases).toContain("desktop-stable: 1.0.42 on 2026-11-17, 1.0.40 on 2026-11-11")
+    expect(releases).not.toContain("desktop-stable: 1.0.44")
+    expect(await run("repo_activity", { source: "commits", cursor: null })).not.toContain("time zone")
+    expect(await run("repo_search", { query: "time zone" })).toContain("merged by owner, branch sam/recurring-timezone")
+  })
+
+  test("every task the notes leave unticked is tagged with the skill it tests", async () => {
+    const quill = await load(join(fixtures, "quill"))
+    const untagged = quill.stages.flatMap(stage => stage.rubric.tasks.filter(task => /unticked|RC 1\.0|testing/.test(task.id) && !task.skills?.length).map(task => task.id))
+    expect(untagged).toEqual([])
+  })
+})
+
 describe("Lumen", () => {
   test("the shelving update sits past the first page", async () => {
     const retro = await Bun.file(join(fixtures, "lumen", "notes", "retro.md")).text()
@@ -129,7 +151,7 @@ describe("Lumen", () => {
 
   test("is found by folder or project name", async () => {
     expect((await projects(fixtures, "Lumen")).map(project => project.id)).toEqual(["lumen"])
-    expect((await projects(fixtures)).map(project => project.id).toSorted()).toEqual(["interviews", "lumen", "martin", "tandem"])
+    expect((await projects(fixtures)).map(project => project.id).toSorted()).toEqual(["interviews", "lumen", "martin", "quill", "tandem"])
   })
 
   test("recorded activity follows each stage's window", async () => {
@@ -142,7 +164,7 @@ describe("Lumen", () => {
     expect(commits).toContain("Prototype album invite links")
     expect(commits).not.toContain("Album feed")
     const branches = await activity.run({ source: "branches", cursor: null })
-    expect(branches).toContain("shared-albums, owner · last commit 2026-10-08 · idle 0.2 days · 1 commits ahead of main, not merged")
+    expect(branches).toContain("The owner's unmerged branches:\nshared-albums · last commit 2026-10-08 · idle 0.2 days · 1 commits ahead of main, not merged")
     expect(branches).toContain("priya/payments-provider, praman · last commit 2026-10-07 · idle 1.3 days · merged")
   })
 
@@ -167,7 +189,7 @@ describe("Lumen", () => {
 const rubric: Rubric = {
   tasks: [
     { id: "albums", section: "now", caption: "invite links work", updated: "2026-10-08" },
-    { id: "widget", section: "shelved", updated: "any" },
+    { id: "widget", section: "shelved", updated: "any", skills: ["stale-notes"] },
     { id: "billing", section: "absent" },
   ],
   tolerated: ["Dark mode in Next"],
@@ -203,12 +225,12 @@ describe("judge", () => {
     expect(items(rubric).at(-1)!.expect).toContain("- Dark mode in Next")
   })
 
-  test("returns a verdict for every item, labelled with its kind", async () => {
+  test("returns a verdict for every item, labelled with its kind and its task's skills", async () => {
     const provider = counting(fake({ calls: [], answer: answer(key => key !== "widget · section") }))
     const judgement = await judge(rubric, result, "material", provider, await folder())
     expect(provider.runs).toBe(1)
     expect(judgement.cached).toBe(false)
-    expect(judgement.verdicts.filter(verdict => !verdict.pass)).toEqual([{ item: "widget · section", kind: "section", pass: false, reason: "about widget · section" }])
+    expect(judgement.verdicts.filter(verdict => !verdict.pass)).toEqual([{ item: "widget · section", kind: "section", skills: ["stale-notes"], pass: false, reason: "about widget · section" }])
   })
 
   test("reuses a cached verdict for the same rubric and overview, and asks again when either changes", async () => {
@@ -230,7 +252,7 @@ describe("judge", () => {
 
 describe("invariants", () => {
   test("are left out of the score", () => {
-    const verdict = (kind: "section" | "invariant", pass: boolean) => ({ item: kind, kind, pass, reason: "" })
+    const verdict = (kind: "section" | "invariant", pass: boolean) => ({ item: kind, kind, skills: [], pass, reason: "" })
     const verdicts = [verdict("section", true), verdict("section", false), verdict("invariant", true), verdict("invariant", true)]
     expect(scored(verdicts).map(item => [item.kind, item.pass])).toEqual([["section", true], ["section", false]])
   })

@@ -154,23 +154,31 @@ export function repoActivity(activity: Activity, { owner, cutoff }: Context, sou
     const listed = await sources.read("branches", "the repository's branches", () => activity.branches())
     if (!listed) return "The repository's branches couldn't be read."
     if (!listed.length) return "No branches other than main had commits in the last 30 days."
-    const lines = fit(listed
+    const described = listed
       .toSorted((a, b) => Date.parse(b.lastCommit) - Date.parse(a.lastCommit))
       .map(branch => {
         const idle = idleDays(branch.lastCommit, cutoff)
         const pull = branch.pullRequest
         const mine = pull ? owns.pull(pull.author) : owns.commit(branch)
-        const who = mine ? "owner" : pull?.author ?? committer(branch)
-        return [
-          `${branch.name}, ${who}`,
+        const line = [
+          mine ? branch.name : `${branch.name}, ${pull?.author ?? committer(branch)}`,
           `last commit ${day(branch.lastCommit)}`,
           `idle ${idle.toFixed(1)} days${!branch.merged && idle >= staleDays ? ", stale" : ""}`,
           branch.merged ? "merged" : `${branch.ahead} commits ahead of main, not merged`,
           pull ? `pull request ${pull.state.toLowerCase()}, ${size(pull)}: ${pull.title}` : "no pull request",
         ].join(" · ")
-      }))
-    const hidden = listed.length - lines.length
-    return [...lines, ...(hidden > 0 ? [`${hidden} older branches are not shown.`] : [])].join("\n")
+        return { mine, merged: branch.merged, line }
+      })
+    const sections = [
+      { header: "The owner's unmerged branches:", branches: described.filter(branch => branch.mine && !branch.merged) },
+      { header: "The owner's merged branches:", branches: described.filter(branch => branch.mine && branch.merged) },
+      { header: "Other contributors' branches:", branches: described.filter(branch => !branch.mine) },
+    ]
+    const headers = sections.map(section => section.header)
+    const shown = fit(sections.flatMap(({ header, branches }) => branches.length ? [header, ...branches.map(branch => branch.line)] : []))
+    if (headers.includes(shown.at(-1)!)) shown.pop()
+    const hidden = listed.length - shown.filter(line => !headers.includes(line)).length
+    return [...shown, ...(hidden > 0 ? [`${hidden} more branches are not shown.`] : [])].join("\n")
   }
 
   async function releases(): Promise<string> {
@@ -193,7 +201,7 @@ export function repoActivity(activity: Activity, { owner, cutoff }: Context, sou
       "Read the linked repository. Activity by the owner is marked “owner”.",
       "Source commits pages through commits since the last read on local branches, remote branches and tags, newest first, each with its branch and author; pass cursor null to start and the cursor it reports to continue.",
       "Source pullRequests lists pull requests updated since the last read with their state, author, branch and size.",
-      `Source branches lists every branch other than main with a commit in the last 30 days: its last commit, how long it has been idle (weekend days count half), whether it is stale (idle ${staleDays} days or more and not merged), how far it is ahead of main, whether it has merged, and its pull request.`,
+      `Source branches lists every branch other than main with a commit in the last 30 days, the owner's unmerged ones first, then the owner's merged ones, then other contributors': its last commit, how long it has been idle (weekend days count half), whether it is stale (idle ${staleDays} days or more and not merged), how far it is ahead of main, whether it has merged, and its pull request.`,
       "Source releases lists the release tracks found in tags and release branches, newest first, each with its latest versions and the day each appeared. A release branch, a candidate (rc, beta, alpha), or a nightly or latest build is still being tested; a stable or plain version has shipped.",
       "The cursor is ignored except for commits.",
     ].join(" "),

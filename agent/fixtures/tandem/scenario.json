@@ -1208,7 +1208,7 @@
       "commits": 2
     }
   ],
-  "tags": [
+  "releases": [
     {
       "name": "v2.3.0",
       "date": "2026-10-21T16:00:00Z"
@@ -1280,7 +1280,10 @@
           },
           {
             "id": "2.4 release testing",
-            "section": "next"
+            "section": "next",
+            "skills": [
+              "releases"
+            ]
           },
           {
             "id": "transcript search, the branch left on Oct 29",
@@ -1305,11 +1308,17 @@
           },
           {
             "id": "2.3 release testing, over because 2.3.0 shipped on Oct 21",
-            "section": "absent"
+            "section": "absent",
+            "skills": [
+              "releases"
+            ]
           },
           {
             "id": "notes typed during the call missing from the summary, still unticked in My tasks and in the 2.3 checklist, but fixed and merged by the owner on Oct 22",
-            "section": "absent"
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
           }
         ],
         "tolerated": []
@@ -1363,7 +1372,10 @@
           },
           {
             "id": "2.4 release testing",
-            "section": "next"
+            "section": "next",
+            "skills": [
+              "releases"
+            ]
           },
           {
             "id": "transcript search, the branch left on Oct 29",
@@ -1396,11 +1408,17 @@
           },
           {
             "id": "2.3 release testing, over because 2.3.0 shipped on Oct 21",
-            "section": "absent"
+            "section": "absent",
+            "skills": [
+              "releases"
+            ]
           },
           {
             "id": "notes typed during the call missing from the summary, still unticked in My tasks and in the 2.3 checklist, but fixed and merged by the owner on Oct 22",
-            "section": "absent"
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
           }
         ],
         "tolerated": []
@@ -1483,7 +1501,10 @@
           },
           {
             "id": "the getting-started checklist, which the 1:1 says the owner is still on but which merged on Nov 2",
-            "section": "absent"
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
           },
           {
             "id": "Tomás's speaker names in transcripts, including the review fix the owner pushed to it",
@@ -1503,11 +1524,17 @@
           },
           {
             "id": "2.3 release testing, over because 2.3.0 shipped on Oct 21",
-            "section": "absent"
+            "section": "absent",
+            "skills": [
+              "releases"
+            ]
           },
           {
             "id": "notes typed during the call missing from the summary, still unticked in My tasks and in the 2.3 checklist, but fixed and merged by the owner on Oct 22",
-            "section": "absent"
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
           }
         ],
         "tolerated": []
@@ -1571,6 +1598,9 @@
             "id": "2.4 release testing, a single checklist task",
             "section": "now",
             "caption": "that the Android share sheet and offline sync are still open",
+            "skills": [
+              "releases"
+            ],
             "updated": "2026-11-12"
           },
           {
@@ -1615,11 +1645,17 @@
           },
           {
             "id": "2.3 release testing, over because 2.3.0 shipped on Oct 21",
-            "section": "absent"
+            "section": "absent",
+            "skills": [
+              "releases"
+            ]
           },
           {
             "id": "notes typed during the call missing from the summary, still unticked in My tasks and in the 2.3 checklist, but fixed and merged by the owner on Oct 22",
-            "section": "absent"
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
           }
         ],
         "tolerated": [],
@@ -1685,7 +1721,10 @@
           },
           {
             "id": "2.4 release testing, over because 2.4.0 shipped on Nov 18 and 2.4.1 followed on Nov 20, even though the checklist still has unticked boxes",
-            "section": "absent"
+            "section": "absent",
+            "skills": [
+              "releases"
+            ]
           },
           {
             "id": "transcript search, merged on Nov 19",
@@ -1729,11 +1768,17 @@
           },
           {
             "id": "2.3 release testing, over because 2.3.0 shipped on Oct 21",
-            "section": "absent"
+            "section": "absent",
+            "skills": [
+              "releases"
+            ]
           },
           {
             "id": "notes typed during the call missing from the summary, still unticked in My tasks and in the 2.3 checklist, but fixed and merged by the owner on Oct 22",
-            "section": "absent"
+            "section": "absent",
+            "skills": [
+              "stale-notes"
+            ]
           }
         ],
         "tolerated": []

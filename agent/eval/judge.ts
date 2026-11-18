@@ -11,8 +11,8 @@ import { type Project, type Rubric, type Stage, state } from "./scenario"
 export const judgeModel = "claude-sonnet-5-5"
 
 export type Kind = "section" | "caption" | "date" | "order" | "precision" | "invariant"
-export type Item = { key: string, kind: Kind, expect: string }
-export type Verdict = { item: string, kind: Kind, pass: boolean, reason: string }
+export type Item = { key: string, kind: Kind, expect: string, skills: string[] }
+export type Verdict = { item: string, kind: Kind, skills: string[], pass: boolean, reason: string }
 export type Judgement = { verdicts: Verdict[], cost: number, cached: boolean }
 
 export function scored(verdicts: Verdict[]): Verdict[] {
@@ -27,22 +27,24 @@ The precision item fails when the overview has a task that matches no rubric tas
 
 export function items(rubric: Rubric): Item[] {
   const tasks = rubric.tasks.flatMap((task): Item[] => {
-    if (task.section === "absent") return [{ key: `${task.id} · section`, kind: "section", expect: `No task in the overview is about “${task.id}”.` }]
+    const skills = task.skills ?? []
+    if (task.section === "absent") return [{ key: `${task.id} · section`, kind: "section", expect: `No task in the overview is about “${task.id}”.`, skills }]
     return [
-      { key: `${task.id} · section`, kind: "section", expect: `A task about “${task.id}” is in ${task.section}.` },
-      ...(task.caption ? [{ key: `${task.id} · caption`, kind: "caption" as const, expect: `The caption of the task about “${task.id}” says ${task.caption}.` }] : []),
+      { key: `${task.id} · section`, kind: "section", expect: `A task about “${task.id}” is in ${task.section}.`, skills },
+      ...(task.caption ? [{ key: `${task.id} · caption`, kind: "caption" as const, expect: `The caption of the task about “${task.id}” says ${task.caption}.`, skills }] : []),
       ...(task.updated ? [{
         key: `${task.id} · date`,
         kind: "date" as const,
         expect: task.updated === "any"
           ? `The task about “${task.id}” has a reasonable updated date for the latest material about it.`
           : `The task about “${task.id}” is dated ${task.updated}.`,
+        skills,
       }] : []),
     ]
   })
-  const order = rubric.order ? [{ key: "order", kind: "order" as const, expect: `Now lists these tasks in this order: ${rubric.order.map(id => `“${id}”`).join(", ")}.` }] : []
+  const order = rubric.order ? [{ key: "order", kind: "order" as const, expect: `Now lists these tasks in this order: ${rubric.order.map(id => `“${id}”`).join(", ")}.`, skills: [] }] : []
   const tolerated = rubric.tolerated.length ? rubric.tolerated.map(extra => `- ${extra}`).join("\n") : "none"
-  const precision = { key: "precision", kind: "precision" as const, expect: `Every task matches a rubric task or one of these tolerated extras, and no two tasks cover the same theme. Tolerated extras:\n${tolerated}` }
+  const precision = { key: "precision", kind: "precision" as const, skills: [], expect: `Every task matches a rubric task or one of these tolerated extras, and no two tasks cover the same theme. Tolerated extras:\n${tolerated}` }
   return [...tasks, ...order, precision]
 }
 
@@ -83,7 +85,7 @@ export async function judge(rubric: Rubric, overview: OverviewResult, source: st
     effort: "medium",
   })
   const answers = outcome.result as Record<string, z.infer<typeof verdict>>
-  const verdicts = list.map(item => ({ item: item.key, kind: item.kind, ...answers[item.key]! }))
+  const verdicts = list.map(item => ({ item: item.key, kind: item.kind, skills: item.skills, ...answers[item.key]! }))
   await mkdir(cache, { recursive: true })
   await Bun.write(file, JSON.stringify(verdicts, null, 2))
   return { verdicts, cost: cost(judgeModel, outcome.requests), cached: false }
@@ -101,7 +103,7 @@ export function invariants(overview: OverviewResult, cutoff: string): Verdict[] 
   const over = sections.filter(section => overview[section].length > limits[section])
   const dates = tasks.filter(task => task.updated !== null && !(/^\d{4}-\d{2}-\d{2}$/.test(task.updated) && !Number.isNaN(Date.parse(task.updated)) && task.updated <= day(cutoff)))
   const leaks = tasks.flatMap(task => references.filter(reference => reference.pattern.test(`${task.title} ${task.caption}`)).map(reference => `${reference.name} in “${task.title}”`))
-  const verdict = (item: string, problems: string[], fine: string): Verdict => ({ item, kind: "invariant", pass: !problems.length, reason: problems.join("; ") || fine })
+  const verdict = (item: string, problems: string[], fine: string): Verdict => ({ item, kind: "invariant", skills: [], pass: !problems.length, reason: problems.join("; ") || fine })
   return [
     verdict("section limits", over.map(section => `${section} has ${overview[section].length} tasks, over ${limits[section]}`), "Every section is within its limit."),
     verdict("valid dates", dates.map(task => `“${task.title}” is dated ${task.updated}`), "Every date is a valid day up to the cutoff."),

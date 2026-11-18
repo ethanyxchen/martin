@@ -4,7 +4,7 @@ import { execute, github, history, type Release } from "../src/activity"
 import type { Commit } from "../src/schema"
 import { type PullRequest, Scenario } from "./scenario"
 
-type Recorded = { commits: Commit[], pullRequests: PullRequest[], tags: Release[] }
+type Recorded = { commits: Commit[], pullRequests: PullRequest[], releases: Release[] }
 
 type Pull = Omit<PullRequest, "author" | "branch"> & { author: { login: string } | null, headRefName: string, oids: string[] }
 
@@ -25,7 +25,7 @@ export async function record(folder: string, slug: string, since: Date, until: D
   ])
   const pulls = listed.split("\n").filter(Boolean).map(line => JSON.parse(line) as Pull).filter(pull => new Date(pull.createdAt) <= until)
   const heads = new Map(pulls.flatMap(pull => pull.oids.map(oid => [oid, pull.headRefName] as const)))
-  const tags = await github({ folder, slug }, { since, until }, run).releases()
+  const releases = await github({ folder, slug }, { since, until }, run).releases()
   const commits = (await history(folder, { since, until }, run)).map(({ hash, commit }) => ({ ...commit, branch: heads.get(hash) ?? commit.branch }))
   const pullRequests = pulls
     .filter(pull => !pull.closedAt || new Date(pull.closedAt) >= since)
@@ -33,7 +33,7 @@ export async function record(folder: string, slug: string, since: Date, until: D
   return {
     commits: commits.toSorted((a, b) => Date.parse(a.date) - Date.parse(b.date)),
     pullRequests: pullRequests.toSorted((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt)),
-    tags: tags.toSorted((a, b) => Date.parse(a.date) - Date.parse(b.date)),
+    releases: releases.toSorted((a, b) => Date.parse(a.date) - Date.parse(b.date)),
   }
 }
 
@@ -64,5 +64,5 @@ if (import.meta.main) {
     stages: existing?.stages ?? [],
   })
   await Bun.write(file, `${JSON.stringify(scenario, null, 2)}\n`)
-  console.log(`${recorded.commits.length} commits, ${recorded.pullRequests.length} pull requests and ${recorded.tags.length} tags written to ${file.name}`)
+  console.log(`${recorded.commits.length} commits, ${recorded.pullRequests.length} pull requests and ${recorded.releases.length} releases written to ${file.name}`)
 }

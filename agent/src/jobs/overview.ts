@@ -31,7 +31,7 @@ Start from the previous overview: keep what still holds and change only what the
 
 Read only what you need. You may read several notes at once. When a note continues past the page you read and the rest may settle a task, read on. When a repository is linked, read its branches and releases every time, and its commits and pull requests as needed, even if no note changed. If a source couldn't be read, do not describe it as having no activity. Leave out anything the material does not support.`
 
-const stale = `Notes go stale: each says what was true when it was last edited, and nobody goes back to tidy old ones. An open item in a note that hasn't been edited for days is a claim to check, not proof the work is still open. Before keeping such an item in now or next, look for it with repo_search, and treat it as done when the owner's merged work covers it. A release or testing checklist belongs to one version. Once that version, or a later one on the same track, has shipped, the checklist is over: remove its task, even when boxes are still unticked. Use the repository's releases to tell which versions have shipped and which are still being tested, and name the version the owner is actually on.`
+const outdated = `Notes fall out of date: each says what was true when it was last edited, and nobody goes back to tidy old ones. An open item in a note that hasn't been edited for days is a claim to check, not proof the work is still open. Before keeping such an item in now or next, look for it with repo_search, and treat it as done when the owner's merged work covers it. A release or testing checklist belongs to one version. Once that version, or a later one on the same track, has shipped, the checklist is over: remove its task, even when boxes are still unticked. An unticked item that reports a bug, not a check to run, outlives the release: keep it as its own task until the repository shows it fixed. Use the repository's releases to tell which versions have shipped and which are still being tested, and name the version the owner is actually on.`
 
 export function overview(job: OverviewJob, connect: Connect = github): JobSpec<OverviewResult> {
   const sources = new Sources()
@@ -75,7 +75,7 @@ export function prompt(job: OverviewJob): string {
     `Last read: ${job.previous?.readAt ?? "never"}`,
     `Previous overview:\n${job.previous ? describe(job.previous) : "None yet."}`,
     `Notes:\n${notes.length ? notes.join("\n") : "No notes."}`,
-    job.repository ? `Repository: ${job.repository.slug}. Read its activity with repo_activity.\n\n${stale}` : "No repository is linked.",
+    job.repository ? `Repository: ${job.repository.slug}. Read its activity with repo_activity.\n\n${outdated}` : "No repository is linked.",
   ].join("\n\n")
 }
 

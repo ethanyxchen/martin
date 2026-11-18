@@ -26,6 +26,7 @@ export const Rubric = z.strictObject({
     id: z.string(),
     section: Section,
     caption: z.string().optional(),
+    skills: z.array(z.string()).optional(),
     updated: z.union([z.iso.date(), z.literal("any")]).optional(),
   })),
   tolerated: z.array(z.string()),
@@ -45,7 +46,7 @@ export const Scenario = z.strictObject({
   repository: Repository.nullable(),
   commits: z.array(Commit),
   pullRequests: z.array(PullRequest),
-  tags: z.array(z.strictObject({ name: z.string(), date: Timestamp })),
+  releases: z.array(z.strictObject({ name: z.string(), date: Timestamp })),
   stages: z.array(Stage),
 })
 
@@ -82,7 +83,7 @@ export async function load(folder: string): Promise<Project> {
   }
 }
 
-export function state(scenario: Pick<Scenario, "commits" | "pullRequests" | "tags">, cutoff: Date): State {
+export function state(scenario: Pick<Scenario, "commits" | "pullRequests" | "releases">, cutoff: Date): State {
   const by = (date: string | null) => date !== null && new Date(date) <= cutoff
   const commits = scenario.commits.filter(commit => by(commit.date))
   const pullRequests = scenario.pullRequests.filter(pull => by(pull.createdAt)).map(pull => {
@@ -102,7 +103,7 @@ export function state(scenario: Pick<Scenario, "commits" | "pullRequests" | "tag
     const pull = pulls.at(-1)
     return { name, lastCommit: last.date, author: last.author, email: last.email, ahead, merged: merge !== null && ahead === 0, pullRequest: pull ? shape(pull) : null }
   })
-  return { commits, pullRequests, branches, releases: scenario.tags.filter(tag => by(tag.date)) }
+  return { commits, pullRequests, branches, releases: scenario.releases.filter(release => by(release.date)) }
 }
 
 export function connect(scenario: Scenario): Connect {

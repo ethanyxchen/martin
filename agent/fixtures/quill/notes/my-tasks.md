@@ -1,0 +1,3 @@
+- [ ] Fix recurring meetings showing the wrong time zone
+- [ ] Speed up summary generation
+- [ ] Personalisation

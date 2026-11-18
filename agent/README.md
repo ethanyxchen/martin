@@ -27,17 +27,19 @@ The provider is Claude (`ANTHROPIC_API_KEY`) or OpenAI (`OPENAI_API_KEY`), chose
     bun --env-file=../.env eval/eval.ts --provider anthropic --scratch
     bun --env-file=../.env eval/eval.ts --provider anthropic --project lumen --model claude-sonnet-5-5
 
-`--project` runs one project, by folder or name. `--scratch` adds a final run without a previous overview. `--model` and `--effort` override the job's defaults.
+`--project` runs one project, by folder or name. `--scratch` adds a final run without a previous overview. `--stage` runs only the named stage, without a previous overview, and `--repeat` runs the selection several times and pools the scores, so a change can be measured on the slice it should move. `--model` and `--effort` override the job's defaults.
+
+    bun --env-file=../.env eval/eval.ts --project martin --stage 1-refocus --repeat 4
 
 ### Fixtures
 
-Four projects are graded. Martin is this repository's real activity from Oct 19 to Nov 17, with its two real notes. Tandem is an invented work app with teammates, a large pull request in progress, more than 100 commits in one window, and release testing checklists left unticked after their version ships. Lumen is an invented app whose branches and merges drive started and done. Interviews is a job search with notes only.
+Five projects are graded. Martin is this repository's real activity from Oct 19 to Nov 17, with its two real notes. Tandem is an invented work app with teammates, a large pull request in progress, more than 100 commits in one window, and release testing checklists left unticked after their version ships. Lumen is an invented app whose branches and merges drive started and done. Quill is an invented desktop and mobile app with a release every few days, modelled on a real project whose overview trusted stale notes: its release testing and task notes are never ticked, so the repository's releases and history must say what is over. Interviews is a job search with notes only.
 
-Each project is a folder holding `scenario.json` and its notes. A scenario has the project's owner (name, emails and GitHub login), its repository or null, the commits (date, author, email, subject and branch), the pull requests (title, author, branch, `createdAt`, `mergedAt`, `closedAt`, lines added and removed, files changed and commit count), the tags and release branches (name and date) and the stages. Each stage has a cutoff, the notes visible then, and a rubric.
+Each project is a folder holding `scenario.json` and its notes. A scenario has the project's owner (name, emails and GitHub login), its repository or null, the commits (date, author, email, subject and branch), the pull requests (title, author, branch, `createdAt`, `mergedAt`, `closedAt`, lines added and removed, files changed and commit count), the releases (each tag and release branch, by name and date) and the stages. Each stage has a cutoff, the notes visible then, and a rubric.
 
 At each cutoff the fixture works out which commits and pull requests are visible, each pull request's state, and each branch's last commit, how far it is ahead of main, whether it has merged and its pull request. None of these are stored. The agent reads them through the same `repo_activity` and `repo_search` views as a real repository; releases are those tagged by the cutoff, and search reaches 90 days back from it.
 
-A rubric lists the expected tasks, each with a theme id, its section (`now`, `next`, `shelved` or `absent`), optionally what its caption must say and its `updated` date (a day, or `any` for any reasonable date); the extras it tolerates, in words; and optionally the order of Now.
+A rubric lists the expected tasks, each with a theme id, its section (`now`, `next`, `shelved` or `absent`), optionally what its caption must say, the skills it tests and its `updated` date (a day, or `any` for any reasonable date); the extras it tolerates, in words; and optionally the order of Now.
 
 `eval/record.ts` writes a real repository's commits, pull requests and releases into a scenario. It reads commits from the local clone's branches, remotes and tags, so unpushed branches are included and checkpoint refs are not, and pull requests from `gh`. Run it from the repository's checkout:
 
@@ -49,4 +51,4 @@ Claude Sonnet 5.5 (`claude-sonnet-5-5`, pinned in `eval/judge.ts`) judges each r
 
 Code checks the section limits, that dates are valid days up to the cutoff, and that no task mentions a pull request number, commit hash or file name. These invariants are a safety net, not a measure of quality: they're reported on their own line and left out of every score, and a broken one still fails the run.
 
-The report gives pass counts per project and per kind of item, and the time, tokens, agent cost, judge cost and tool calls.
+The report gives pass counts per project, per kind of item and per skill, so a capability such as `releases` or `stale-notes` gets its own score however few items test it, and the time, tokens, agent cost, judge cost and tool calls.
