@@ -51,10 +51,20 @@ public struct AgentClient: Sendable {
 
     public func run<Result: Decodable>(_ job: some Encodable, using credential: Credential) async throws -> Result {
         guard let executable else { throw Failure.unavailable }
-        let input = String(decoding: try JSONEncoder().encode(job), as: UTF8.self)
+        let input = String(decoding: try Self.encoder(in: .current).encode(job), as: UTF8.self)
         let outcome = await Command.run(executable.path(percentEncoded: false), [], input: input, environment: credential.environment, timeout: timeout)
         try Task.checkCancellation()
         return try Self.result(of: outcome)
+    }
+
+    static func encoder(in zone: TimeZone) -> JSONEncoder {
+        let encoder = JSONEncoder()
+        let style = Date.ISO8601FormatStyle(timeZoneSeparator: .colon, timeZone: zone)
+        encoder.dateEncodingStrategy = .custom { date, encoder in
+            var container = encoder.singleValueContainer()
+            try container.encode(date.formatted(style))
+        }
+        return encoder
     }
 
     static func result<Result: Decodable>(of outcome: Command.Outcome) throws(Failure) -> Result {

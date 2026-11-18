@@ -110,4 +110,27 @@ final class RepositoryTests {
             "ethanyxchen/martin": Date(timeIntervalSince1970: 1_793_181_600),
         ])
     }
+
+    @Test func aCommitSinceTheLastReadIsActivityAndSoIsAnUnreadableRepository() async throws {
+        let martin = repository("ethanyxchen/martin", in: "martin")
+        let git = ["-C", martin.folder.path(percentEncoded: false), "-c", "user.name=Ada", "-c", "user.email=ada@example.com"]
+        _ = await Command.run("git", git + ["init", "-q"], timeout: 10)
+        #expect(await Command.run("git", git + ["commit", "-q", "--allow-empty", "-m", "Start"], timeout: 10).ending == .exited(0))
+        #expect(await martin.hasActivity(since: .now - 3600))
+        try FileManager.default.removeItem(at: martin.folder.appending(path: ".git"))
+        #expect(await martin.hasActivity(since: .now + 3600))
+    }
+
+    @Test func theOwnerIsTheGitIdentityAndTheGitHubAccountWithItsNoreplyEmail() async throws {
+        #expect(Owner(name: " Ada \n", email: "Ada@Example.com\n", account: "ada 42") == Owner(name: "Ada", email: "ada@example.com", account: "ada 42"))
+        let owner = Owner(name: "Ada", email: "Ada@Example.com", account: "ada 42")
+        #expect(owner.emails == ["ada@example.com", "42+ada@users.noreply.github.com"])
+        #expect(owner.login == "ada")
+        #expect(Owner(name: nil, email: "", account: nil).emails.isEmpty)
+        let folder = root.appending(path: "identity", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        #expect(await Command.run("git", ["-C", folder.path(percentEncoded: false), "init", "-q"], timeout: 10).ending == .exited(0))
+        #expect(await Command.run("git", ["-C", folder.path(percentEncoded: false), "config", "user.name", "Ada Lovelace"], timeout: 10).ending == .exited(0))
+        #expect(await Owner.current(in: folder).name == "Ada Lovelace")
+    }
 }

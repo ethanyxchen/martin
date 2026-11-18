@@ -41,6 +41,14 @@ public struct Repository: Hashable, Sendable {
             .firstMatch(of: /^ref: refs\/heads\/(.+)$/).map { String($0.1) }
     }
 
+    public func hasActivity(since date: Date) async -> Bool {
+        let since = date.formatted(.iso8601)
+        guard let commits = await Command.run("git", ["-C", folder.path(percentEncoded: false), "log", "--all", "--since", since, "-1", "--format=%H"], timeout: 30).success else { return true }
+        guard commits.isEmpty else { return true }
+        let pulls = await Command.run("gh", ["pr", "list", "--repo", slug, "--state", "all", "--limit", "1", "--search", "updated:>=\(since)", "--json", "number", "--jq", "length"], timeout: 30).success
+        return pulls?.trimmingCharacters(in: .whitespacesAndNewlines) != "0"
+    }
+
     public static func clones(in roots: [URL]) -> [Repository] {
         roots.flatMap { (try? FileManager.default.contentsOfDirectory(at: $0, includingPropertiesForKeys: nil)) ?? [] }
             .filter { isDirectory($0.appending(path: ".git")) }

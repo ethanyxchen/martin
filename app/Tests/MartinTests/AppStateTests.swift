@@ -324,7 +324,7 @@ final class AppStateTests: Sandbox {
         await app.suggestRepositories()
         await AppState(library: library, defaults: defaults, credentials: credentials, finder: finding(martin, asked: asked)).suggestRepositories()
         #expect(await asked.times == 2)
-        #expect(try library.lookups().values.map(\.folder) == [martin.folder])
+        #expect(library.lookups().values.map(\.folder) == [martin.folder])
     }
 
     @Test func aMeetingWithoutANoteYetStillTellsTheLookupItsTitle() async throws {
@@ -333,7 +333,7 @@ final class AppStateTests: Sandbox {
         app.file(try library.create(title: "Lumen sync"), inNewProjectNamed: "Lumen")
         app.credential = claude
         await app.suggestRepositories()
-        #expect(try library.lookups().count == 1)
+        #expect(library.lookups().count == 1)
     }
 
     @Test func aSecretProjectIsNotLookedUpInTheBackground() async throws {
@@ -362,7 +362,7 @@ final class AppStateTests: Sandbox {
         app.file(try library.create(), inNewProjectNamed: "Notepad")
         app.credential = claude
         await app.suggestRepository(for: try #require(app.projects.first ?? app.allProjects.first))
-        #expect(try library.lookups().isEmpty)
+        #expect(library.lookups().isEmpty)
         #expect(app.suggestions.isEmpty)
     }
 

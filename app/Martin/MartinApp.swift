@@ -68,7 +68,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         app.show()
         PostHogSDK.shared.logger?.info("application launch completed", attributes: ["runtime": "macos"])
-        Task { await app.suggestRepositories() }
+        Task {
+            await app.suggestRepositories()
+            await app.scheduleOverviews()
+        }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
@@ -80,6 +83,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 @MainActor
 @Observable
 final class AppState {
+    static let overviewInterval: TimeInterval = 30 * 60
     private static let windowSize = NSSize(width: 520, height: 640)
     private static let hiddenCalendarsKey = "hiddenCalendars"
     private static let pageKey = "page"
@@ -89,12 +93,16 @@ final class AppState {
     private let defaults: UserDefaults
     private let credentials: CredentialStore
     private let finder: RepositoryFinder
+    private let overviewer: Overviewer
     private let share: (Bool) -> Void
     private(set) var meetings: [Meeting] = []
     private(set) var allProjects: [Project] = []
     private(set) var previews: [Meeting.ID: String] = [:]
     private(set) var clones: [Repository] = []
     private(set) var suggestions: [Project.ID: RepositorySuggestion] = [:]
+    private(set) var overviews: [Project.ID: OverviewRecord] = [:]
+    private(set) var overviewStatus: [Project.ID: OverviewStatus] = [:]
+    @ObservationIgnored private var overviewRequests: [Project.ID: OverviewRequest] = [:]
     @ObservationIgnored private var scouting: Task<[Repository], Never>?
     @ObservationIgnored private var lookupRound = 0
     @ObservationIgnored private var lookups: Task<Void, Never>?
@@ -110,6 +118,9 @@ final class AppState {
             suggestions = [:]
             lookupRound += 1
             lookups?.cancel()
+            overviewRequests.values.forEach { $0.task.cancel() }
+            overviewRequests = [:]
+            overviewStatus = [:]
         }
     }
     var sharesUsage: Bool {
@@ -128,15 +139,17 @@ final class AppState {
     @ObservationIgnored private var grown: CGFloat = 0
     @ObservationIgnored private(set) lazy var window = makeWindow()
 
-    init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = .standard, credentials: CredentialStore = .keychain(service: Bundle.main.bundleIdentifier ?? "Martin"), finder: RepositoryFinder = RepositoryFinder(), share: @escaping (Bool) -> Void = Telemetry.share) {
+    init(library: MeetingLibrary = MeetingLibrary(), defaults: UserDefaults = .standard, credentials: CredentialStore = .keychain(service: Bundle.main.bundleIdentifier ?? "Martin"), finder: RepositoryFinder = RepositoryFinder(), overviewer: Overviewer = Overviewer(), share: @escaping (Bool) -> Void = Telemetry.share) {
         self.library = library
         self.defaults = defaults
         self.credentials = credentials
         self.finder = finder
+        self.overviewer = overviewer
         self.share = share
         page = defaults.string(forKey: Self.pageKey).flatMap(HomePage.init) ?? .upcoming
         hiddenPages = Set((defaults.stringArray(forKey: Self.hiddenPagesKey) ?? []).compactMap(HomePage.init))
         credential = credentials.load()
+        overviews = library.overviews()
         hiddenCalendars = Set(defaults.stringArray(forKey: Self.hiddenCalendarsKey) ?? [])
         sharesUsage = defaults.object(forKey: Self.sharesUsageKey) as? Bool ?? true
         share(sharesUsage)
@@ -365,7 +378,7 @@ final class AppState {
 
     func suggestRepository(for project: Project) async {
         guard project.repository?.folder == nil, suggestions[project.id] == nil else { return }
-        if let saved = (try? library.lookups())?[project.id] {
+        if let saved = library.lookups()[project.id] {
             return found(saved.folder.flatMap(Repository.init(at:)), for: project)
         }
         guard let credential else { return }
@@ -403,12 +416,14 @@ final class AppState {
         guard var changed = allProjects.first(where: { $0.id == project.id }) else { return }
         changed.secretAt = secret ? .now : nil
         if secret, !showsSecrets { dismiss(notes(in: project)) }
+        if secret { stopOverview(of: project.id) }
         try? library.save(changed)
         reload()
     }
 
     func archive(_ project: Project) {
         dismiss(notes(in: project))
+        stopOverview(of: project.id)
         guard (try? library.archive(project)) != nil else { return }
         reload()
         PostHogSDK.shared.capture("project_archived")
@@ -423,6 +438,8 @@ final class AppState {
     func delete(_ project: Project) {
         dismiss(notes(in: project))
         suggestions[project.id] = nil
+        stopOverview(of: project.id)
+        overviews[project.id] = nil
         guard (try? library.delete(project)) != nil else { return }
         reload()
         PostHogSDK.shared.capture("project_deleted")
@@ -550,6 +567,119 @@ final class AppState {
         alert.informativeText = detail
         alert.runModal()
     }
+}
+
+extension AppState {
+    private static let unsaved = "Couldn’t save the overview."
+
+    func canRefreshOverview(of project: Project) -> Bool {
+        guard credential != nil, let project = projects.first(where: { $0.id == project.id }), !project.isSecret else { return false }
+        return !overviewNotes(in: project).isEmpty || project.repository?.folder != nil || overviews[project.id]?.built != nil
+    }
+
+    @discardableResult
+    func refreshOverview(of project: Project) -> Task<Void, Never>? {
+        refreshOverview(of: project, ifChanged: false)
+    }
+
+    func refreshDueOverviews() async {
+        for project in projects where canRefreshOverview(of: project) && nextOverviewCheck(of: project) <= overviewer.now() {
+            await refreshOverview(of: project, ifChanged: true)?.value
+        }
+    }
+
+    func nextOverviewCheck() -> Date {
+        projects.filter(canRefreshOverview(of:)).map(nextOverviewCheck(of:)).reduce(overviewer.now() + Self.overviewInterval, min)
+    }
+
+    func scheduleOverviews() async {
+        while !Task.isCancelled {
+            await refreshDueOverviews()
+            await overviewer.wait(max(nextOverviewCheck().timeIntervalSince(overviewer.now()), 0))
+        }
+    }
+
+    private func nextOverviewCheck(of project: Project) -> Date {
+        overviews[project.id].map { $0.checkedAt + Self.overviewInterval } ?? .distantPast
+    }
+
+    private func refreshOverview(of project: Project, ifChanged: Bool) -> Task<Void, Never>? {
+        if let running = overviewRequests[project.id] {
+            if !ifChanged { overviewRequests[project.id]?.checksChanges = false }
+            return running.task
+        }
+        guard let credential, canRefreshOverview(of: project) else { return nil }
+        let id = UUID()
+        let task = Task { await runOverview(of: project.id, request: id, using: credential) }
+        overviewRequests[project.id] = OverviewRequest(id: id, task: task, checksChanges: ifChanged)
+        return task
+    }
+
+    private func runOverview(of id: Project.ID, request: UUID, using credential: Credential) async {
+        defer { if overviewRequests[id]?.id == request { overviewRequests[id] = nil } }
+        guard let project = projects.first(where: { $0.id == id }) else { return }
+        let cutoff = Date(timeIntervalSince1970: overviewer.now().timeIntervalSince1970.rounded(.down))
+        let built = overviews[id]?.built
+        let checked = OverviewRecord(built: built, checkedAt: cutoff)
+        overviews[id] = checked
+        guard (try? library.save(checked, for: id)) != nil else { return overviewStatus[id] = .failed(Self.unsaved) }
+        let notes = overviewNotes(in: project)
+        let folder = project.repository?.folder
+        let unchanged = if overviewRequests[id]?.checksChanges == true, let built { !(await overviewChanged(since: built, notes: notes, folder: folder)) } else { false }
+        guard let current = overviewRequests[id], current.id == request else { return }
+        if unchanged, current.checksChanges { return overviewStatus[id] = nil }
+        overviewStatus[id] = .refreshing
+        let repository = folder.flatMap(Repository.init(at:))
+        let previous = built.flatMap { $0.repository == folder ? $0.overview : nil }
+        let job = Agent.OverviewJob(provider: credential.provider, project: project.name, owner: await overviewer.owner(repository?.folder), cutoff: cutoff, previous: previous, notes: notes, repository: repository)
+        let result: Result<Overview, any Error>
+        do { result = .success(try await overviewer.overview(job, credential)) } catch { result = .failure(error) }
+        guard overviewRequests[id]?.id == request else { return }
+        guard canRefreshOverview(of: project) else { return overviewStatus[id] = nil }
+        switch result {
+        case .success(let overview):
+            let record = OverviewRecord(built: .init(overview: overview, notes: Set(notes.map(\.id)), repository: folder), checkedAt: cutoff)
+            guard (try? library.save(record, for: id)) != nil else { return overviewStatus[id] = .failed(Self.unsaved) }
+            overviews[id] = record
+            overviewStatus[id] = nil
+        case .failure(let error):
+            overviewStatus[id] = .failed((error as? AgentClient.Failure)?.message ?? "Couldn’t refresh the overview.")
+        }
+    }
+
+    private func overviewChanged(since built: OverviewRecord.Built, notes: [Agent.OverviewJob.Note], folder: URL?) async -> Bool {
+        let readAt = built.overview.readAt
+        guard Set(notes.map(\.id)) == built.notes, folder == built.repository, notes.allSatisfy({ $0.changedAt <= readAt }) else { return true }
+        guard let repository = folder.flatMap(Repository.init(at:)) else { return false }
+        return await overviewer.hasActivity(repository, readAt)
+    }
+
+    private func overviewNotes(in project: Project) -> [Agent.OverviewJob.Note] {
+        notes(in: project).filter { $0.archivedAt == nil }.compactMap { meeting in
+            let file = library.noteFile(of: meeting)
+            guard let changedAt = try? file.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate else { return nil }
+            return Agent.OverviewJob.Note(id: meeting.id, title: meeting.displayTitle, date: meeting.date, changedAt: changedAt, file: file)
+        }
+    }
+
+    private func stopOverview(of id: Project.ID) {
+        overviewRequests.removeValue(forKey: id)?.task.cancel()
+        overviewStatus[id] = nil
+    }
+}
+
+struct OverviewRequest {
+    let id: UUID
+    let task: Task<Void, Never>
+    var checksChanges: Bool
+}
+
+struct Overviewer: Sendable {
+    var overview: @Sendable (Agent.OverviewJob, Credential) async throws -> Overview = Agent.overview
+    var hasActivity: @Sendable (Repository, Date) async -> Bool = { await $0.hasActivity(since: $1) }
+    var owner: @Sendable (URL?) async -> Owner = Owner.current(in:)
+    var now: @Sendable () -> Date = { .now }
+    var wait: @Sendable (TimeInterval) async -> Void = { try? await Task.sleep(for: .seconds($0)) }
 }
 
 extension Meeting {
