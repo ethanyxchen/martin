@@ -1,4 +1,5 @@
-import Foundation
+import AppKit
+import AuthenticationServices
 import MartinKit
 import Supabase
 
@@ -19,7 +20,7 @@ struct Cloud: Sendable {
         let client = SupabaseClient(supabaseURL: url, supabaseKey: key, options: SupabaseClientOptions(
             auth: .init(
                 storage: KeychainLocalStorage(service: (bundle.bundleIdentifier ?? "Martin") + ".account"),
-                redirectToURL: URL(string: "martin://auth"),
+                redirectToURL: URL(string: "\(WebSignIn.scheme)://auth"),
                 emitLocalSessionAsInitialSession: true
             )
         ))
@@ -48,10 +49,38 @@ struct Cloud: Sendable {
         }
         return Cloud(
             user: { client.auth.currentUser.map(CloudUser.init) },
-            signIn: { try await CloudUser(client.auth.signInWithOAuth(provider: .apple).user) },
+            signIn: { try await CloudUser(client.auth.signInWithOAuth(provider: .apple, launchFlow: WebSignIn.callback(from:)).user) },
             signOut: { try await client.auth.signOut(scope: .local) },
             server: server
         )
+    }
+}
+
+@MainActor
+private final class WebSignIn: NSObject, ASWebAuthenticationPresentationContextProviding {
+    nonisolated static let scheme = "martin"
+
+    private var session: ASWebAuthenticationSession?
+
+    static func callback(from url: URL) async throws -> URL {
+        let signIn = WebSignIn()
+        return try await withCheckedThrowingContinuation { continuation in
+            let session = ASWebAuthenticationSession(url: url, callback: .customScheme(scheme), completionHandler: finish(continuation, keeping: signIn))
+            session.presentationContextProvider = signIn
+            signIn.session = session
+            session.start()
+        }
+    }
+
+    private nonisolated static func finish(_ continuation: CheckedContinuation<URL, any Error>, keeping signIn: WebSignIn) -> @Sendable (URL?, (any Error)?) -> Void {
+        { url, error in
+            Task { @MainActor in signIn.session = nil }
+            if let url { continuation.resume(returning: url) } else { continuation.resume(throwing: error ?? ASWebAuthenticationSessionError(.canceledLogin)) }
+        }
+    }
+
+    nonisolated func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        MainActor.assumeIsolated { NSApp.keyWindow ?? ASPresentationAnchor() }
     }
 }
 
