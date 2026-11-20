@@ -16,11 +16,11 @@ test("prints progress, then one result with its estimated cost, and exits 0", as
   ])
 })
 
-test("leaves the cost out when the model has no price", async () => {
+test("prices OpenAI's answer too", async () => {
   const answer = { now: [], next: [], shelved: [] }
   const lines: string[] = []
   await serve(JSON.stringify(overviewJob({ provider: "openai" })), line => lines.push(line), () => fake({ calls: [], answer }, "openai"))
-  expect(JSON.parse(lines[0]!)).toEqual({ type: "result", result: answer, cost: null })
+  expect(JSON.parse(lines[0]!)).toEqual({ type: "result", result: answer, cost: cost("gpt-6-luna", [fakeUsage]) })
 })
 
 test("prints one error and exits 1 for a malformed job", async () => {

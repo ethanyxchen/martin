@@ -11,6 +11,11 @@ const prices: Price[] = [
     rate: { input: 0.1, output: 0.5, cacheRead: 0.01, cacheWrite: 0.125 },
     longPrompt: { above: 100_000, rate: { input: 0.5, output: 2.5, cacheRead: 0.05, cacheWrite: 0.625 } },
   },
+  {
+    model: "gpt-6-luna",
+    rate: { input: 0.1, output: 0.5, cacheRead: 0.01, cacheWrite: 0.125 },
+    longPrompt: { above: 272_000, rate: { input: 0.2, output: 0.75, cacheRead: 0.02, cacheWrite: 0.25 } },
+  },
 ]
 
 export function priced(model: string): boolean {
