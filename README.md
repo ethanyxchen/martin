@@ -83,4 +83,4 @@ git tag -a v1.1.2 -m v1.1.2
 git push origin v1.1.2
 ```
 
-The Release workflow builds Martin, signs it with Developer ID, notarizes the app and the DMG, signs the update for Sparkle and publishes `Martin-<version>.dmg` and `appcast.xml` to a GitHub release. It reads its signing and release secrets from the repository's GitHub secrets. `mise run release` does the same from a Mac with the secrets from the Martin vault. Installed copies find the update through the appcast of the latest release.
+The Release workflow builds Martin, signs it with Developer ID, notarizes the app and the DMG, signs the update for Sparkle and publishes `Martin-<version>.dmg` and `appcast.xml` to a GitHub release. It reads every signing and release secret from the Martin vault through a 1Password service account that can only read that vault; its token, `OP_SERVICE_ACCOUNT_TOKEN`, is the workflow's only repository secret. `mise run release` does the same from a Mac through the 1Password app. Installed copies find the update through the appcast of the latest release.
