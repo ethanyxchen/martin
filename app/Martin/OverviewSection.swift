@@ -111,7 +111,7 @@ struct OverviewSection: View {
     }
 
     static func price(_ cost: Double) -> String {
-        cost.formatted(.currency(code: "USD").precision(.significantDigits(1...2)))
+        "$\(cost.formatted(.number.precision(.significantDigits(1...2))))"
     }
 
     static func shown(_ tasks: [Overview.Item], in section: Overview.Section, unfolded: Bool) -> [Overview.Item] {

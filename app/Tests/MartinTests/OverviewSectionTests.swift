@@ -68,7 +68,7 @@ struct OverviewSectionTests {
         let updated = "Updated \(OverviewSection.age(of: now, now: now))"
         #expect(OverviewSection.caption(built, status: .ready, now: now) == "\(updated) · ~\(OverviewSection.price(0.004_23))")
         #expect(OverviewSection.caption(built, status: .refreshing, now: now) == "\(updated) · ~\(OverviewSection.price(0.004_23)) · refreshing")
-        #expect(OverviewSection.price(0.004_23).contains("0.0042"))
-        #expect(OverviewSection.price(0.123).contains("0.12"))
+        #expect(OverviewSection.price(0.004_23) == "$\(0.0042.formatted())")
+        #expect(OverviewSection.price(0.123) == "$\(0.12.formatted())")
     }
 }
