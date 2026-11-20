@@ -49,7 +49,7 @@ struct MarkdownEditor: NSViewRepresentable {
         }
 
         func textView(_ textView: NSTextView, willChangeSelectionFromCharacterRanges old: [NSValue], toCharacterRanges new: [NSValue]) -> [NSValue] {
-            guard let textView = textView as? NoteTextView else { return new }
+            guard let textView = textView as? NoteTextView, !textView.hasMarkedText() else { return new }
             let from = old.first?.rangeValue.location ?? 0
             return new.map { NSValue(range: textView.skippingImages(textView.skippingListPrefixes(textView.skippingMentions($0.rangeValue, from: from), from: from))) }
         }

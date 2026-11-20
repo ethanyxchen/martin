@@ -48,6 +48,20 @@ struct NoteTextViewTests {
         #expect(textView.string == "Notes:\n- AVery")
     }
 
+    @Test func acceptingAnInlinePredictionOverTheFirstWordOfAListItemKeepsItInTheItem() {
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 640), styleMask: .titled, backing: .buffered, defer: true)
+        let textView = NoteTextView.make()
+        let coordinator = MarkdownEditor.Coordinator(text: .constant(""))
+        textView.delegate = coordinator
+        textView.load("Notes:\n- First\n- Very good")
+        window.contentView = textView
+        textView.setMarkedText("Much", selectedRange: NSRange(location: 4, length: 0), replacementRange: NSRange(location: 17, length: 4))
+        textView.setMarkedText("", selectedRange: NSRange(location: 0, length: 0), replacementRange: textView.markedRange())
+        textView.unmarkText()
+        textView.insertText("Much", replacementRange: NSRange(location: NSNotFound, length: 0))
+        #expect(textView.string == "Notes:\n- First\n- Much good")
+    }
+
     @Test(arguments: [
         ("- **bold** item", "- **bold** item\n- ", "- **bold** item\n"),
         ("  - nested", "  - nested\n  - ", "  - nested\n"),
