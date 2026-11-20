@@ -73,14 +73,3 @@ mise run dev
 Secrets live in the Martin vault of the Chen Family 1Password account, and fnox reads them through the 1Password app; `fnox.toml` holds only references. A build reads the Supabase project ID and publishable key, and fnox's daemon keeps them for 8 idle hours so builds don't ask 1Password every time. Without 1Password the build still works and hides the Account section.
 
 Syncing needs a Supabase project with Sign in with Apple turned on, `martin://auth` in its redirect URLs and the schema in `supabase/migrations` applied.
-
-## Releasing
-
-Tag `main` with the next version and push the tag. Each release raises the last number of the latest version tag by 2, so `v1.1.0` is followed by `v1.1.2`, then `v1.1.4`.
-
-```sh
-git tag -a v1.1.2 -m v1.1.2
-git push origin v1.1.2
-```
-
-The Release workflow builds Martin, signs it with Developer ID, notarizes the app and the DMG, signs the update for Sparkle and publishes `Martin-<version>.dmg` and `appcast.xml` to a GitHub release. It reads every signing and release secret from the Martin vault through a 1Password service account that can only read that vault; its token, `OP_SERVICE_ACCOUNT_TOKEN`, is the workflow's only repository secret. `mise run release` does the same from a Mac through the 1Password app. Installed copies find the update through the appcast of the latest release.
