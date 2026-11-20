@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { cost, priced } from "../eval/prices"
+import { cost, priced } from "../src/prices"
 
 const usage = (input: number, output: number, cacheRead = 0, cacheWrite = 0) => ({ input, output, cacheRead, cacheWrite })
 
@@ -13,6 +13,14 @@ test("uses Haiku's long-prompt rate only for requests above 100K prompt tokens",
   expect(cost("claude-haiku-5-5", [short])).toBeCloseTo((90_000 * 0.1 + 1000 * 0.5 + 10_000 * 0.01) / 1_000_000)
   expect(cost("claude-haiku-5-5", [long])).toBeCloseTo((90_000 * 0.5 + 1000 * 2.5 + 10_001 * 0.05) / 1_000_000)
   expect(cost("claude-haiku-5-5", [short, long])).toBeCloseTo(cost("claude-haiku-5-5", [short]) + cost("claude-haiku-5-5", [long]))
+})
+
+test("uses GPT-6 Luna's long-context rate only for requests above 272K prompt tokens", () => {
+  const short = usage(262_000, 1000, 10_000)
+  const long = usage(262_000, 1000, 10_001)
+  expect(cost("gpt-6-luna", [short])).toBeCloseTo((262_000 * 0.1 + 1000 * 0.5 + 10_000 * 0.01) / 1_000_000)
+  expect(cost("gpt-6-luna", [long])).toBeCloseTo((262_000 * 0.2 + 1000 * 0.75 + 10_001 * 0.02) / 1_000_000)
+  expect(priced("gpt-6-luna-2026-10-01")).toBe(true)
 })
 
 test("matches dated model ids but not other models sharing a prefix", () => {

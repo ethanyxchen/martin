@@ -17,20 +17,30 @@ public struct AgentClient: Sendable {
         }
     }
 
-    enum Event<Result: Decodable>: Decodable {
+    public struct Reply<Result: Decodable & Sendable>: Decodable, Sendable {
+        public let result: Result
+        public let cost: Double?
+
+        public init(result: Result, cost: Double?) {
+            self.result = result
+            self.cost = cost
+        }
+    }
+
+    enum Event<Result: Decodable & Sendable>: Decodable {
         case progress
-        case result(Result)
+        case result(Reply<Result>)
         case error(String)
 
         enum CodingKeys: CodingKey {
-            case type, result, message
+            case type, message
         }
 
         init(from decoder: any Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             switch try container.decode(String.self, forKey: .type) {
             case "progress": self = .progress
-            case "result": self = .result(try container.decode(Result.self, forKey: .result))
+            case "result": self = .result(try Reply(from: decoder))
             case "error": self = .error(try container.decode(String.self, forKey: .message))
             default: throw DecodingError.dataCorruptedError(forKey: .type, in: container, debugDescription: "Unknown event")
             }
@@ -49,7 +59,7 @@ public struct AgentClient: Sendable {
         self.timeout = timeout
     }
 
-    public func run<Result: Decodable>(_ job: some Encodable, using credential: Credential) async throws -> Result {
+    public func run<Result: Decodable & Sendable>(_ job: some Encodable, using credential: Credential) async throws -> Reply<Result> {
         guard let executable else { throw Failure.unavailable }
         let input = String(decoding: try Self.encoder(in: .current).encode(job), as: UTF8.self)
         let outcome = await Command.run(executable.path(percentEncoded: false), [], input: input, environment: credential.environment, timeout: timeout)
@@ -67,7 +77,7 @@ public struct AgentClient: Sendable {
         return encoder
     }
 
-    static func result<Result: Decodable>(of outcome: Command.Outcome) throws(Failure) -> Result {
+    static func result<Result: Decodable & Sendable>(of outcome: Command.Outcome) throws(Failure) -> Reply<Result> {
         switch outcome.ending {
         case .unlaunched: throw .unavailable
         case .stopped: throw .timedOut
@@ -77,7 +87,7 @@ public struct AgentClient: Sendable {
         guard let events = try? outcome.output.split(separator: "\n").map({ try decoder.decode(Event<Result>.self, from: Data($0.utf8)) }),
               let last = events.last, events.dropLast().allSatisfy(\.isProgress) else { throw .broken }
         switch (last, outcome.ending) {
-        case (.result(let result), .exited(0)): return result
+        case (.result(let reply), .exited(0)): return reply
         case (.error(let message), .exited(let status)) where status != 0: throw .reported(message)
         default: throw .broken
         }

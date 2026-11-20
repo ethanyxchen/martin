@@ -35,13 +35,13 @@ final class FakeAgent {
         return activity
     }
 
-    private func answer(_ job: Agent.OverviewJob) throws -> Overview {
+    private func answer(_ job: Agent.OverviewJob) throws -> AgentClient.Reply<Overview> {
         jobs.append(job)
         let during = during
         self.during = nil
         during?()
         if let failure { throw failure }
-        return Overview(now: [.init(title: "Run \(jobs.count)", caption: "Going.")], next: [], shelved: [], readAt: job.cutoff)
+        return AgentClient.Reply(result: Overview(now: [.init(title: "Run \(jobs.count)", caption: "Going.")], next: [], shelved: [], readAt: job.cutoff), cost: 0.001 * Double(jobs.count))
     }
 }
 
@@ -94,6 +94,15 @@ final class OverviewRefreshTests: Sandbox {
         passTime(1)
         await app.refreshDueOverviews()
         #expect(agent.jobs.count == 2)
+    }
+
+    @Test func theOverviewKeepsTheCostOfTheRefreshThatBuiltItAcrossLaunches() async throws {
+        let app = launch()
+        let project = try project(app)
+        await app.refreshOverview(of: project)?.value
+        await app.refreshOverview(of: project)?.value
+        #expect(app.overviews[project.id]?.built?.cost == 0.002)
+        #expect(launch().overviews[project.id]?.built?.cost == 0.002)
     }
 
     @Test func aDueProjectWithNothingNewStartsNoAgentButCountsAsCheckedAcrossLaunches() async throws {

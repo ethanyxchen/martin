@@ -105,10 +105,10 @@ struct OverviewJobTests {
 
     @Test func theAgentsSectionsBecomeAnOverviewReadAtTheCutoff() throws {
         let line = #"{"type":"result","result":{"now":[{"title":"Agent","caption":"Wiring it up.","updated":"2026-11-17"}],"next":[],"shelved":[{"title":"Docs","caption":"Paused.","updated":null}]}}"#
-        let sections: Agent.Sections = try AgentClient.result(of: Command.Outcome(output: line + "\n", ending: .exited(0)))
+        let sections: Agent.Sections = try AgentClient.result(of: Command.Outcome(output: line + "\n", ending: .exited(0))).result
         #expect(sections.now == [.init(title: "Agent", caption: "Wiring it up.", updated: "2026-11-17")])
         #expect(sections.shelved == [.init(title: "Docs", caption: "Paused.")])
         let lookup = #"{"type":"result","result":{"evidence":"","slugs":[]}}"#
-        #expect(throws: AgentClient.Failure.broken) { let _: Agent.Sections = try AgentClient.result(of: Command.Outcome(output: lookup, ending: .exited(0))) }
+        #expect(throws: AgentClient.Failure.broken) { let _: AgentClient.Reply<Agent.Sections> = try AgentClient.result(of: Command.Outcome(output: lookup, ending: .exited(0))) }
     }
 }

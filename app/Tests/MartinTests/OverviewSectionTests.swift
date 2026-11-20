@@ -54,10 +54,21 @@ struct OverviewSectionTests {
     @Test func aRefreshKeepsTheAgeOfTheOverviewItReplaces() {
         let now = date(11, 17)
         let overview = Overview(now: [], next: [], shelved: [], readAt: now.addingTimeInterval(-7200))
+        let built = OverviewRecord.Built(overview: overview, notes: [], repository: nil, cost: nil)
         let updated = "Updated \(OverviewSection.age(of: overview.readAt, now: now))"
-        #expect(OverviewSection.caption(overview, status: .ready, now: now) == updated)
-        #expect(OverviewSection.caption(overview, status: .refreshing, now: now) == "\(updated) · refreshing")
+        #expect(OverviewSection.caption(built, status: .ready, now: now) == updated)
+        #expect(OverviewSection.caption(built, status: .refreshing, now: now) == "\(updated) · refreshing")
         #expect(OverviewSection.caption(nil, status: .refreshing, now: now) == "Refreshing…")
         #expect(OverviewSection.caption(nil, status: .ready, now: now) == nil)
+    }
+
+    @Test func theCaptionEstimatesWhatTheLastRefreshCost() {
+        let now = date(11, 17)
+        let built = OverviewRecord.Built(overview: Overview(now: [], next: [], shelved: [], readAt: now), notes: [], repository: nil, cost: 0.004_23)
+        let updated = "Updated \(OverviewSection.age(of: now, now: now))"
+        #expect(OverviewSection.caption(built, status: .ready, now: now) == "\(updated) · ~\(OverviewSection.price(0.004_23))")
+        #expect(OverviewSection.caption(built, status: .refreshing, now: now) == "\(updated) · ~\(OverviewSection.price(0.004_23)) · refreshing")
+        #expect(OverviewSection.price(0.004_23) == "$\(0.0042.formatted())")
+        #expect(OverviewSection.price(0.123) == "$\(0.12.formatted())")
     }
 }

@@ -3,6 +3,8 @@ import type { Provider } from "./provider"
 
 export type Script = { calls: { tool: string, input: unknown }[][], answer: unknown }
 
+export const fakeUsage = { input: 1000, cacheRead: 0, cacheWrite: 0, output: 100 }
+
 export function fake(script: Script, name: ProviderName = "anthropic"): Provider {
   return {
     name,
@@ -14,8 +16,8 @@ export function fake(script: Script, name: ProviderName = "anthropic"): Provider
           return tool.run(call.input)
         }))
       }
-      const requests = Array.from({ length: script.calls.length + 1 }, () => ({ input: 0, cacheRead: 0, cacheWrite: 0, output: 0 }))
-      return { result: request.result.parse(script.answer), model: "fake", requests }
+      const requests = Array.from({ length: script.calls.length + 1 }, () => fakeUsage)
+      return { result: request.result.parse(script.answer), model: request.model, requests }
     },
   }
 }

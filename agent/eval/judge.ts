@@ -5,7 +5,7 @@ import { describe, limits } from "../src/jobs/overview"
 import type { Provider } from "../src/providers/provider"
 import type { OverviewResult } from "../src/schema"
 import { day } from "../src/text"
-import { cost } from "./prices"
+import { cost } from "../src/prices"
 import { type Project, type Rubric, type Stage, state } from "./scenario"
 
 export const judgeModel = "claude-sonnet-5-5"
