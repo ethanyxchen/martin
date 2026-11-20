@@ -1,4 +1,4 @@
-import type { Usage } from "../src/providers/provider"
+import type { Usage } from "./providers/provider"
 
 type Rate = { input: number, output: number, cacheRead: number, cacheWrite: number }
 type Price = { model: string, rate: Rate, longPrompt?: { above: number, rate: Rate } }
@@ -19,7 +19,7 @@ export function priced(model: string): boolean {
 
 export function cost(model: string, requests: Usage[]): number {
   const price = find(model)
-  if (!price) throw new Error(`No price for ${model}. Add it to eval/prices.ts.`)
+  if (!price) throw new Error(`No price for ${model}. Add it to src/prices.ts.`)
   return requests.reduce((total, usage) => {
     const prompt = usage.input + usage.cacheRead + usage.cacheWrite
     const rate = price.longPrompt && prompt > price.longPrompt.above ? price.longPrompt.rate : price.rate

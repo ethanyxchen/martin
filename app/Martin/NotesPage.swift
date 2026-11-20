@@ -372,7 +372,7 @@ struct ProjectOverview: View {
 
     var body: some View {
         if app.canRefreshOverview(of: project) {
-            OverviewSection(overview: app.overviews[project.id]?.built?.overview, status: app.overviewStatus[project.id] ?? .ready, sweepsAbove: project.repository != nil, now: now) {
+            OverviewSection(built: app.overviews[project.id]?.built, status: app.overviewStatus[project.id] ?? .ready, sweepsAbove: project.repository != nil, now: now) {
                 app.refreshOverview(of: project)
             }
         }

@@ -13,7 +13,7 @@ enum OverviewStatus: Equatable {
 
 struct OverviewSection: View {
     static let folded = 2
-    let overview: Overview?
+    let built: OverviewRecord.Built?
     let status: OverviewStatus
     let sweepsAbove: Bool
     let now: Date
@@ -25,7 +25,7 @@ struct OverviewSection: View {
             if case .failed(let message) = status {
                 Notice(message: message)
             }
-            if let overview {
+            if let overview = built?.overview {
                 let sections = Overview.Section.allCases.filter { !overview[$0].isEmpty }
                 ForEach(sections, id: \.self) { section in
                     group(section, overview[section], first: section == sections.first)
@@ -79,7 +79,7 @@ struct OverviewSection: View {
             if status == .refreshing, !sweepsAbove {
                 ProgressView().controlSize(.mini)
             }
-            Self.caption(overview, status: status, now: now).map(Text.init)
+            Self.caption(built, status: status, now: now).map(Text.init)
             Spacer(minLength: 0)
             Button(action: refresh) {
                 Label(status.action, systemImage: "arrow.clockwise")
@@ -98,13 +98,20 @@ struct OverviewSection: View {
         .font(Theme.meta)
         .foregroundStyle(Theme.tertiary)
         .padding(.horizontal, TaskRow.inset)
-        .padding(.top, overview == nil ? 0 : 10)
+        .padding(.top, built == nil ? 0 : 10)
     }
 
-    static func caption(_ overview: Overview?, status: OverviewStatus, now: Date) -> String? {
-        let updated = overview.map { "Updated \(age(of: $0.readAt, now: now))" }
+    static func caption(_ built: OverviewRecord.Built?, status: OverviewStatus, now: Date) -> String? {
+        let updated = built.map { built in
+            let text = "Updated \(age(of: built.overview.readAt, now: now))"
+            return built.cost.map { "\(text) · ~\(price($0))" } ?? text
+        }
         guard status == .refreshing else { return updated }
         return updated.map { "\($0) · refreshing" } ?? "Refreshing…"
+    }
+
+    static func price(_ cost: Double) -> String {
+        cost.formatted(.currency(code: "USD").precision(.significantDigits(1...2)))
     }
 
     static func shown(_ tasks: [Overview.Item], in section: Overview.Section, unfolded: Bool) -> [Overview.Item] {

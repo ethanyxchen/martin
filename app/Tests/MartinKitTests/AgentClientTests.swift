@@ -3,7 +3,7 @@ import Testing
 @testable import MartinKit
 
 struct AgentClientTests {
-    struct Echo: Codable, Equatable {
+    struct Echo: Codable, Equatable, Sendable {
         let evidence: String
         let slugs: [String]
     }
@@ -14,6 +14,10 @@ struct AgentClientTests {
     let rejected = #"{"type":"error","message":"The Claude API key was rejected."}"#
 
     private func result(_ lines: [String], _ ending: Command.Outcome.Ending) -> Result<Agent.Answer, AgentClient.Failure> {
+        reply(lines, ending).map(\.result)
+    }
+
+    private func reply(_ lines: [String], _ ending: Command.Outcome.Ending) -> Result<AgentClient.Reply<Agent.Answer>, AgentClient.Failure> {
         Result { () throws(AgentClient.Failure) in try AgentClient.result(of: Command.Outcome(output: lines.map { $0 + "\n" }.joined(), ending: ending)) }
     }
 
@@ -27,6 +31,11 @@ struct AgentClientTests {
     @Test func theResultIsTheOneResultEventAfterAnyProgressFromAnAgentThatExitedCleanly() throws {
         #expect(try result([progress, progress, answer], .exited(0)).get().slugs == ["acme/atlas"])
         #expect(try result([answer], .exited(0)).get().slugs == ["acme/atlas"])
+    }
+
+    @Test func theResultCarriesTheCostTheAgentEstimatedWhenItHasOne() throws {
+        #expect(try reply([#"{"type":"result","result":{"evidence":"notes","slugs":[]},"cost":0.0042}"#], .exited(0)).get().cost == 0.0042)
+        #expect(try reply([#"{"type":"result","result":{"evidence":"notes","slugs":[]},"cost":null}"#], .exited(0)).get().cost == nil)
     }
 
     @Test func aLineSeparatorInsideAStringDoesNotEndTheEvent() throws {
@@ -67,26 +76,26 @@ struct AgentClientTests {
     @Test func theAgentReadsTheJobOnItsInputAndTheKeyInItsEnvironment() async throws {
         let job = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         let agent = try agent(#"cat > "\#(job.path(percentEncoded: false))"; printf '{"type":"result","result":{"evidence":"%s","slugs":[]}}\n' "$ANTHROPIC_API_KEY""#)
-        let echo: Echo = try await AgentClient(executable: agent).run(["job": 1], using: credential)
+        let echo: Echo = try await AgentClient(executable: agent).run(["job": 1], using: credential).result
         #expect(echo == Echo(evidence: "sk-ant", slugs: []))
         #expect(try String(contentsOf: job, encoding: .utf8) == #"{"job":1}"#)
     }
 
     @Test func aMissingAgentIsUnavailable() async {
-        await #expect(throws: AgentClient.Failure.unavailable) { let _: Echo = try await AgentClient(executable: nil).run(["job": 1], using: credential) }
-        await #expect(throws: AgentClient.Failure.unavailable) { let _: Echo = try await AgentClient(executable: URL(filePath: "/martin/no-agent")).run(["job": 1], using: credential) }
+        await #expect(throws: AgentClient.Failure.unavailable) { let _: AgentClient.Reply<Echo> = try await AgentClient(executable: nil).run(["job": 1], using: credential) }
+        await #expect(throws: AgentClient.Failure.unavailable) { let _: AgentClient.Reply<Echo> = try await AgentClient(executable: URL(filePath: "/martin/no-agent")).run(["job": 1], using: credential) }
     }
 
     @Test func anAgentThatHangsTimesOut() async throws {
         let agent = try agent("sleep 30")
-        await #expect(throws: AgentClient.Failure.timedOut) { let _: Echo = try await AgentClient(executable: agent, timeout: 0.5).run(["job": 1], using: credential) }
+        await #expect(throws: AgentClient.Failure.timedOut) { let _: AgentClient.Reply<Echo> = try await AgentClient(executable: agent, timeout: 0.5).run(["job": 1], using: credential) }
     }
 
     @Test func cancellingARequestStopsTheAgentAndWhatItStarted() async throws {
         let mark = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString).path(percentEncoded: false)
         let agent = try agent("sh -c 'sleep 2; touch \(mark)' & wait")
         let start = ContinuousClock.now
-        let request = Task { () async throws -> Echo in try await AgentClient(executable: agent).run(["job": 1], using: credential) }
+        let request = Task { () async throws -> Echo in try await AgentClient(executable: agent).run(["job": 1], using: credential).result }
         try await Task.sleep(for: .seconds(0.3))
         request.cancel()
         await #expect(throws: CancellationError.self) { try await request.value }

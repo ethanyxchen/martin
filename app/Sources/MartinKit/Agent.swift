@@ -112,25 +112,26 @@ public enum Agent {
         }
     }
 
-    struct Sections: Decodable {
+    struct Sections: Decodable, Sendable {
         let now: [Overview.Item]
         let next: [Overview.Item]
         let shelved: [Overview.Item]
     }
 
-    public static func overview(_ job: OverviewJob, using credential: Credential) async throws -> Overview {
-        let sections: Sections = try await AgentClient().run(job, using: credential)
-        return Overview(now: sections.now, next: sections.next, shelved: sections.shelved, readAt: job.cutoff)
+    public static func overview(_ job: OverviewJob, using credential: Credential) async throws -> AgentClient.Reply<Overview> {
+        let reply: AgentClient.Reply<Sections> = try await AgentClient().run(job, using: credential)
+        let sections = reply.result
+        return AgentClient.Reply(result: Overview(now: sections.now, next: sections.next, shelved: sections.shelved, readAt: job.cutoff), cost: reply.cost)
     }
 
-    struct Answer: Decodable, Equatable {
+    struct Answer: Decodable, Equatable, Sendable {
         let slugs: [String]
     }
 
     public static func match(_ project: Project, notes: [Note], among candidates: [Repository], using credential: Credential) async -> Set<String>? {
         guard !candidates.isEmpty else { return [] }
-        let answer: Answer? = try? await AgentClient().run(LookupJob(for: project, notes: notes, among: candidates, provider: credential.provider), using: credential)
-        return answer.map { Set($0.slugs) }
+        let answer: AgentClient.Reply<Answer>? = try? await AgentClient().run(LookupJob(for: project, notes: notes, among: candidates, provider: credential.provider), using: credential)
+        return answer.map { Set($0.result.slugs) }
     }
 
     public static func pick(for project: Project, matches: Set<String>, among candidates: [Repository]) -> Repository? {

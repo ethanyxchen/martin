@@ -655,13 +655,13 @@ extension AppState {
         overviewStatus[id] = .refreshing
         let previous = built.flatMap { $0.repository == folder ? $0.overview : nil }
         let job = Agent.OverviewJob(provider: credential.provider, project: project.name, owner: await overviewer.owner(repository?.folder), cutoff: cutoff, previous: previous, notes: notes, repository: repository)
-        let result: Result<Overview, any Error>
+        let result: Result<AgentClient.Reply<Overview>, any Error>
         do { result = .success(try await overviewer.overview(job, credential)) } catch { result = .failure(error) }
         guard overviewRequests[id]?.id == request else { return }
         guard canRefreshOverview(of: project) else { return overviewStatus[id] = nil }
         switch result {
-        case .success(let overview):
-            let record = OverviewRecord(built: .init(overview: overview, notes: Set(notes.map(\.id)), repository: folder), checkedAt: cutoff)
+        case .success(let reply):
+            let record = OverviewRecord(built: .init(overview: reply.result, notes: Set(notes.map(\.id)), repository: folder, cost: reply.cost), checkedAt: cutoff)
             guard (try? library.save(record, for: id)) != nil else { return overviewStatus[id] = .failed(Self.unsaved) }
             overviews[id] = record
             overviewStatus[id] = nil
@@ -780,7 +780,7 @@ struct OverviewRequest {
 }
 
 struct Overviewer: Sendable {
-    var overview: @Sendable (Agent.OverviewJob, Credential) async throws -> Overview = Agent.overview
+    var overview: @Sendable (Agent.OverviewJob, Credential) async throws -> AgentClient.Reply<Overview> = Agent.overview
     var hasActivity: @Sendable (Repository, Date) async -> Bool = { await $0.hasActivity(since: $1) }
     var owner: @Sendable (URL?) async -> Owner = Owner.current(in:)
     var now: @Sendable () -> Date = { .now }

@@ -84,5 +84,5 @@ export type Job = z.infer<typeof Job>
 
 export type Event =
   | { type: "progress", tool: string, input: unknown }
-  | { type: "result", result: OverviewResult | LookupResult }
+  | { type: "result", result: OverviewResult | LookupResult, cost: number | null }
   | { type: "error", message: string }

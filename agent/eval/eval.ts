@@ -8,7 +8,7 @@ import type { Effort, Outcome, Usage } from "../src/providers/provider"
 import { runJob } from "../src/run"
 import type { Overview, OverviewResult, ProviderName } from "../src/schema"
 import { invariants, judge, judgeModel, type Kind, material, scored, type Verdict } from "./judge"
-import { cost, priced } from "./prices"
+import { cost, priced } from "../src/prices"
 import { connect, type Project, projects, type Stage } from "./scenario"
 
 type Run = {
@@ -40,7 +40,7 @@ const { values } = parseArgs({
 
 const name = values.provider as ProviderName
 const model = values.model ?? models[name]
-if (!priced(model)) exit(`No price for ${model}, so its runs can't be costed. Add it to eval/prices.ts.`)
+if (!priced(model)) exit(`No price for ${model}, so its runs can't be costed. Add it to src/prices.ts.`)
 const selected = await projects(join(import.meta.dir, "..", "fixtures"), values.project)
 if (!selected.length) exit(values.project ? `No project named ${values.project}.` : "No projects in fixtures/.")
 const repeats = Number(values.repeat)

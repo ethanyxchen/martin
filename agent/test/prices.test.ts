@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { cost, priced } from "../eval/prices"
+import { cost, priced } from "../src/prices"
 
 const usage = (input: number, output: number, cacheRead = 0, cacheWrite = 0) => ({ input, output, cacheRead, cacheWrite })
 

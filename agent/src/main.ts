@@ -1,5 +1,6 @@
 import { ZodError } from "zod"
 import { Failure } from "./failure"
+import { cost, priced } from "./prices"
 import { provider as providerNamed } from "./providers"
 import type { Provider } from "./providers/provider"
 import { runJob } from "./run"
@@ -9,8 +10,8 @@ export async function serve(input: string, write: (line: string) => void, provid
   const emit = (event: Event) => write(JSON.stringify(event))
   try {
     const job = Job.parse(JSON.parse(input))
-    const { result } = await runJob(job, provider(job.provider), emit)
-    emit({ type: "result", result })
+    const { result, model, requests } = await runJob(job, provider(job.provider), emit)
+    emit({ type: "result", result, cost: priced(model) ? cost(model, requests) : null })
     return 0
   } catch (error) {
     emit({ type: "error", message: explain(error) })

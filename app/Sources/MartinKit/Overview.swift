@@ -58,11 +58,13 @@ public struct OverviewRecord: Codable, Hashable, Sendable {
         public let overview: Overview
         public let notes: Set<Meeting.ID>
         public let repository: URL?
+        public let cost: Double?
 
-        public init(overview: Overview, notes: Set<Meeting.ID>, repository: URL?) {
+        public init(overview: Overview, notes: Set<Meeting.ID>, repository: URL?, cost: Double?) {
             self.overview = overview
             self.notes = notes
             self.repository = repository
+            self.cost = cost
         }
     }
 
