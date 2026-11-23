@@ -19,3 +19,7 @@ Every bug fix and behaviour change comes with a regression test that fails witho
 # Benchmarking the agent
 
 Run `mise run eval` with `claude-haiku-5-5` or `claude-sonnet-5-5` only. Never benchmark on Opus unless the owner asks for it in that conversation: on the full benchmark it scored within a few checks of Haiku at about fifteen times the agent cost.
+
+# Versioning
+
+Releases are tagged `vMAJOR.MINOR.PATCH` on `main`, and the tag sets the app's version. The patch number's parity says what a release ships: even for a feature release, odd for a release of only bug fixes. Tag the next release with the smallest patch number above the latest tag that has the right parity: from `v1.2.1`, a feature release is `v1.2.2` and a bug-fix release is `v1.2.3`; from `v1.2.2`, a feature release is `v1.2.4` and a bug-fix release is `v1.2.3`. Never bump the minor or major number yourself; those upgrades are made only by the owner.
